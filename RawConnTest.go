@@ -3,6 +3,7 @@ package main
 import (
     "fmt"
 //    "net/ipv4"
+    "golang.org/x/net/ipv4"
 )
 
 func main() {
@@ -10,5 +11,5 @@ func main() {
 }
 
 type UDP struct {
-//	conn *RawConn
+	conn *ipv4.RawConn
 }
