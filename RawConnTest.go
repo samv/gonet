@@ -2,7 +2,7 @@ package main
 
 import (
     "fmt"
-    "net/ipv4"
+//    "net/ipv4"
 )
 
 func main() {
@@ -10,5 +10,5 @@ func main() {
 }
 
 type UDP struct {
-	conn *RawConn
+//	conn *RawConn
 }
