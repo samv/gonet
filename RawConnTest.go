@@ -46,8 +46,11 @@ func readUDP(c *UDP, size int) ([]byte, error) {
     return make([]byte, 0), nil
 }
 func writeUDP(c *UDP, x []byte) error {
-    return nil
+    // TODO convert to byte slice: 5 00 00 44 ad 0b 00 00 40 11 72 72 ac 14 02 fd ac 14 00 06
+	h := ipv4.ParseHeader()
+	c.conn.WriteTo(h, x, nil)
+	return nil
 }
 func closeUDP(c *UDP) error {
-    return nil
+    return c.conn.Close()
 }
