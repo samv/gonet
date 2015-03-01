@@ -51,7 +51,7 @@ func (c *UDP) write(x []byte) error {
 	UDPHeader := []byte{
 		c.src >> 8, c.src << 8 >> 8, // Source port in byte slice
 		c.dest >> 8, c.src << 8 >> 8, // Dest port in byte slice
-		(8 + len(x)) >> 8, (8 + len(x)<<8>>8), // Length in bytes of UDP header + data
+		(8 + len(x)) >> 8, (8 + len(x)) << 8 >> 8, // Length in bytes of UDP header + data
 		0, 0, // Checksum
 	}
 
