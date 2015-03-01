@@ -15,19 +15,24 @@ func main() {
         fmt.Println("Failed")
         os.Exit(1)
     }
-    read(c, 1024)
+    readUDP(c, 1024)
+    writeUDP(c, make([]byte, 0))
+    closeUDP(c)
 }
 
-//type netConn interface {
-//    open(src, dest int) (S UDP, error)
-//}
-
 type UDP struct {
+    open bool
 	conn *ipv4.RawConn
 }
 func openUDP(src, dest int) (*UDP, error) {
     return nil, nil
 }
-func read(S *UDP, size int) ([]byte, error) {
+func readUDP(c *UDP, size int) ([]byte, error) {
     return make([]byte, 0), nil
+}
+func writeUDP(c *UDP, x []byte) error {
+    return nil
+}
+func closeUDP(c *UDP) error {
+    return nil
 }
