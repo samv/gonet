@@ -40,6 +40,8 @@ func NewUDP(src, dest uint16) (*UDP, error) {
         return nil, err;
     }
 
+    // TODO use r.JoinGroup at https://godoc.org/golang.org/x/net/ipv4#NewRawConn
+
     return &UDP{open: true, conn: r, src: src, dest: dest, pl: p}, nil
 }
 func (c *UDP) read(size int) ([]byte, error) {
