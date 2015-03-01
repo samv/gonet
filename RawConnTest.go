@@ -48,9 +48,31 @@ func (c *UDP) read(size int) ([]byte, error) {
     return make([]byte, 0), nil
 }
 func (c *UDP) write(x []byte) error {
-    // TODO convert to byte slice: 5 00 00 44 ad 0b 00 00 40 11 72 72 ac 14 02 fd ac 14 00 06
-//	h := ipv4.ParseHeader()
-//	c.conn.WriteTo(h, x, nil)
+	UDPHeader := []byte{
+		c.src >> 8, c.src << 8 >> 8, // Source port in byte slice
+		c.dest >> 8, c.src << 8 >> 8, // Dest port in byte slice
+		(8 + len(x)) >> 8, (8 + len(x)<<8>>8), // Length in bytes of UDP header + data
+		0, 0, // Checksum
+	}
+
+	x = append(UDPHeader, x...)
+
+	h := &ipv4.Header{
+		Version:  ipv4.Version,      // protocol version
+		Len:      20,                // header length
+		TOS:      0,                 // type-of-service (0 is everything normal)
+		TotalLen: len(x) + 20,       // packet total length (octets)
+		ID:       0,                 // identification
+		Flags:    ipv4.DontFragment, // flags
+		FragOff:  0,                 // fragment offset
+		TTL:      8,                 // time-to-live (maximum lifespan in seconds)
+		Protocol: 17,                // next protocol (17 is UDP)
+		Checksum: 0,                 // checksum (apparently autocomputed)
+		//Src:    net.IPv4(127, 0, 0, 1), // source address, apparently done automatically
+		Dst: net.IPv4(127, 0, 0, 1), // destination address
+		//Options                         // options, extension headers
+	}
+	c.conn.WriteTo(h, x, nil)
 	return nil
 }
 func (c *UDP) close() error {
