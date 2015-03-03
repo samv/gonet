@@ -11,13 +11,13 @@ import (
 func main() {
 	fmt.Println("Hello, World!")
 
-	c, err := NewUDP(5049, 5050)
+	c, err := NewUDP(20001, 20005)
 	if err != nil {
 		fmt.Println(err)
 		os.Exit(1)
 	}
 	c.read(1024)
-	c.write(make([]byte, 0))
+	c.write([]byte{'h', 'e', 'l', 'l', 'o', ' ', 'w', 'o', 'r', 'l', 'd', 0})
 	c.close()
 }
 
