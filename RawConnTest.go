@@ -1,57 +1,60 @@
 package main
 
 import (
-    "fmt"
-//    "net/ipv4"
-    "net"
-    "golang.org/x/net/ipv4"
-    "os"
+	"fmt"
+	//    "net/ipv4"
+	"golang.org/x/net/ipv4"
+	"net"
+	"os"
 )
 
 func main() {
-    fmt.Println("Hello, World!")
+	fmt.Println("Hello, World!")
 
-    c, err := NewUDP(5049, 5050)
-    if err != nil {
-        fmt.Println(err)
-        os.Exit(1)
-    }
-    c.read(1024)
-    c.write(make([]byte, 0))
-    c.close()
+	c, err := NewUDP(5049, 5050)
+	if err != nil {
+		fmt.Println(err)
+		os.Exit(1)
+	}
+	c.read(1024)
+	c.write(make([]byte, 0))
+	c.close()
 }
 
 type UDP struct {
-    open bool
+	open bool
 	conn *ipv4.RawConn
 
-    src, dest uint16
+	src, dest uint16
 
-    pl net.PacketConn
+	pl net.PacketConn
 }
+
 func NewUDP(src, dest uint16) (*UDP, error) {
-    p, err := net.ListenPacket("ip4:17", "127.0.0.1")
-    if err != nil {
-        return nil, err;
-    }
+	p, err := net.ListenPacket("ip4:17", "127.0.0.1")
+	if err != nil {
+		fmt.Println(err)
+		return nil, err
+	}
 
-    r, err := ipv4.NewRawConn(p)
-    if  err != nil {
-        return nil, err;
-    }
+	r, err := ipv4.NewRawConn(p)
+	if err != nil {
+		fmt.Println(err)
+		return nil, err
+	}
 
-    // TODO use r.JoinGroup at https://godoc.org/golang.org/x/net/ipv4#NewRawConn
+	// TODO use r.JoinGroup at https://godoc.org/golang.org/x/net/ipv4#NewRawConn
 
-    return &UDP{open: true, conn: r, src: src, dest: dest, pl: p}, nil
+	return &UDP{open: true, conn: r, src: src, dest: dest, pl: p}, nil
 }
 func (c *UDP) read(size int) ([]byte, error) {
-    return make([]byte, 0), nil
+	return make([]byte, 0), nil
 }
 func (c *UDP) write(x []byte) error {
 	UDPHeader := []byte{
-        (byte)(c.src >> 8), (byte)(c.src << 8 >> 8), // Source port in byte slice
-        (byte)(c.dest >> 8), (byte)(c.dest << 8 >> 8), // Dest port in byte slice
-        (byte)((8 + len(x)) >> 8), (byte)((8 + len(x)) << 8 >> 8), // Length in bytes of UDP header + data
+		(byte)(c.src >> 8), (byte)(c.src), // Source port in byte slice
+		(byte)(c.dest >> 8), (byte)(c.dest), // Dest port in byte slice
+		(byte)((8 + len(x)) >> 8), (byte)(8 + len(x)), // Length in bytes of UDP header + data
 		0, 0, // Checksum
 	}
 
@@ -72,9 +75,13 @@ func (c *UDP) write(x []byte) error {
 		Dst: net.IPv4(127, 0, 0, 1), // destination address
 		//Options                         // options, extension headers
 	}
-	c.conn.WriteTo(h, x, nil)
+	err := c.conn.WriteTo(h, x, nil)
+	if err != nil {
+		fmt.Println(err)
+		return err
+	}
 	return nil
 }
 func (c *UDP) close() error {
-    return c.conn.Close()
+	return c.conn.Close()
 }
