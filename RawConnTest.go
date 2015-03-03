@@ -9,14 +9,12 @@ import (
 )
 
 func main() {
-	fmt.Println("Hello, World!")
-
 	c, err := NewUDP(20001, 20005)
 	if err != nil {
 		fmt.Println(err)
 		os.Exit(1)
 	}
-	c.read(1024)
+	fmt.Println(c.read(41))
 	c.write([]byte{'h', 'e', 'l', 'l', 'o', ' ', 'w', 'o', 'r', 'l', 'd', 0})
 	c.close()
 }
@@ -31,7 +29,7 @@ type UDP struct {
 }
 
 func NewUDP(src, dest uint16) (*UDP, error) {
-	p, err := net.ListenPacket("ip4:17", "0.0.0.0")
+	p, err := net.ListenPacket("ip4:udp", "127.0.0.1")
 	if err != nil {
 		fmt.Println(err)
 		return nil, err
@@ -48,7 +46,12 @@ func NewUDP(src, dest uint16) (*UDP, error) {
 	return &UDP{open: true, conn: r, src: src, dest: dest, pl: p}, nil
 }
 func (c *UDP) read(size int) ([]byte, error) {
-	return make([]byte, 0), nil
+	b := make([]byte, size)
+	_, payload, _, err := c.conn.ReadFrom(b)
+	if err != nil {
+		return nil, err
+	}
+	return payload[8:], nil
 }
 func (c *UDP) write(x []byte) error {
 	UDPHeader := []byte{
