@@ -30,7 +30,7 @@ type UDP struct {
     pl net.PacketConn
 }
 func NewUDP(src, dest uint16) (*UDP, error) {
-    p, err := net.ListenPacket(fmt.Sprintf("ip4:%d", dest), "127.0.0.1")
+    p, err := net.ListenPacket("ip4:17", "127.0.0.1")
     if err != nil {
         return nil, err;
     }
