@@ -10,7 +10,7 @@ import (
 
 func main() {
 	manager, _ := NewUDP_Manager()
-	c, err := NewUDP(20006, 20005, manager)
+	c, err := manager.NewUDP(20006, 20005)
 	if err != nil {
 		fmt.Println(err)
 		os.Exit(1)
@@ -24,6 +24,13 @@ type UDP_manager struct {
 	pl   net.PacketConn
 	open bool
 	conn *ipv4.RawConn
+    buff map[uint16](chan byte)
+}
+
+type UDP struct {
+    conn      *ipv4.RawConn
+    bytes chan byte
+    src, dest uint16
 }
 
 func NewUDP_Manager() (*UDP_manager, error) {
@@ -39,38 +46,46 @@ func NewUDP_Manager() (*UDP_manager, error) {
 		return nil, err
 	}
 
-	// TODO use r.JoinGroup at https://godoc.org/golang.org/x/net/ipv4#NewRawConn
+    x := &UDP_manager{open: true, conn: r, pl: p, buff: make(map[uint16](chan byte))}
 
-	return &UDP_manager{open: true, conn: r, pl: p}, nil
+    go x.readAll()
+
+    return x, nil
 }
 
-type UDP struct {
-	conn      *ipv4.RawConn
-	src, dest uint16
+func (x *UDP_manager) readAll() {
+    b := make([]byte, 1024)
+
+    for {
+        _, payload, _, err := x.conn.ReadFrom(b)
+        if err != nil {
+            continue
+        }
+
+        dest := (((uint16)(payload[2])) << 8) + ((uint16)(payload[3]))
+
+        c, ok := x.buff[dest]
+        if ok {
+            go func() {
+                for _, elem := range(payload) {
+                    c <- elem
+                }
+            }()
+        }
+    }
 }
 
-func NewUDP(src, dest uint16, manager *UDP_manager) (*UDP, error) {
-	return &UDP{src: src, dest: dest, conn: manager.conn}, nil
+func (x *UDP_manager) NewUDP(src, dest uint16) (*UDP, error) {
+    x.buff[dest] = make(chan byte, 1024)
+    return &UDP{src: src, dest: dest, conn: x.conn}, nil
 }
 
 func (c *UDP) read(size int) ([]byte, error) {
-	b := make([]byte, size)
-
-	var payload []byte
-	var err error
-
-	for {
-		_, payload, _, err = c.conn.ReadFrom(b)
-		if err != nil {
-			return nil, err
-		}
-
-		dest := (((uint16)(payload[2])) << 8) + ((uint16)(payload[3]))
-		if dest == c.src {
-			break
-		}
-	}
-	return payload[8:], nil
+    data := make([]byte, size)
+	for i := 0; i < size; i++ {
+        data[i] = <-c.bytes
+    }
+    return data, nil
 }
 func (c *UDP) write(x []byte) error {
 	UDPHeader := []byte{
