@@ -9,7 +9,8 @@ import (
 )
 
 func main() {
-	c, err := NewUDP(20006, 20005)
+    manager, _ := NewUDP_Manager();
+	c, err := NewUDP(20006, 20005, manager)
 	if err != nil {
 		fmt.Println(err)
 		os.Exit(1)
@@ -19,16 +20,18 @@ func main() {
 	c.close()
 }
 
-type UDP struct {
-	open bool
-	conn *ipv4.RawConn
-
-	src, dest uint16
-
-	pl net.PacketConn
+type UDP_manager struct {
+    pl net.PacketConn
+    open bool
+    conn *ipv4.RawConn
 }
 
-func NewUDP(src, dest uint16) (*UDP, error) {
+type UDP struct {
+    conn *ipv4.RawConn
+	src, dest uint16
+}
+
+func NewUDP_Manager() (*UDP_manager, error) {
 	p, err := net.ListenPacket("ip4:17", "127.0.0.1")
 	if err != nil {
 		fmt.Println(err)
@@ -43,8 +46,12 @@ func NewUDP(src, dest uint16) (*UDP, error) {
 
 	// TODO use r.JoinGroup at https://godoc.org/golang.org/x/net/ipv4#NewRawConn
 
-	return &UDP{open: true, conn: r, src: src, dest: dest, pl: p}, nil
+	return &UDP_manager{open: true, conn: r, pl: p}, nil
 }
+func NewUDP(src, dest uint16, manager *UDP_manager) (*UDP, error) {
+    return &UDP{src: src, dest: dest, conn: manager.conn}, nil
+}
+
 func (c *UDP) read(size int) ([]byte, error) {
 	b := make([]byte, size)
 	_, payload, _, err := c.conn.ReadFrom(b)
