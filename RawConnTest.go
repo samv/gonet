@@ -9,7 +9,7 @@ import (
 )
 
 func main() {
-    manager, _ := NewUDP_Manager();
+	manager, _ := NewUDP_Manager()
 	c, err := NewUDP(20006, 20005, manager)
 	if err != nil {
 		fmt.Println(err)
@@ -21,14 +21,9 @@ func main() {
 }
 
 type UDP_manager struct {
-    pl net.PacketConn
-    open bool
-    conn *ipv4.RawConn
-}
-
-type UDP struct {
-    conn *ipv4.RawConn
-	src, dest uint16
+	pl   net.PacketConn
+	open bool
+	conn *ipv4.RawConn
 }
 
 func NewUDP_Manager() (*UDP_manager, error) {
@@ -48,15 +43,32 @@ func NewUDP_Manager() (*UDP_manager, error) {
 
 	return &UDP_manager{open: true, conn: r, pl: p}, nil
 }
+
+type UDP struct {
+	conn      *ipv4.RawConn
+	src, dest uint16
+}
+
 func NewUDP(src, dest uint16, manager *UDP_manager) (*UDP, error) {
-    return &UDP{src: src, dest: dest, conn: manager.conn}, nil
+	return &UDP{src: src, dest: dest, conn: manager.conn}, nil
 }
 
 func (c *UDP) read(size int) ([]byte, error) {
 	b := make([]byte, size)
-	_, payload, _, err := c.conn.ReadFrom(b)
-	if err != nil {
-		return nil, err
+
+	var payload []byte
+	var err error
+
+	for {
+		_, payload, _, err = c.conn.ReadFrom(b)
+		if err != nil {
+			return nil, err
+		}
+
+		dest := (((uint16)(payload[2])) << 8) + ((uint16)(payload[3]))
+		if dest == c.src {
+			break
+		}
 	}
 	return payload[8:], nil
 }
