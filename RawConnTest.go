@@ -2,35 +2,36 @@ package main
 
 import (
 	"fmt"
-	//    "net/ipv4"
 	"golang.org/x/net/ipv4"
 	"net"
-	"os"
 )
 
 func main() {
 	manager, _ := NewUDP_Manager()
-	c, err := manager.NewUDP(20006, 20005)
-	if err != nil {
-		fmt.Println(err)
-		os.Exit(1)
+	c := []*UDP{}
+	for i := 0; i < 20; i++ {
+		udp, _ := manager.NewUDP(((uint16)(20000 + i)), ((uint16)(20000 + i)))
+		c = append(c, udp)
+		udp.write([]byte{((byte)(100 + i))})
+		a, _ := udp.read(1)
+		fmt.Println(a)
 	}
-	fmt.Println(c.read(41))
-	c.write([]byte{'h', 'e', 'l', 'l', 'o', ' ', 'w', 'o', 'r', 'l', 'd', 0})
-	c.close()
+	for _, element := range c {
+		element.close()
+	}
 }
 
 type UDP_manager struct {
 	pl   net.PacketConn
 	open bool
 	conn *ipv4.RawConn
-    buff map[uint16](chan byte)
+	buff map[uint16](chan byte)
 }
 
 type UDP struct {
-    conn      *ipv4.RawConn
-    bytes chan byte
-    src, dest uint16
+	conn      *ipv4.RawConn
+	bytes     chan byte
+	src, dest uint16
 }
 
 func NewUDP_Manager() (*UDP_manager, error) {
@@ -46,46 +47,54 @@ func NewUDP_Manager() (*UDP_manager, error) {
 		return nil, err
 	}
 
-    x := &UDP_manager{open: true, conn: r, pl: p, buff: make(map[uint16](chan byte))}
+	x := &UDP_manager{open: true, conn: r, pl: p, buff: make(map[uint16](chan byte))}
 
-    go x.readAll()
+	go x.readAll()
 
-    return x, nil
+	return x, nil
 }
 
 func (x *UDP_manager) readAll() {
-    b := make([]byte, 1024)
+	b := make([]byte, 1024)
 
-    for {
-        _, payload, _, err := x.conn.ReadFrom(b)
-        if err != nil {
-            continue
-        }
+	for {
+		_, payload, _, err := x.conn.ReadFrom(b)
+		if err != nil {
+			continue
+		}
 
-        dest := (((uint16)(payload[2])) << 8) + ((uint16)(payload[3]))
-
-        c, ok := x.buff[dest]
-        if ok {
-            go func() {
-                for _, elem := range(payload) {
-                    c <- elem
-                }
-            }()
-        }
-    }
+		dest := (((uint16)(payload[2])) << 8) + ((uint16)(payload[3]))
+		//		fmt.Println(dest)
+		//		fmt.Println(payload)
+		//
+		//		fmt.Println(x.buff)
+		c, ok := x.buff[dest]
+		//fmt.Println(ok)
+		payload = payload[8:]
+		if ok {
+			go func() {
+				for _, elem := range payload {
+					//fmt.Println("Writing")
+					c <- elem
+				}
+			}()
+		}
+	}
 }
 
 func (x *UDP_manager) NewUDP(src, dest uint16) (*UDP, error) {
-    x.buff[dest] = make(chan byte, 1024)
-    return &UDP{src: src, dest: dest, conn: x.conn}, nil
+	x.buff[src] = make(chan byte, 1024)
+	return &UDP{src: src, dest: dest, conn: x.conn, bytes: x.buff[src]}, nil
 }
 
 func (c *UDP) read(size int) ([]byte, error) {
-    data := make([]byte, size)
+	data := make([]byte, size)
 	for i := 0; i < size; i++ {
-        data[i] = <-c.bytes
-    }
-    return data, nil
+		//fmt.Println("test")
+		data[i] = <-c.bytes
+		//fmt.Println(data[i])
+	}
+	return data, nil
 }
 func (c *UDP) write(x []byte) error {
 	UDPHeader := []byte{
