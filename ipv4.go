@@ -5,9 +5,10 @@ type IP_Conn struct {
     pc *net.PacketConn
     version uint8
     dst, src string
+    headerLen uint16
     //len uint16
     //id uint16
-    ttl int
+    ttl uint8
     protocol uint8
     //checksum int
 }
@@ -17,6 +18,7 @@ func NewIP_Conn(dst string) (*IP_Conn, error) {
     return &IP_Conn{
         pc: &pc,
         version: 4,
+        headerLen: 20,
         dst:     dst,
         src:     "127.0.0.1",
         ttl:     8,
@@ -24,12 +26,58 @@ func NewIP_Conn(dst string) (*IP_Conn, error) {
     }, nil
 }
 
+func calcChecksum(head []byte, excludeChecksum bool) uint16 {
+    totlSum := uint64(0)
+    for ind, elem := range head {
+        if (ind == 10 || ind == 11) && excludeChecksum { // Ignore the checksum in some situations
+            continue
+        }
+
+        if ind % 2 == 0 {
+            totlSum += (uint16(elem) << 8)
+        } else {
+            totlSum += uint16(elem)
+        }
+    }
+
+    for prefix := (totlSum >> 16); prefix != 0; {
+        totlSum = uint64(uint16(totlSum) + prefix)
+    }
+    carried := uint16(totlSum)
+
+    return !carried
+}
+
 func (ipc *IP_Conn) ReadFrom() {
 
 }
 
 func (ipc *IP_Conn) WriteTo(p []byte) {
+    totalLen := ipc.headerLen + len(p)
+    packet := make([]byte, totalLen)
+    packet[0] = (byte)(ipc.version << 4) // Version
+    packet[1] = 0
+    packet[2] = (byte)(totalLen >> 8) // Total Len
+    packet[3] = (byte)(totalLen)
+    packet[4] = 0 // Identification (for now)
+    packet[5] = 0
+    packet[6] = byte(1 << 6) // Flags: Don't fragment
+    packet[7] = 0 // Fragment Offset
+    packet[8] = (byte)(ipc.ttl) // Time to Live
+    packet[9] = (byte)(ipc.protocol) // Protocol
 
+    srcIP := net.ParseIP(ipc.src)
+    dstIP := net.ParseIP(ipc.dst)
+    packet[12:16] = srcIP
+    packet[16:20] = dstIP
+
+    checksum := calcChecksum(packet[:20], true)
+    packet[10] = byte(checksum >> 8)
+    packet[11] = byte(checksum)
+
+    packet[20:] = p // Payload
+
+//    ipc.pc.WriteTo
 }
 
 func (ipc *IP_Conn) Close() error {
