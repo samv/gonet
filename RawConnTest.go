@@ -22,6 +22,7 @@ func main() {
 }
 
 type UDP_manager struct {
+    ipAddress string
 	pl   net.PacketConn
 	open bool
 	conn *ipv4.RawConn
@@ -29,13 +30,14 @@ type UDP_manager struct {
 }
 
 type UDP struct {
+    manager   *UDP_manager
 	conn      *ipv4.RawConn
 	bytes     chan byte
 	src, dest uint16
 }
 
-func NewUDP_Manager() (*UDP_manager, error) {
-	p, err := net.ListenPacket("ip4:17", "127.0.0.1")
+func NewUDP_Manager(ip string) (*UDP_manager, error) {
+	p, err := net.ListenPacket("ip4:17", ip)
 	if err != nil {
 		fmt.Println(err)
 		return nil, err
@@ -47,7 +49,7 @@ func NewUDP_Manager() (*UDP_manager, error) {
 		return nil, err
 	}
 
-	x := &UDP_manager{open: true, conn: r, pl: p, buff: make(map[uint16](chan byte))}
+	x := &UDP_manager{open: true, conn: r, pl: p, buff: make(map[uint16](chan byte)), ipAddress: ip}
 
 	go x.readAll()
 
@@ -84,7 +86,7 @@ func (x *UDP_manager) readAll() {
 
 func (x *UDP_manager) NewUDP(src, dest uint16) (*UDP, error) {
 	x.buff[src] = make(chan byte, 1024)
-	return &UDP{src: src, dest: dest, conn: x.conn, bytes: x.buff[src]}, nil
+	return &UDP{src: src, dest: dest, conn: x.conn, bytes: x.buff[src], manager: x}, nil
 }
 
 func (c *UDP) read(size int) ([]byte, error) {
@@ -118,7 +120,7 @@ func (c *UDP) write(x []byte) error {
 		Protocol: 17,                // next protocol (17 is UDP)
 		Checksum: 0,                 // checksum (apparently autocomputed)
 		//Src:    net.IPv4(127, 0, 0, 1), // source address, apparently done automatically
-		Dst: net.IPv4(127, 0, 0, 1), // destination address
+		Dst: net.ParseIP(c.manager.ipAddress), // destination address
 		//Options                         // options, extension headers
 	}
 	err := c.conn.WriteTo(h, x, nil)
