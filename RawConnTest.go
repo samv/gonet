@@ -7,7 +7,7 @@ import (
 )
 
 func main() {
-	manager, _ := NewUDP_Manager()
+	manager, _ := NewUDP_Manager("127.0.0.1")
 	c := []*UDP{}
 	for i := 0; i < 20; i++ {
 		udp, _ := manager.NewUDP(((uint16)(20000 + i)), ((uint16)(20000 + i)))
