@@ -34,18 +34,18 @@ func calcChecksum(head []byte, excludeChecksum bool) uint16 {
         }
 
         if ind % 2 == 0 {
-            totlSum += (uint16(elem) << 8)
+            totlSum += (uint64)(uint16(elem) << 8)
         } else {
-            totlSum += uint16(elem)
+            totlSum += (uint64)(uint16(elem))
         }
     }
 
     for prefix := (totlSum >> 16); prefix != 0; {
-        totlSum = uint64(uint16(totlSum) + prefix)
+        totlSum = uint64(uint16(totlSum)) + prefix
     }
     carried := uint16(totlSum)
 
-    return !carried
+    return ^carried
 }
 
 func (ipc *IP_Conn) ReadFrom() {
@@ -53,7 +53,7 @@ func (ipc *IP_Conn) ReadFrom() {
 }
 
 func (ipc *IP_Conn) WriteTo(p []byte) {
-    totalLen := ipc.headerLen + len(p)
+    totalLen := uint16(ipc.headerLen) + uint16(len(p))
     packet := make([]byte, totalLen)
     packet[0] = (byte)(ipc.version << 4) // Version
     packet[1] = 0
@@ -66,17 +66,28 @@ func (ipc *IP_Conn) WriteTo(p []byte) {
     packet[8] = (byte)(ipc.ttl) // Time to Live
     packet[9] = (byte)(ipc.protocol) // Protocol
 
+    // Src and Dst IPs
     srcIP := net.ParseIP(ipc.src)
     dstIP := net.ParseIP(ipc.dst)
-    packet[12:16] = srcIP
-    packet[16:20] = dstIP
+    packet[12] = srcIP[0]
+    packet[13] = srcIP[1]
+    packet[14] = srcIP[2]
+    packet[15] = srcIP[3]
+    packet[16] = dstIP[0]
+    packet[17] = dstIP[1]
+    packet[18] = dstIP[2]
+    packet[19] = dstIP[3]
 
+    // Checksum
     checksum := calcChecksum(packet[:20], true)
     packet[10] = byte(checksum >> 8)
     packet[11] = byte(checksum)
 
-    packet[20:] = p // Payload
-
+    // Payload
+    for ind, elem := range p {
+        packet[20+ind] = elem
+    }
+    
 //    ipc.pc.WriteTo
 }
 
