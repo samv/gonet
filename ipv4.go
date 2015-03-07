@@ -87,8 +87,10 @@ func (ipc *IP_Conn) WriteTo(p []byte) {
     for ind, elem := range p {
         packet[20+ind] = elem
     }
-    
-//    ipc.pc.WriteTo
+
+    dstIPAddr, _ := net.ResolveIPAddr("ip", ipc.dst)
+    pConn := *(ipc.pc)
+    pConn.WriteTo(packet, dstIPAddr)
 }
 
 func (ipc *IP_Conn) Close() error {
