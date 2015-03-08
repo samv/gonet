@@ -51,7 +51,7 @@ func (x *UDP_manager) readAll() {
         fmt.Println(b)
         fmt.Println(payload)
 
-		dest := (((uint16)(payload[2])) << 8) + ((uint16)(payload[3]))
+		dest := (((uint16)(payload[2])) * 256) + ((uint16)(payload[3]))
 		//		fmt.Println(dest)
 		//		fmt.Println(payload)
 		//
