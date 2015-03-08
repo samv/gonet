@@ -49,6 +49,7 @@ func calcChecksum(head []byte, excludeChecksum bool) uint16 {
             totalSum += (uint64)(uint16(elem))
         }
     }
+    fmt.Println(totalSum)
 
     for prefix := (totalSum >> 16); prefix != 0; {
         totalSum = uint64(uint16(totalSum)) + prefix
