@@ -104,6 +104,9 @@ func (ipc *IP_Conn) WriteTo(p []byte) error {
     packet[18] = dstIP[14]
     packet[19] = dstIP[15]
 
+    // IPv4 header test (before checksum)
+    fmt.Println(packet)
+
     // Checksum
     checksum := calcChecksum(packet[:20], true)
     packet[10] = byte(checksum >> 8)
