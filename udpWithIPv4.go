@@ -48,8 +48,8 @@ func (x *UDP_manager) readAll() {
 		if err != nil {
 			continue
 		}
-        fmt.Println(b)
-        fmt.Println(payload)
+//        fmt.Println(b)
+        fmt.Println("UDP header and payload: ", payload)
 
 		dest := (((uint16)(payload[2])) * 256) + ((uint16)(payload[3]))
 		//		fmt.Println(dest)

@@ -35,8 +35,8 @@ func main() {
         c = append(c, udp)
         udp.write([]byte{((byte)(100 + i))})
 //        go func() {
-            a, _ := udp.read(1)
-            fmt.Println(a)
+        a, _ := udp.read(1)
+        fmt.Println("UDP data: ", a)
 //        }()
     }
     for _, element := range c {
