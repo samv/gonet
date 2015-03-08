@@ -2,6 +2,7 @@ package main
 
 import (
     "net"
+//    "golang.org/x/net/ipv4"
 )
 
 type IP_Conn struct {
@@ -51,11 +52,19 @@ func calcChecksum(head []byte, excludeChecksum bool) uint16 {
     return ^carried
 }
 
-func (ipc *IP_Conn) ReadFrom() {
-
+func slicePacket(b []byte) (payload []byte) {
+    hdrLen := int(b[0] & 0x0f) * 4
+    return payload[hdrLen:]
 }
 
-func (ipc *IP_Conn) WriteTo(p []byte) {
+func (ipc *IP_Conn) ReadFrom(b []byte) (payload []byte, e error) {
+    _, err := ipc.ReadFrom(b)
+    p := slicePacket(b)
+
+    return p, err
+}
+
+func (ipc *IP_Conn) WriteTo(p []byte) error {
     totalLen := uint16(ipc.headerLen) + uint16(len(p))
     packet := make([]byte, totalLen)
     packet[0] = (byte)(ipc.version << 4) // Version
@@ -92,12 +101,12 @@ func (ipc *IP_Conn) WriteTo(p []byte) {
     }
 
     dstIPAddr, _ := net.ResolveIPAddr("ip", ipc.dst)
-    pConn := *(ipc.pc)
-    pConn.WriteTo(packet, dstIPAddr)
+    _, err := (*(ipc.pc)).WriteTo(packet, dstIPAddr)
+    return err
 }
 
 func (ipc *IP_Conn) Close() error {
-    return nil
+    return (*(ipc.pc)).(net.PacketConn).Close()
 }
 
 /* h := &ipv4.Header{
