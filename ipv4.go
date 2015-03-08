@@ -109,7 +109,8 @@ func (ipc *IP_Conn) WriteTo(p []byte) error {
     }
     fmt.Println(dstIPAddr)
 
-    (*(ipc.pc)).WriteTo(packet, dstIPAddr)
+    pConn := *(ipc.pc)
+    pConn.WriteTo(packet, dstIPAddr)
     return err
 }
 
