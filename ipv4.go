@@ -87,7 +87,9 @@ func (ipc *IP_Conn) WriteTo(p []byte) error {
 
     // Src and Dst IPs
     srcIP := net.ParseIP(ipc.src)
+    fmt.Println(srcIP)
     dstIP := net.ParseIP(ipc.dst)
+    fmt.Println(dstIP)
     packet[12] = srcIP[0]
     packet[13] = srcIP[1]
     packet[14] = srcIP[2]
