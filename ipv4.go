@@ -97,8 +97,8 @@ func (ipc *IP_Conn) WriteTo(p []byte) error {
     packet[11] = byte(checksum)
 
     // Payload
-    for ind, elem := range p {
-        packet[20+ind] = elem
+    for ind := range p {
+        packet[20+ind] = p[ind]
     }
     fmt.Println(packet)
 
@@ -110,7 +110,7 @@ func (ipc *IP_Conn) WriteTo(p []byte) error {
     fmt.Println(dstIPAddr)
 
     pConn := ipc.pc
-    pConn.WriteTo(packet, dstIPAddr)
+    pConn.WriteTo(packet, (net.Addr)(dstIPAddr))
     return err
 }
 
