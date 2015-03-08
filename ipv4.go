@@ -67,7 +67,7 @@ func calcChecksum(head []byte, excludeChecksum bool) uint16 {
 func slicePacket(b []byte) (payload []byte) {
     hdrLen := int(b[0] & 0x0f) * 4
     fmt.Println("HdrLen: ", hdrLen)
-    return payload[hdrLen:]
+    return b[hdrLen:]
 }
 
 func (ipc *IP_Conn) ReadFrom(b []byte) (payload []byte, e error) {
