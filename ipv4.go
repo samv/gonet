@@ -7,7 +7,7 @@ import (
 )
 
 type IP_Conn struct {
-    pc        *net.PacketConn
+    pc        net.PacketConn
     version   uint8
     dst, src  string
     headerLen uint16
@@ -21,7 +21,7 @@ type IP_Conn struct {
 func NewIP_Conn(dst string) (*IP_Conn, error) {
     pc, _ := net.ListenPacket("ip4", dst)
     return &IP_Conn{
-        pc:        &pc,
+        pc:        pc,
         version:   4,
         headerLen: 20,
         dst:       dst,
@@ -59,7 +59,7 @@ func slicePacket(b []byte) (payload []byte) {
 }
 
 func (ipc *IP_Conn) ReadFrom(b []byte) (payload []byte, e error) {
-    _, err := ipc.ReadFrom(b)
+    _, _, err := ipc.pc.ReadFrom(b)
     p := slicePacket(b)
 
     return p, err
@@ -109,13 +109,13 @@ func (ipc *IP_Conn) WriteTo(p []byte) error {
     }
     fmt.Println(dstIPAddr)
 
-    pConn := *(ipc.pc)
+    pConn := ipc.pc
     pConn.WriteTo(packet, dstIPAddr)
     return err
 }
 
 func (ipc *IP_Conn) Close() error {
-    return (*(ipc.pc)).(net.PacketConn).Close()
+    return ipc.pc.(net.PacketConn).Close()
 }
 
 /* h := &ipv4.Header{
