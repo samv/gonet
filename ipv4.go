@@ -7,7 +7,7 @@ import (
 )
 
 type IP_Conn struct {
-    pc        net.PacketConn
+    pc        *net.IPConn
     version   uint8
     dst, src  string
     headerLen uint16
@@ -19,7 +19,7 @@ type IP_Conn struct {
 }
 
 func NewIP_Conn(dst string) (*IP_Conn, error) {
-    pc, _ := net.ListenPacket("ip4", dst)
+    pc, _ := net.ListenIP("ip4", &net.IPAddr{IP: net.ParseIP(dst)})
     return &IP_Conn{
         pc:        pc,
         version:   4,
@@ -109,13 +109,12 @@ func (ipc *IP_Conn) WriteTo(p []byte) error {
     }
     fmt.Println(dstIPAddr)
 
-    pConn := ipc.pc
-    pConn.WriteTo(packet, (net.Addr)(dstIPAddr))
+    ipc.pc.WriteToIP(packet, dstIPAddr)
     return err
 }
 
 func (ipc *IP_Conn) Close() error {
-    return ipc.pc.(net.PacketConn).Close()
+    return ipc.pc.Close()
 }
 
 /* h := &ipv4.Header{
