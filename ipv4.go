@@ -89,20 +89,20 @@ func (ipc *IP_Conn) WriteTo(p []byte) error {
     // Src and Dst IPs
     srcIP := net.ParseIP(ipc.src)
     fmt.Println(srcIP)
-    fmt.Println(srcIP[0])
-    fmt.Println(srcIP[1])
-    fmt.Println(srcIP[2])
-    fmt.Println(srcIP[3])
+//    fmt.Println(srcIP[12])
+//    fmt.Println(srcIP[13])
+//    fmt.Println(srcIP[14])
+//    fmt.Println(srcIP[15])
     dstIP := net.ParseIP(ipc.dst)
     fmt.Println(dstIP)
-    packet[12] = srcIP[0]
-    packet[13] = srcIP[1]
-    packet[14] = srcIP[2]
-    packet[15] = srcIP[3]
-    packet[16] = dstIP[0]
-    packet[17] = dstIP[1]
-    packet[18] = dstIP[2]
-    packet[19] = dstIP[3]
+    packet[12] = srcIP[12]
+    packet[13] = srcIP[13]
+    packet[14] = srcIP[14]
+    packet[15] = srcIP[15]
+    packet[16] = dstIP[12]
+    packet[17] = dstIP[13]
+    packet[18] = dstIP[14]
+    packet[19] = dstIP[15]
 
     // Checksum
     checksum := calcChecksum(packet[:20], true)
