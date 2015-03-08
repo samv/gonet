@@ -49,7 +49,7 @@ func calcChecksum(head []byte, excludeChecksum bool) uint16 {
             totalSum += uint64(elem)
         }
     }
-    fmt.Println(totalSum)
+    fmt.Println("Checksum total: ", totalSum)
 
     for prefix := (totalSum >> 16); prefix != 0; prefix = (totalSum >> 16) {
 //        fmt.Println(prefix)
@@ -57,7 +57,7 @@ func calcChecksum(head []byte, excludeChecksum bool) uint16 {
 //        fmt.Println(totalSum & 0xffff)
         totalSum = uint64(totalSum & 0xffff) + prefix
     }
-    fmt.Println(totalSum)
+    fmt.Println("Checksum after carry: ", totalSum)
 
     carried := uint16(totalSum)
 
@@ -82,7 +82,7 @@ func (ipc *IP_Conn) ReadFrom(b []byte) (payload []byte, e error) {
 
 func (ipc *IP_Conn) WriteTo(p []byte) error {
     totalLen := uint16(ipc.headerLen) + uint16(len(p))
-    fmt.Println(totalLen)
+    fmt.Println("Total Len: ", totalLen)
     packet := make([]byte, ipc.headerLen)
     packet[0] = (byte)((ipc.version << 4) + (uint8)(ipc.headerLen / 4)) // Version, IHL
     packet[1] = 0
@@ -114,7 +114,7 @@ func (ipc *IP_Conn) WriteTo(p []byte) error {
     packet[19] = dstIP[15]
 
     // IPv4 header test (before checksum)
-    fmt.Println(packet)
+    fmt.Println("Packet before checksum: ", packet)
 
     // Checksum
     checksum := calcChecksum(packet[:20], true)
