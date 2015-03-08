@@ -19,7 +19,7 @@ type IP_Conn struct {
 }
 
 func NewIP_Conn(dst string) (*IP_Conn, error) {
-    pc, err := net.ListenIP("ip4", &net.IPAddr{IP: net.ParseIP(dst)})
+    pc, err := net.ListenIP("ip4:17", &net.IPAddr{IP: net.ParseIP(dst)})
     if err != nil {
         fmt.Println("Failed to ListenIP")
         return nil, err
