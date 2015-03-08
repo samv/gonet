@@ -72,6 +72,7 @@ func (ipc *IP_Conn) ReadFrom(b []byte) (payload []byte, e error) {
 
 func (ipc *IP_Conn) WriteTo(p []byte) error {
     totalLen := uint16(ipc.headerLen) + uint16(len(p))
+    fmt.Println(totalLen)
     packet := make([]byte, totalLen)
     packet[0] = (byte)(ipc.version << 4) // Version
     packet[1] = 0
