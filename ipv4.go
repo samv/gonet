@@ -74,6 +74,7 @@ func (ipc *IP_Conn) ReadFrom(b []byte) (payload []byte, e error) {
     n, _, err := ipc.pc.ReadFrom(b)
     b = b[:n]
     fmt.Println("Read Length: ", n)
+    fmt.Println("Full Read Data (after trim): ", b)
     p := slicePacket(b)
 
     return p, err
