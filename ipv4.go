@@ -73,7 +73,7 @@ func (ipc *IP_Conn) ReadFrom(b []byte) (payload []byte, e error) {
 func (ipc *IP_Conn) WriteTo(p []byte) error {
     totalLen := uint16(ipc.headerLen) + uint16(len(p))
     fmt.Println(totalLen)
-    packet := make([]byte, totalLen)
+    packet := make([]byte, ipc.headerLen)
     packet[0] = (byte)(ipc.version << 4) // Version
     packet[1] = 0
     packet[2] = (byte)(totalLen >> 8) // Total Len
@@ -105,9 +105,7 @@ func (ipc *IP_Conn) WriteTo(p []byte) error {
     packet[11] = byte(checksum)
 
     // Payload
-    for ind := range p {
-        packet[20+ind] = p[ind]
-    }
+    packet = append(packet, p...)
     fmt.Println(packet)
 
     dstIPAddr, err := net.ResolveIPAddr("ip", ipc.dst)
@@ -117,7 +115,7 @@ func (ipc *IP_Conn) WriteTo(p []byte) error {
     }
     fmt.Println(dstIPAddr)
 
-    ipc.pc.WriteToIP(packet, dstIPAddr)
+    ipc.pc.WriteMsgIP(packet, nil, dstIPAddr)
     return err
 }
 
