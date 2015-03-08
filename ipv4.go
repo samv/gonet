@@ -16,6 +16,7 @@ type IP_Conn struct {
     ttl      uint8
     protocol uint8
     //checksum int
+    identifier uint16
 }
 
 func NewIP_Conn(dst string) (*IP_Conn, error) {
@@ -33,6 +34,7 @@ func NewIP_Conn(dst string) (*IP_Conn, error) {
         src:       "127.0.0.1",
         ttl:       8,
         protocol:  17,
+        identifier: 20000,
     }, nil
 }
 
@@ -88,8 +90,12 @@ func (ipc *IP_Conn) WriteTo(p []byte) error {
     packet[1] = 0
     packet[2] = (byte)(totalLen >> 8) // Total Len
     packet[3] = (byte)(totalLen)
-    packet[4] = 0 // Identification (for now)
-    packet[5] = 0
+
+    id := ipc.identifier
+    packet[4] = byte(id >> 8) // Identification
+    packet[5] = byte(id)
+    ipc.identifier++
+
     packet[6] = byte(1 << 6)         // Flags: Don't fragment
     packet[7] = 0                    // Fragment Offset
     packet[8] = (byte)(ipc.ttl)      // Time to Live
