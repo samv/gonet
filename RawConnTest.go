@@ -5,6 +5,29 @@ import (
 )
 
 func main() {
+    /*fmt.Println(calcChecksum([]byte{
+        69,
+        0,
+        0,
+        115,
+        0,
+        0,
+        64,
+        0,
+        64,
+        17,
+        184,
+        97,
+        192,
+        168,
+        0,
+        1,
+        192,
+        168,
+        0,
+        199,
+    }, true))*/
+
     manager, _ := NewUDP_Manager("127.0.0.1")
     c := []*UDP{}
     for i := 0; i < 20; i++ {

@@ -44,16 +44,21 @@ func calcChecksum(head []byte, excludeChecksum bool) uint16 {
         }
 
         if ind%2 == 0 {
-            totalSum += (uint64)(uint16(elem) << 8)
+            totalSum += (uint64(elem) << 8)
         } else {
-            totalSum += (uint64)(uint16(elem))
+            totalSum += uint64(elem)
         }
     }
     fmt.Println(totalSum)
 
-    for prefix := (totalSum >> 16); prefix != 0; {
-        totalSum = uint64(uint16(totalSum)) + prefix
+    for prefix := (totalSum >> 16); prefix != 0; prefix = (totalSum >> 16) {
+//        fmt.Println(prefix)
+//        fmt.Println(totalSum)
+//        fmt.Println(totalSum & 0xffff)
+        totalSum = uint64(totalSum & 0xffff) + prefix
     }
+    fmt.Println(totalSum)
+
     carried := uint16(totalSum)
 
     return ^carried
@@ -115,14 +120,14 @@ func (ipc *IP_Conn) WriteTo(p []byte) error {
 
     // Payload
     packet = append(packet, p...)
-    fmt.Println(packet)
+    fmt.Println("Full Packet:  ", packet)
 
     dstIPAddr, err := net.ResolveIPAddr("ip", ipc.dst)
     if err != nil {
 //        fmt.Println(err)
         return err
     }
-    fmt.Println(dstIPAddr)
+    fmt.Println("Full Address: ", dstIPAddr)
 
     ipc.pc.WriteMsgIP(packet, nil, dstIPAddr)
     return err
