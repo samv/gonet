@@ -52,9 +52,9 @@ func calcChecksum(head []byte, excludeChecksum bool) uint16 {
     fmt.Println("Checksum total: ", totalSum)
 
     for prefix := (totalSum >> 16); prefix != 0; prefix = (totalSum >> 16) {
-//        fmt.Println(prefix)
-//        fmt.Println(totalSum)
-//        fmt.Println(totalSum & 0xffff)
+        //        fmt.Println(prefix)
+        //        fmt.Println(totalSum)
+        //        fmt.Println(totalSum & 0xffff)
         totalSum = uint64(totalSum & 0xffff) + prefix
     }
     fmt.Println("Checksum after carry: ", totalSum)
@@ -98,10 +98,10 @@ func (ipc *IP_Conn) WriteTo(p []byte) error {
     // Src and Dst IPs
     srcIP := net.ParseIP(ipc.src)
     fmt.Println(srcIP)
-//    fmt.Println(srcIP[12])
-//    fmt.Println(srcIP[13])
-//    fmt.Println(srcIP[14])
-//    fmt.Println(srcIP[15])
+    //    fmt.Println(srcIP[12])
+    //    fmt.Println(srcIP[13])
+    //    fmt.Println(srcIP[14])
+    //    fmt.Println(srcIP[15])
     dstIP := net.ParseIP(ipc.dst)
     fmt.Println(dstIP)
     packet[12] = srcIP[12]
@@ -127,7 +127,7 @@ func (ipc *IP_Conn) WriteTo(p []byte) error {
 
     dstIPAddr, err := net.ResolveIPAddr("ip", ipc.dst)
     if err != nil {
-//        fmt.Println(err)
+        //        fmt.Println(err)
         return err
     }
     fmt.Println("Full Address: ", dstIPAddr)
