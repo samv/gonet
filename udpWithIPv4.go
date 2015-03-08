@@ -35,7 +35,7 @@ func NewUDP_Manager(ip string) (*UDP_manager, error) {
 
 	x := &UDP_manager{open: true, conn: r, pl: p, buff: make(map[uint16](chan byte)), ipAddress: ip}
 
-	go x.readAll()
+	//go x.readAll()
 
 	return x, nil
 }
