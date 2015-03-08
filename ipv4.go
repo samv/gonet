@@ -75,7 +75,7 @@ func (ipc *IP_Conn) WriteTo(p []byte) error {
     totalLen := uint16(ipc.headerLen) + uint16(len(p))
     fmt.Println(totalLen)
     packet := make([]byte, ipc.headerLen)
-    packet[0] = (byte)(ipc.version << 4) // Version
+    packet[0] = (byte)((ipc.version << 4) + (ipc.headerLen / 4)) // Version, IHL
     packet[1] = 0
     packet[2] = (byte)(totalLen >> 8) // Total Len
     packet[3] = (byte)(totalLen)
@@ -89,6 +89,10 @@ func (ipc *IP_Conn) WriteTo(p []byte) error {
     // Src and Dst IPs
     srcIP := net.ParseIP(ipc.src)
     fmt.Println(srcIP)
+    fmt.Println(srcIP[0])
+    fmt.Println(srcIP[1])
+    fmt.Println(srcIP[2])
+    fmt.Println(srcIP[3])
     dstIP := net.ParseIP(ipc.dst)
     fmt.Println(dstIP)
     packet[12] = srcIP[0]
