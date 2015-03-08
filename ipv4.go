@@ -3,6 +3,7 @@ package main
 import (
     "net"
 //    "golang.org/x/net/ipv4"
+    "fmt"
 )
 
 type IP_Conn struct {
@@ -99,9 +100,16 @@ func (ipc *IP_Conn) WriteTo(p []byte) error {
     for ind, elem := range p {
         packet[20+ind] = elem
     }
+    fmt.Println(packet)
 
-    dstIPAddr, _ := net.ResolveIPAddr("ip", ipc.dst)
-    _, err := (*(ipc.pc)).WriteTo(packet, dstIPAddr)
+    dstIPAddr, err := net.ResolveIPAddr("ip", ipc.dst)
+    if err != nil {
+//        fmt.Println(err)
+        return err
+    }
+    fmt.Println(dstIPAddr)
+
+    (*(ipc.pc)).WriteTo(packet, dstIPAddr)
     return err
 }
 
