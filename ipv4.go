@@ -1,8 +1,8 @@
 package main
 
 import (
-	"net"
 	"fmt"
+	"net"
 	"syscall"
 	//"golang.org/x/net/ipv4"
 )
@@ -145,21 +145,19 @@ func (ipc *IP_Conn) WriteTo(p []byte) error {
 	addr := syscall.SockaddrInet4{
 		Port: 0,
 		//Addr: [4]byte{127, 0, 0, 1},
-        Addr: [4]byte{
-            dstIPAddr.IP[12],
-            dstIPAddr.IP[13],
-            dstIPAddr.IP[14],
-            dstIPAddr.IP[15],
-        },
+		Addr: [4]byte{
+			dstIPAddr.IP[12],
+			dstIPAddr.IP[13],
+			dstIPAddr.IP[14],
+			dstIPAddr.IP[15],
+		},
 	}
 	syscall.Sendto(ipc.fd, packet, 0, &addr)
 	return err
 }
 
 func (ipc *IP_Conn) Close() error {
-	return nil
-    // TODO: actually close the fd socket
-	//return ipc.pc.Close()
+	return syscall.Close(ipc.fd)
 }
 
 /* h := &ipv4.Header{
