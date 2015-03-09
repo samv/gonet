@@ -1,16 +1,14 @@
 package main
 
 import (
-    "fmt"
-    "net"
+	"syscall"
 )
 
 func main() {
-    protocol := "icmp"
-    netaddr, _ := net.ResolveIPAddr("ip4", "127.0.0.1")
-    conn, _ := net.ListenIP("ip4:"+protocol, netaddr)
-
-    buf := make([]byte, 1024)
-    numRead, _, _ := conn.ReadFrom(buf)
-    fmt.Printf("% X\n", buf[:numRead])
+	fd, _ := syscall.Socket(syscall.AF_INET, syscall.SOCK_RAW, syscall.IPPROTO_RAW)
+	addr := syscall.SockaddrInet4{
+		Port: 0,
+		Addr: [4]byte{127, 0, 0, 1},
+	}
+	syscall.Sendto(fd, []byte{255}, 0, &addr)
 }
