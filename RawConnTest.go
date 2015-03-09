@@ -34,10 +34,10 @@ func main() {
         udp, _ := manager.NewUDP(((uint16)(20000 + i)), ((uint16)(20000 + i)))
         c = append(c, udp)
         udp.write([]byte{((byte)(100 + i))})
-//        go func() {
+        //        go func() {
         a, _ := udp.read(1)
         fmt.Println("UDP data: ", a)
-//        }()
+        //        }()
     }
     for _, element := range c {
         element.close()
