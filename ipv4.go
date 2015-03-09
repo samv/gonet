@@ -2,9 +2,9 @@ package main
 
 import (
 	"net"
-	//    "golang.org/x/net/ipv4"
 	"fmt"
 	"syscall"
+	//"golang.org/x/net/ipv4"
 )
 
 type IP_Conn struct {
@@ -75,7 +75,7 @@ func slicePacket(b []byte) (payload []byte) {
 }
 
 func (ipc *IP_Conn) ReadFrom(b []byte) (payload []byte, e error) {
-	n, err := syscall.Read(ipc.fd, b)
+	n, err := syscall.Read(ipc.fd, b) // TODO: verify the checksum/other info
 	b = b[:n]
 	fmt.Println("Read Length: ", n)
 	fmt.Println("Full Read Data (after trim): ", b)
@@ -142,10 +142,15 @@ func (ipc *IP_Conn) WriteTo(p []byte) error {
 
 	//ipc.pc.WriteMsgIP(packet, nil, dstIPAddr)
 
-	//TODO parse dest instead of hardcode
 	addr := syscall.SockaddrInet4{
 		Port: 0,
-		Addr: [4]byte{127, 0, 0, 1},
+		//Addr: [4]byte{127, 0, 0, 1},
+        Addr: [4]byte{
+            dstIPAddr.IP[12],
+            dstIPAddr.IP[13],
+            dstIPAddr.IP[14],
+            dstIPAddr.IP[15],
+        },
 	}
 	syscall.Sendto(ipc.fd, packet, 0, &addr)
 	return err
@@ -153,6 +158,7 @@ func (ipc *IP_Conn) WriteTo(p []byte) error {
 
 func (ipc *IP_Conn) Close() error {
 	return nil
+    // TODO: actually close the fd socket
 	//return ipc.pc.Close()
 }
 
