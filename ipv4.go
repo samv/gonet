@@ -8,7 +8,7 @@ import (
 )
 
 type IP_Conn struct {
-	pc        *net.IPConn
+	fd        int
 	version   uint8
 	dst, src  string
 	headerLen uint16
@@ -21,14 +21,15 @@ type IP_Conn struct {
 }
 
 func NewIP_Conn(dst string) (*IP_Conn, error) {
-	pc, err := net.ListenIP("ip4:17", &net.IPAddr{IP: net.ParseIP(dst)})
+	//pc, err := net.ListenIP("ip4:17", &net.IPAddr{IP: net.ParseIP(dst)})
+	fd, err := syscall.Socket(syscall.AF_INET, syscall.SOCK_RAW, syscall.IPPROTO_RAW)
 	if err != nil {
 		fmt.Println("Failed to ListenIP")
 		return nil, err
 	}
 
 	return &IP_Conn{
-		pc:         pc,
+		fd:         fd,
 		version:    4,
 		headerLen:  20,
 		dst:        dst,
@@ -74,7 +75,7 @@ func slicePacket(b []byte) (payload []byte) {
 }
 
 func (ipc *IP_Conn) ReadFrom(b []byte) (payload []byte, e error) {
-	n, _, err := ipc.pc.ReadFrom(b)
+	n, err := syscall.Read(ipc.fd, b)
 	b = b[:n]
 	fmt.Println("Read Length: ", n)
 	fmt.Println("Full Read Data (after trim): ", b)
@@ -140,17 +141,19 @@ func (ipc *IP_Conn) WriteTo(p []byte) error {
 	fmt.Println("Full Address: ", dstIPAddr)
 
 	//ipc.pc.WriteMsgIP(packet, nil, dstIPAddr)
-	fd, _ := syscall.Socket(syscall.AF_INET, syscall.SOCK_RAW, syscall.IPPROTO_RAW)
+
+	//TODO parse dest instead of hardcode
 	addr := syscall.SockaddrInet4{
 		Port: 0,
 		Addr: [4]byte{127, 0, 0, 1},
 	}
-	syscall.Sendto(fd, packet, 0, &addr)
+	syscall.Sendto(ipc.fd, packet, 0, &addr)
 	return err
 }
 
 func (ipc *IP_Conn) Close() error {
-	return ipc.pc.Close()
+	return nil
+	//return ipc.pc.Close()
 }
 
 /* h := &ipv4.Header{
