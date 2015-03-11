@@ -38,7 +38,7 @@ func NewIP_Conn(dst string) (*IP_Conn, error) {
     fmt.Println("Full Address: ", dstIPAddr)
 
     addr := &syscall.SockaddrInet4{
-        Port: 20000,
+        Port: 0,
         //Addr: [4]byte{127, 0, 0, 1},
         Addr: [4]byte{
             dstIPAddr.IP[12],
@@ -101,7 +101,8 @@ func slicePacket(b []byte) (hrd, payload []byte) {
 }
 
 func (ipc *IP_Conn) ReadFrom(b []byte) (payload []byte, e error) {
-	n, _, err := syscall.Recvfrom(ipc.fd, b, 0) //_ is src address
+	//n, _, err := syscall.Recvfrom(ipc.fd, b, 0) //_ is src address
+    n, _, _, _, err := syscall.Recvmsg(ipc.fd, b, make([]byte, 30000), 0)
 	b = b[:n]
 	fmt.Println("Read Length: ", n)
 	fmt.Println("Full Read Data (after trim): ", b)
