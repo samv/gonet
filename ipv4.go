@@ -10,6 +10,7 @@ import (
 
 type IP_Conn struct {
 	fd        int
+    sockAddr  syscall.Sockaddr
 	version   uint8
 	dst, src  string
 	headerLen uint16
@@ -29,8 +30,32 @@ func NewIP_Conn(dst string) (*IP_Conn, error) {
 		return nil, err
 	}
 
+    dstIPAddr, err := net.ResolveIPAddr("ip", dst)
+    if err != nil {
+        //fmt.Println(err)
+        return nil, err
+    }
+    fmt.Println("Full Address: ", dstIPAddr)
+
+    addr := &syscall.SockaddrInet4{
+        Port: 0,
+        //Addr: [4]byte{127, 0, 0, 1},
+        Addr: [4]byte{
+            dstIPAddr.IP[12],
+            dstIPAddr.IP[13],
+            dstIPAddr.IP[14],
+            dstIPAddr.IP[15],
+        },
+    }
+
+    err = syscall.Bind(fd, addr)
+    if err != nil {
+        return nil, errors.New("Failed to bind to address.")
+    }
+
 	return &IP_Conn{
 		fd:         fd,
+        sockAddr:   addr,
 		version:    4,
 		headerLen:  20,
 		dst:        dst,
@@ -142,27 +167,9 @@ func (ipc *IP_Conn) WriteTo(p []byte) error {
 	packet = append(packet, p...)
 	fmt.Println("Full Packet:  ", packet)
 
-	dstIPAddr, err := net.ResolveIPAddr("ip", ipc.dst)
-	if err != nil {
-		//        fmt.Println(err)
-		return err
-	}
-	fmt.Println("Full Address: ", dstIPAddr)
-
 	//ipc.pc.WriteMsgIP(packet, nil, dstIPAddr)
 
-	addr := syscall.SockaddrInet4{
-		Port: 0,
-		//Addr: [4]byte{127, 0, 0, 1},
-		Addr: [4]byte{
-			dstIPAddr.IP[12],
-			dstIPAddr.IP[13],
-			dstIPAddr.IP[14],
-			dstIPAddr.IP[15],
-		},
-	}
-	syscall.Sendto(ipc.fd, packet, 0, &addr)
-	return err
+	return syscall.Sendto(ipc.fd, packet, 0, ipc.sockAddr)
 }
 
 func (ipc *IP_Conn) Close() error {
