@@ -1,10 +1,10 @@
 package main
 
 import (
+	"errors"
 	"fmt"
 	"net"
 	"syscall"
-    "errors"
 	//"golang.org/x/net/ipv4"
 )
 
@@ -76,19 +76,19 @@ func slicePacket(b []byte) (hrd, payload []byte) {
 }
 
 func (ipc *IP_Conn) ReadFrom(b []byte) (payload []byte, e error) {
-	n, err := syscall.Read(ipc.fd, b)
-    b = b[:n]
-    fmt.Println("Read Length: ", n)
-    fmt.Println("Full Read Data (after trim): ", b)
-    hdr, p := slicePacket(b)
+	n, _, err := syscall.Recvfrom(ipc.fd, b, 0) //_ is src address
+	b = b[:n]
+	fmt.Println("Read Length: ", n)
+	fmt.Println("Full Read Data (after trim): ", b)
+	hdr, p := slicePacket(b)
 
 	// verify checksum
-    if calcChecksum(hdr, false) != 0 {
-        fmt.Println("Header checksum verification failed. Packet dropped.")
-        fmt.Println("Wrong header: ", hdr)
-        fmt.Println("Payload (dropped): ", p)
-        return nil, errors.New("Header checksum incorrect, packet dropped")
-    }
+	if calcChecksum(hdr, false) != 0 {
+		fmt.Println("Header checksum verification failed. Packet dropped.")
+		fmt.Println("Wrong header: ", hdr)
+		fmt.Println("Payload (dropped): ", p)
+		return nil, errors.New("Header checksum incorrect, packet dropped")
+	}
 
 	return p, err
 }
