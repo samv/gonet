@@ -21,7 +21,7 @@ type UDP struct {
 }
 
 func NewUDP_Manager(ip string) (*UDP_manager, error) {
-    p, err := net.ListenPacket("ip4:17", ip)
+    p, err := net.ListenPacket("ip4:1", ip)
     if err != nil {
         fmt.Println(err)
         return nil, err
