@@ -38,7 +38,7 @@ func NewIP_Conn(dst string) (*IP_Conn, error) {
     fmt.Println("Full Address: ", dstIPAddr)
 
     addr := &syscall.SockaddrInet4{
-        Port: 0,
+        Port: 20000,
         //Addr: [4]byte{127, 0, 0, 1},
         Addr: [4]byte{
             dstIPAddr.IP[12],
