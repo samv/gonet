@@ -48,10 +48,10 @@ func NewIP_Conn(dst string) (*IP_Conn, error) {
         },
     }
 
-    err = syscall.Connect(fd, addr)
+    /*err = syscall.Connect(fd, addr)
     if err != nil {
         return nil, errors.New("Failed to connect.")
-    }
+    }*/
     err = syscall.Bind(fd, addr)
     if err != nil {
         return nil, errors.New("Failed to bind to address.")
