@@ -1,4 +1,4 @@
-package oldIPv4
+package main
 
 import (
     "fmt"

@@ -1,4 +1,4 @@
-package main
+package mainTest2
 
 import (
 	"syscall"
