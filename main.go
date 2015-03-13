@@ -8,7 +8,7 @@ func main() {
         return
     }
 
-    for {
+    for x := 0; x < 3; x++{
         buffer := make([]byte, MAX_IP_PACKET_LEN)
         len, err := nr.getNextPacket(buffer)
 
