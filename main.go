@@ -17,6 +17,7 @@ func main() {
             continue
         }
 
+        fmt.Println("Total Length of Packet: ", len)
         fmt.Println(buffer[:len])
         fmt.Println()
     }
