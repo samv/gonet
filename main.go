@@ -9,13 +9,15 @@ func main() {
     }
 
     for {
-        buffer := make([]byte, 4096)
+        buffer := make([]byte, MAX_IP_PACKET_LEN)
         len, err := nr.getNextPacket(buffer)
 
         if err != nil {
             fmt.Println(err)
+            continue
         }
 
         fmt.Println(buffer[:len])
+        fmt.Println()
     }
 }

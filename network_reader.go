@@ -12,6 +12,8 @@ type Network_Reader struct {
 	fd int
 }
 
+const MAX_IP_PACKET_LEN = 65535
+
 func NewNetwork_Reader() (*Network_Reader, error) {
 	// 768 = htons(ETH_P_ALL) = htons(3)
     // see http://ideone.com/2eunQu
