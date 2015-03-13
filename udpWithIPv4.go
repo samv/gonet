@@ -7,7 +7,7 @@ import (
 
 type UDP_manager struct {
     ipAddress string
-    pl        net.PacketConn
+//    pl        net.PacketConn
     open      bool
     conn      *IP_Conn
     buff      map[uint16](chan byte)
@@ -21,11 +21,11 @@ type UDP struct {
 }
 
 func NewUDP_Manager(ip string) (*UDP_manager, error) {
-    p, err := net.ListenPacket("ip4:1", ip)
-    if err != nil {
-        fmt.Println(err)
-        return nil, err
-    }
+//    p, err := net.ListenPacket("ip4:1", ip)
+//    if err != nil {
+//        fmt.Println(err)
+//        return nil, err
+//    }
 
     r, err := NewIP_Conn(ip)
     if err != nil {
@@ -33,7 +33,7 @@ func NewUDP_Manager(ip string) (*UDP_manager, error) {
         return nil, err
     }
 
-    x := &UDP_manager{open: true, conn: r, pl: p, buff: make(map[uint16](chan byte)), ipAddress: ip}
+    x := &UDP_manager{open: true, conn: r, /*pl: p,*/ buff: make(map[uint16](chan byte)), ipAddress: ip}
 
     go x.readAll()
 
