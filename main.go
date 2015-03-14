@@ -39,5 +39,6 @@ func main() {
 
     udp.write([]byte{'h', 'i'})
 
-    fmt.Println("Reading: ", udp.read(13))
+    data, _ := udp.read(13)
+    fmt.Println("Reading: ", data)
 }
