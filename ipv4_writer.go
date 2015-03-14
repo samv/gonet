@@ -18,7 +18,7 @@ type IP_Writer struct {
     identifier uint16
 }
 
-func NewIP_Writer(dst string) (*IP_Writer, error) {
+func NewIP_Writer(dst string, protocol uint8) (*IP_Writer, error) {
     fd, err := syscall.Socket(syscall.AF_INET, syscall.SOCK_RAW, syscall.IPPROTO_RAW)
     if err != nil {
         fmt.Println("Write's socket failed")
