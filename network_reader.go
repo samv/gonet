@@ -40,6 +40,7 @@ func NewNetwork_Reader() (*Network_Reader, error) {
 
 	nr := &Network_Reader{
 		fd: fd,
+        buffers: make(map[uint8](chan []byte)),
 	}
     go nr.readAll()
 
