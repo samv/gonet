@@ -14,7 +14,7 @@ func main() {
         return
     }
 
-    for x := 0; x < 8; x++{
+    for x := 0; x < 1; x++{
         b, _, err := ipr.ReadFrom()
         if err != nil {
             fmt.Println(err)
