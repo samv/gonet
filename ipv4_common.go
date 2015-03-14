@@ -17,7 +17,7 @@ func calcChecksum(head []byte, excludeChecksum bool) uint16 {
             totalSum += uint64(elem)
         }
     }
-    fmt.Println("Checksum total: ", totalSum)
+    //fmt.Println("Checksum total: ", totalSum)
 
     for prefix := (totalSum >> 16); prefix != 0; prefix = (totalSum >> 16) {
         //        fmt.Println(prefix)
@@ -25,9 +25,12 @@ func calcChecksum(head []byte, excludeChecksum bool) uint16 {
         //        fmt.Println(totalSum & 0xffff)
         totalSum = uint64(totalSum&0xffff) + prefix
     }
-    fmt.Println("Checksum after carry: ", totalSum)
+    //fmt.Println("Checksum after carry: ", totalSum)
 
     carried := uint16(totalSum)
 
-    return ^carried
+    flip := ^carried
+    fmt.Println("Checksum: ", flip)
+
+    return flip
 }

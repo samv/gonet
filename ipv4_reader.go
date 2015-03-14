@@ -39,6 +39,7 @@ func (ipr *IP_Reader) ReadFrom() (b, payload []byte, e error) {
     b = <- ipr.incomingPackets
     fmt.Println("Read Length: ", len(b))
     fmt.Println("Full Read Data: ", b)
+
     hdr, p := slicePacket(b)
 
     // verify checksum
@@ -48,6 +49,9 @@ func (ipr *IP_Reader) ReadFrom() (b, payload []byte, e error) {
         fmt.Println("Payload (dropped): ", p)
         return nil, nil, errors.New("Header checksum incorrect, packet dropped")
     }
+
+    fmt.Println("Payload Length: ", len(p))
+    fmt.Println("Full payload: ", p)
 
     return b, p, nil
 }

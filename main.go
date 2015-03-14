@@ -15,14 +15,12 @@ func main() {
     }
 
     for x := 0; x < 1; x++{
-        b, _, err := ipr.ReadFrom()
+        _, p, err := ipr.ReadFrom()
         if err != nil {
             fmt.Println(err)
             continue
         }
 
-        fmt.Println("Total Length of Packet: ", len(b))
-        fmt.Println("Entire packet: ", b)
-        fmt.Println()
+        fmt.Println(p)
     }
 }
