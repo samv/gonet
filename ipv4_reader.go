@@ -2,7 +2,7 @@ package main
 
 import (
 	"errors"
-	"fmt"
+	//"fmt"
 	//    "net"
 	//    "syscall"
 	//"golang.org/x/net/ipv4"
@@ -44,9 +44,9 @@ func (ipr *IP_Reader) ReadFrom() (b, payload []byte, e error) {
 
 	// verify checksum
 	if calcChecksum(hdr, false) != 0 {
-		fmt.Println("Header checksum verification failed. Packet dropped.")
-		fmt.Println("Wrong header: ", hdr)
-		fmt.Println("Payload (dropped): ", p)
+		//fmt.Println("Header checksum verification failed. Packet dropped.")
+		//fmt.Println("Wrong header: ", hdr)
+		//fmt.Println("Payload (dropped): ", p)
 		return nil, nil, errors.New("Header checksum incorrect, packet dropped")
 	}
 
