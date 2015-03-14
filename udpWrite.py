@@ -3,7 +3,7 @@ import sys
 
 UDP_IP = "127.0.0.1"
 if len(sys.argv) <= 1:
-    UDP_PORT = 20006
+    UDP_PORT = 20000
 else:
     UDP_PORT = int(sys.argv[1])
 MESSAGE = "Hello, World!"
