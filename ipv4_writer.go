@@ -109,6 +109,8 @@ func (ipw *IP_Writer) WriteTo(p []byte) error {
 	packet = append(packet, p...)
 	fmt.Println("Full Packet:  ", packet)
 
+
+    // TODO: Allow IP fragmentation
 	return syscall.Sendto(ipw.fd, packet, 0, ipw.sockAddr)
 }
 

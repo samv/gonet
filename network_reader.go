@@ -61,6 +61,8 @@ func (nr *Network_Reader) readAll() {
 			continue
 		}
 
+        // TODO: assemble IP fragments
+
 		protocol := uint8(buf[9])
 		if c, found := nr.buffers[protocol]; found {
 			go func() { c <- buf }()
