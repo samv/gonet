@@ -30,7 +30,7 @@ func calcChecksum(head []byte, excludeChecksum bool) uint16 {
     carried := uint16(totalSum)
 
     flip := ^carried
-    fmt.Println("Checksum: ", flip)
+    //fmt.Println("Checksum: ", flip)
 
     return flip
 }

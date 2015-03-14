@@ -1,7 +1,7 @@
 package main
 
 import (
-    "fmt"
+//    "fmt"
 )
 
 type UDP_Read_Manager struct {
@@ -45,7 +45,7 @@ func (x *UDP_Read_Manager) readAll() {
             continue
         }
         //fmt.Println(b)
-        fmt.Println("UDP header and payload: ", payload)
+        //fmt.Println("UDP header and payload: ", payload)
 
         dest := (((uint16)(payload[2])) * 256) + ((uint16)(payload[3]))
         //fmt.Println(dest)

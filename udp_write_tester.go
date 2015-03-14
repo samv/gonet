@@ -1,6 +1,9 @@
 package main
 
-import "fmt"
+import (
+    "fmt"
+    "time"
+)
 
 func main() {
     w, err := NewUDP_Writer(20001, 20000, "127.0.0.1")
@@ -14,5 +17,7 @@ func main() {
         if err != nil {
             fmt.Println(err)
         }
+
+        time.Sleep(500 * time.Millisecond)
     }
 }
