@@ -31,14 +31,14 @@ func (nr *Network_Reader) NewIP_Reader(ip string, protocol uint8) (*IP_Reader, e
 
 func slicePacket(b []byte) (hrd, payload []byte) {
     hdrLen := int(b[0]&0x0f) * 4
-    fmt.Println("HdrLen: ", hdrLen)
+    //fmt.Println("HdrLen: ", hdrLen)
     return b[:hdrLen], b[hdrLen:]
 }
 
 func (ipr *IP_Reader) ReadFrom() (b, payload []byte, e error) {
     b = <- ipr.incomingPackets
     fmt.Println("Read Length: ", len(b))
-    fmt.Println("Full Read Data: ", b)
+    //fmt.Println("Full Read Data: ", b)
 
     hdr, p := slicePacket(b)
 
@@ -51,7 +51,7 @@ func (ipr *IP_Reader) ReadFrom() (b, payload []byte, e error) {
     }
 
     fmt.Println("Payload Length: ", len(p))
-    fmt.Println("Full payload: ", p)
+    //fmt.Println("Full payload: ", p)
 
     return b, p, nil
 }

@@ -66,7 +66,7 @@ func (nr *Network_Reader) readAll() {
             go func(){ c <- buf }()
         } else {
             //fmt.Println("Dropping packet from readAll; no matching connection for protocol: ", protocol)
-            fmt.Print("d")
+            //fmt.Print("d")
         }
     }
 }
