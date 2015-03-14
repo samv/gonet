@@ -8,12 +8,12 @@ type UDP_manager struct {
     ipAddress string
     write *IP_Writer
     read  *IP_Reader
-    buff      map[uint16](chan byte)
+    buff      map[uint16](chan []byte)
 }
 
 type UDP struct {
     manager   *UDP_manager
-    bytes     chan byte
+    bytes     chan []byte
     src, dest uint16 // ports
 }
 
@@ -44,7 +44,7 @@ func NewUDP_Manager(ip string) (*UDP_manager, error) {
     x := &UDP_manager{
         read: ipr,
         write: ipw,
-        buff: make(map[uint16](chan byte)),
+        buff: make(map[uint16](chan []byte)),
         ipAddress: ip,
     }
 
@@ -72,10 +72,7 @@ func (x *UDP_manager) readAll() {
         payload = payload[8:]
         if ok {
             go func() {
-                for _, elem := range payload {
-                    //fmt.Println("Writing")
-                    c <- elem
-                }
+                c <- payload
             }()
         }
     }
@@ -87,11 +84,9 @@ func (x *UDP_manager) NewUDP(src, dest uint16) (*UDP, error) {
 }
 
 func (c *UDP) read(size int) ([]byte, error) {
-    data := make([]byte, size)
-    for i := 0; i < size; i++ {
-        //fmt.Println("test")
-        data[i] = <-c.bytes
-        //fmt.Println(data[i])
+    data := <- c.bytes
+    if len(data) > size {
+        data = data[:size]
     }
     return data, nil
 }
