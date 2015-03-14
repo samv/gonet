@@ -79,7 +79,7 @@ func (x *UDP_manager) readAll() {
 }
 
 func (x *UDP_manager) NewUDP(src, dest uint16) (*UDP, error) {
-    x.buff[src] = make(chan byte, 1024)
+    x.buff[src] = make(chan []byte)
     return &UDP{src: src, dest: dest, bytes: x.buff[src], manager: x}, nil
 }
 
