@@ -8,17 +8,21 @@ func main() {
         return
     }
 
-    for x := 0; x < 3; x++{
-        buffer := make([]byte, MAX_IP_PACKET_LEN)
-        len, err := nr.getNextPacket(buffer)
+    ipr, err := nr.NewIP_Reader("127.0.0.1", 17)
+    if err != nil {
+        fmt.Println(err)
+        return
+    }
 
+    for x := 0; x < 8; x++{
+        b, _, err := ipr.ReadFrom()
         if err != nil {
             fmt.Println(err)
             continue
         }
 
-        fmt.Println("Total Length of Packet: ", len)
-        fmt.Println(buffer[:len])
+        fmt.Println("Total Length of Packet: ", len(b))
+        fmt.Println("Entire packet: ", b)
         fmt.Println()
     }
 }

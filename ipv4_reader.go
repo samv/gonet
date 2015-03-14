@@ -3,69 +3,29 @@ package main
 import (
     "errors"
     "fmt"
-    "net"
-    "syscall"
+//    "net"
+//    "syscall"
 //"golang.org/x/net/ipv4"
 )
 
 type IP_Reader struct {
-    fd        int
-    sockAddr  syscall.Sockaddr
-    version   uint8
-    dst, src  string
-    headerLen uint16
-    //len uint16
-    //id uint16
-    ttl      uint8
+    incomingPackets <-chan []byte
+    nr *Network_Reader
     protocol uint8
-    //checksum int
-    identifier uint16
+    ip string
 }
 
-func NewIP_Reader(dst string) (*IP_Reader, error) {
-    //pc, err := net.ListenIP("ip4:17", &net.IPAddr{IP: net.ParseIP(dst)})
-    fd, err := syscall.Socket(syscall.AF_INET, syscall.SOCK_RAW, syscall.IPPROTO_RAW)
+func (nr *Network_Reader) NewIP_Reader(ip string, protocol uint8) (*IP_Reader, error) {
+    c, err := nr.bind(ip, protocol)
     if err != nil {
-        fmt.Println("Failed to ListenIP")
         return nil, err
-    }
-
-    dstIPAddr, err := net.ResolveIPAddr("ip", dst)
-    if err != nil {
-        //fmt.Println(err)
-        return nil, err
-    }
-    fmt.Println("Full Address: ", dstIPAddr)
-
-    addr := &syscall.SockaddrInet4{
-        Port: 20000,
-        //Addr: [4]byte{127, 0, 0, 1},
-        Addr: [4]byte{
-            dstIPAddr.IP[12],
-            dstIPAddr.IP[13],
-            dstIPAddr.IP[14],
-            dstIPAddr.IP[15],
-        },
-    }
-
-    /*err = syscall.Connect(fd, addr)
-    if err != nil {
-        return nil, errors.New("Failed to connect.")
-    }*/
-    err = syscall.Bind(fd, addr)
-    if err != nil {
-        return nil, errors.New("Failed to bind to address.")
     }
 
     return &IP_Reader{
-        fd:         fd,
-        sockAddr:   addr,
-        version:    4,
-        headerLen:  20,
-        dst:        dst,
-        src:        "127.0.0.1",
-        ttl:        8,
-        protocol:   17,
+        incomingPackets: c,
+        nr: nr,
+        protocol: protocol,
+        ip: ip,
     }, nil
 }
 
@@ -75,12 +35,10 @@ func slicePacket(b []byte) (hrd, payload []byte) {
     return b[:hdrLen], b[hdrLen:]
 }
 
-func (ipc *IP_Reader) ReadFrom(b []byte) (payload []byte, e error) {
-    //n, _, err := syscall.Recvfrom(ipc.fd, b, 0) //_ is src address
-    n, _, _, _, err := syscall.Recvmsg(ipc.fd, b, make([]byte, 30000), 0)
-    b = b[:n]
-    fmt.Println("Read Length: ", n)
-    fmt.Println("Full Read Data (after trim): ", b)
+func (ipr *IP_Reader) ReadFrom() (b, payload []byte, e error) {
+    b = <- ipr.incomingPackets
+    fmt.Println("Read Length: ", len(b))
+    fmt.Println("Full Read Data: ", b)
     hdr, p := slicePacket(b)
 
     // verify checksum
@@ -88,14 +46,14 @@ func (ipc *IP_Reader) ReadFrom(b []byte) (payload []byte, e error) {
         fmt.Println("Header checksum verification failed. Packet dropped.")
         fmt.Println("Wrong header: ", hdr)
         fmt.Println("Payload (dropped): ", p)
-        return nil, errors.New("Header checksum incorrect, packet dropped")
+        return nil, nil, errors.New("Header checksum incorrect, packet dropped")
     }
 
-    return p, err
+    return b, p, nil
 }
 
-func (ipc *IP_Reader) Close() error {
-    return syscall.Close(ipc.fd)
+func (ipr *IP_Reader) Close() error {
+    return ipr.nr.unbind(ipr.ip, ipr.protocol)
 }
 
 /* h := &ipv4.Header{
