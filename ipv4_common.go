@@ -1,7 +1,7 @@
 package main
 
 import (
-    "fmt"
+//    "fmt"
 )
 
 func calcChecksum(head []byte, excludeChecksum bool) uint16 {
