@@ -10,7 +10,7 @@ import (
 
 type IP_Conn struct {
 	fd        int
-    sockAddr  syscall.Sockaddr
+	sockAddr  syscall.Sockaddr
 	version   uint8
 	dst, src  string
 	headerLen uint16
@@ -30,36 +30,36 @@ func NewIP_Conn(dst string) (*IP_Conn, error) {
 		return nil, err
 	}
 
-    dstIPAddr, err := net.ResolveIPAddr("ip", dst)
-    if err != nil {
-        //fmt.Println(err)
-        return nil, err
-    }
-    fmt.Println("Full Address: ", dstIPAddr)
+	dstIPAddr, err := net.ResolveIPAddr("ip", dst)
+	if err != nil {
+		//fmt.Println(err)
+		return nil, err
+	}
+	fmt.Println("Full Address: ", dstIPAddr)
 
-    addr := &syscall.SockaddrInet4{
-        Port: 20000,
-        //Addr: [4]byte{127, 0, 0, 1},
-        Addr: [4]byte{
-            dstIPAddr.IP[12],
-            dstIPAddr.IP[13],
-            dstIPAddr.IP[14],
-            dstIPAddr.IP[15],
-        },
-    }
+	addr := &syscall.SockaddrInet4{
+		Port: 20000,
+		//Addr: [4]byte{127, 0, 0, 1},
+		Addr: [4]byte{
+			dstIPAddr.IP[12],
+			dstIPAddr.IP[13],
+			dstIPAddr.IP[14],
+			dstIPAddr.IP[15],
+		},
+	}
 
-    /*err = syscall.Connect(fd, addr)
-    if err != nil {
-        return nil, errors.New("Failed to connect.")
-    }*/
-    err = syscall.Bind(fd, addr)
-    if err != nil {
-        return nil, errors.New("Failed to bind to address.")
-    }
+	/*err = syscall.Connect(fd, addr)
+	  if err != nil {
+	      return nil, errors.New("Failed to connect.")
+	  }*/
+	err = syscall.Bind(fd, addr)
+	if err != nil {
+		return nil, errors.New("Failed to bind to address.")
+	}
 
 	return &IP_Conn{
 		fd:         fd,
-        sockAddr:   addr,
+		sockAddr:   addr,
 		version:    4,
 		headerLen:  20,
 		dst:        dst,
@@ -106,7 +106,7 @@ func slicePacket(b []byte) (hrd, payload []byte) {
 
 func (ipc *IP_Conn) ReadFrom(b []byte) (payload []byte, e error) {
 	//n, _, err := syscall.Recvfrom(ipc.fd, b, 0) //_ is src address
-    n, _, _, _, err := syscall.Recvmsg(ipc.fd, b, make([]byte, 30000), 0)
+	n, _, _, _, err := syscall.Recvmsg(ipc.fd, b, make([]byte, 30000), 0)
 	b = b[:n]
 	fmt.Println("Read Length: ", n)
 	fmt.Println("Full Read Data (after trim): ", b)
