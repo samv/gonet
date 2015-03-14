@@ -13,19 +13,15 @@ type IP_Client struct {
     version   uint8
     dst, src  string
     headerLen uint16
-    //len uint16
-    //id uint16
     ttl      uint8
     protocol uint8
-    //checksum int
     identifier uint16
 }
 
 func NewIP_Client(dst string) (*IP_Client, error) {
-    //pc, err := net.ListenIP("ip4:17", &net.IPAddr{IP: net.ParseIP(dst)})
     fd, err := syscall.Socket(syscall.AF_INET, syscall.SOCK_RAW, syscall.IPPROTO_RAW)
     if err != nil {
-        fmt.Println("Failed to ListenIP")
+        fmt.Println("Write's socket failed")
         return nil, err
     }
 
@@ -38,7 +34,6 @@ func NewIP_Client(dst string) (*IP_Client, error) {
 
     addr := &syscall.SockaddrInet4{
         Port: 20000,
-        //Addr: [4]byte{127, 0, 0, 1},
         Addr: [4]byte{
             dstIPAddr.IP[12],
             dstIPAddr.IP[13],
@@ -51,10 +46,6 @@ func NewIP_Client(dst string) (*IP_Client, error) {
     if err != nil {
         return nil, errors.New("Failed to connect.")
     }
-    /*err = syscall.Bind(fd, addr)
-    if err != nil {
-        return nil, errors.New("Failed to bind to address.")
-    }*/
 
     return &IP_Client{
         fd:         fd,
@@ -69,33 +60,33 @@ func NewIP_Client(dst string) (*IP_Client, error) {
     }, nil
 }
 
-func (ipc *IP_Client) WriteTo(p []byte) error {
-    totalLen := uint16(ipc.headerLen) + uint16(len(p))
+func (ipw *IP_Client) WriteTo(p []byte) error {
+    totalLen := uint16(ipw.headerLen) + uint16(len(p))
     fmt.Println("Total Len: ", totalLen)
-    packet := make([]byte, ipc.headerLen)
-    packet[0] = (byte)((ipc.version << 4) + (uint8)(ipc.headerLen/4)) // Version, IHL
+    packet := make([]byte, ipw.headerLen)
+    packet[0] = (byte)((ipw.version << 4) + (uint8)(ipw.headerLen/4)) // Version, IHL
     packet[1] = 0
     packet[2] = (byte)(totalLen >> 8) // Total Len
     packet[3] = (byte)(totalLen)
 
-    id := ipc.identifier
+    id := ipw.identifier
     packet[4] = byte(id >> 8) // Identification
     packet[5] = byte(id)
-    ipc.identifier++
+    ipw.identifier++
 
     packet[6] = byte(1 << 6)         // Flags: Don't fragment
     packet[7] = 0                    // Fragment Offset
-    packet[8] = (byte)(ipc.ttl)      // Time to Live
-    packet[9] = (byte)(ipc.protocol) // Protocol
+    packet[8] = (byte)(ipw.ttl)      // Time to Live
+    packet[9] = (byte)(ipw.protocol) // Protocol
 
     // Src and Dst IPs
-    srcIP := net.ParseIP(ipc.src)
+    srcIP := net.ParseIP(ipw.src)
     fmt.Println(srcIP)
     //    fmt.Println(srcIP[12])
     //    fmt.Println(srcIP[13])
     //    fmt.Println(srcIP[14])
     //    fmt.Println(srcIP[15])
-    dstIP := net.ParseIP(ipc.dst)
+    dstIP := net.ParseIP(ipw.dst)
     fmt.Println(dstIP)
     packet[12] = srcIP[12]
     packet[13] = srcIP[13]
@@ -118,13 +109,11 @@ func (ipc *IP_Client) WriteTo(p []byte) error {
     packet = append(packet, p...)
     fmt.Println("Full Packet:  ", packet)
 
-    //ipc.pc.WriteMsgIP(packet, nil, dstIPAddr)
-
-    return syscall.Sendto(ipc.fd, packet, 0, ipc.sockAddr)
+    return syscall.Sendto(ipw.fd, packet, 0, ipw.sockAddr)
 }
 
-func (ipc *IP_Client) Close() error {
-    return syscall.Close(ipc.fd)
+func (ipw *IP_Client) Close() error {
+    return syscall.Close(ipw.fd)
 }
 
 /* h := &ipv4.Header{

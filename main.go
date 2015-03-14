@@ -1,8 +1,9 @@
 package main
+
 import "fmt"
 
 func main() {
-    nr, err := NewNetwork_Reader();
+    /*nr, err := NewNetwork_Reader();
     if err != nil {
         fmt.Println(err)
         return
@@ -22,5 +23,19 @@ func main() {
         }
 
         fmt.Println(p)
+    }*/
+
+    udp_manager, err := NewUDP_Manager("127.0.0.1")
+    if err != nil {
+        fmt.Println(err)
+        return
     }
+
+    udp, err := udp_manager.NewUDP(20001, 20000)
+    if err != nil {
+        fmt.Println(err)
+        return
+    }
+
+    udp.write([]byte{'h', 'i'})
 }
