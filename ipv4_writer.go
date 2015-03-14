@@ -7,7 +7,7 @@ import (
     "syscall"
 )
 
-type IP_Client struct {
+type IP_Writer struct {
     fd        int
     sockAddr  syscall.Sockaddr
     version   uint8
@@ -18,7 +18,7 @@ type IP_Client struct {
     identifier uint16
 }
 
-func NewIP_Client(dst string) (*IP_Client, error) {
+func NewIP_Writer(dst string) (*IP_Writer, error) {
     fd, err := syscall.Socket(syscall.AF_INET, syscall.SOCK_RAW, syscall.IPPROTO_RAW)
     if err != nil {
         fmt.Println("Write's socket failed")
@@ -47,7 +47,7 @@ func NewIP_Client(dst string) (*IP_Client, error) {
         return nil, errors.New("Failed to connect.")
     }
 
-    return &IP_Client{
+    return &IP_Writer{
         fd:         fd,
         sockAddr:   addr,
         version:    4,
@@ -60,7 +60,7 @@ func NewIP_Client(dst string) (*IP_Client, error) {
     }, nil
 }
 
-func (ipw *IP_Client) WriteTo(p []byte) error {
+func (ipw *IP_Writer) WriteTo(p []byte) error {
     totalLen := uint16(ipw.headerLen) + uint16(len(p))
     fmt.Println("Total Len: ", totalLen)
     packet := make([]byte, ipw.headerLen)
@@ -112,7 +112,7 @@ func (ipw *IP_Client) WriteTo(p []byte) error {
     return syscall.Sendto(ipw.fd, packet, 0, ipw.sockAddr)
 }
 
-func (ipw *IP_Client) Close() error {
+func (ipw *IP_Writer) Close() error {
     return syscall.Close(ipw.fd)
 }
 

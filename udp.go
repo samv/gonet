@@ -6,7 +6,7 @@ import (
 
 type UDP_manager struct {
     ipAddress string
-    write *IP_Client
+    write *IP_Writer
     read  *IP_Reader
     buff      map[uint16](chan byte)
 }
@@ -26,7 +26,7 @@ func NewUDP_Manager(ip string) (*UDP_manager, error) {
 
     // TODO: Separate the server UDP and client UDP connections
 
-    ipw, err := NewIP_Client(ip)
+    ipw, err := NewIP_Writer(ip)
     if err != nil {
         return nil, err
     }
