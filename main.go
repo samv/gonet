@@ -38,4 +38,6 @@ func main() {
     }
 
     udp.write([]byte{'h', 'i'})
+
+    fmt.Println("Reading: ", udp.read(13))
 }
