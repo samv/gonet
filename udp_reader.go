@@ -4,6 +4,8 @@ import (
 //    "fmt"
 )
 
+const MAX_UDP_PACKET_LEN = 65507
+
 type UDP_Read_Manager struct {
 	ipAddress string
 	reader    *IP_Reader
