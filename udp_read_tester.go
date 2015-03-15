@@ -16,7 +16,7 @@ func main() {
 	}
 
 	for {
-		p, err := r.read(MAX_IP_PACKET_LEN) // TODO: Find the UDP specific max length
+		p, err := r.read(MAX_UDP_PACKET_LEN) // TODO: Find the UDP specific max length
 		if err != nil {
 			fmt.Println(err)
 			continue
