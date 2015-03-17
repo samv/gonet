@@ -3,7 +3,7 @@ package main
 import (
 	"errors"
 	"fmt"
-	//	"net"
+	"net"
 	"syscall"
 	//"golang.org/x/net/ipv4"
 )
@@ -20,7 +20,8 @@ func NewNetwork_Reader_IP(dst string, protocol uint8) (*Network_Reader_IP, error
 
 type Network_Reader struct {
 	fd      int
-	buffers map[uint8](chan []byte)
+	buffers map[string](map[uint8](chan []byte))
+	//buffers map[uint8](chan []byte)
 }
 
 const MAX_IP_PACKET_LEN = 65535
@@ -39,8 +40,9 @@ func NewNetwork_Reader() (*Network_Reader, error) {
 	}
 
 	nr := &Network_Reader{
-		fd:      fd,
-		buffers: make(map[uint8](chan []byte)),
+		fd: fd,
+		//buffers: make(map[uint8](chan []byte)),
+		buffers: make(map[string](map[uint8](chan []byte))),
 	}
 	go nr.readAll()
 
@@ -61,25 +63,32 @@ func (nr *Network_Reader) readAll() {
 			continue
 		}
 
-        // TODO: assemble IP fragments
+		// TODO: assemble IP fragments
 
 		protocol := uint8(buf[9])
-		if c, found := nr.buffers[protocol]; found {
-			go func() { c <- buf }()
-		} else {
-			//fmt.Println("Dropping packet from readAll; no matching connection for protocol: ", protocol)
-			//fmt.Print("d")
+		ip := net.IPv4(buf[12], buf[13], buf[14], buf[15]).String()
+
+		if protoBuf, found := nr.buffers[ip]; found {
+			if c, foundProto := protoBuf[protocol]; foundProto {
+				go func() { c <- buf }()
+			}
 		}
 	}
 }
 
 func (nr *Network_Reader) bind(ip string, protocol uint8) (<-chan []byte, error) {
-	// TODO: this does not take into account the ip requested... implement longest prefix match
-
-	if _, ok := nr.buffers[protocol]; !ok {
+	// TODO: implement forwarding
+	_, ipOk := nr.buffers[ip]
+	if !ipOk {
+		nr.buffers[ip] = make(map[uint8](chan []byte))
+	}
+	protoBuf, _ := nr.buffers[ip]
+	if _, ok := protoBuf[protocol]; !ok {
 		// doesn't exist in map already
-		nr.buffers[protocol] = make(chan []byte, 1)
-		return nr.buffers[protocol], nil
+		protoBuf[protocol] = make(chan []byte, 1)
+
+		ret, _ := protoBuf[protocol]
+		return ret, nil
 	}
 	return nil, errors.New("Protocol already binded to.")
 }
@@ -87,8 +96,16 @@ func (nr *Network_Reader) bind(ip string, protocol uint8) (<-chan []byte, error)
 func (nr *Network_Reader) unbind(ip string, protocol uint8) error {
 	// TODO: take into account the protocol
 
-	if _, ok := nr.buffers[protocol]; ok {
-		delete(nr.buffers, protocol)
+	protoBuf, ipOk := nr.buffers[ip]
+	if !ipOk {
+		return errors.New("IP not bound, cannot unbind")
+	}
+
+	if _, ok := protoBuf[protocol]; ok {
+		delete(protoBuf, protocol)
+		if len(protoBuf) == 0 {
+			delete(nr.buffers, ip)
+		}
 		return nil
 	}
 	return errors.New("Not binded, can't unbind.")
