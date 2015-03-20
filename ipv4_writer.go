@@ -110,7 +110,7 @@ func (ipw *IP_Writer) WriteTo(p []byte) error {
 	fmt.Println("Full Packet:  ", packet)
 
 
-    // TODO: Allow IP fragmentation
+    // TODO: Allow IP fragmentation (use 1500 as MTU)
 	return syscall.Sendto(ipw.fd, packet, 0, ipw.sockAddr)
 }
 
