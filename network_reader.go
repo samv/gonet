@@ -77,7 +77,6 @@ func (nr *Network_Reader) readAll() {
 }
 
 func (nr *Network_Reader) bind(ip string, protocol uint8) (<-chan []byte, error) {
-	// TODO: implement forwarding
 	_, ipOk := nr.buffers[ip]
 	if !ipOk {
 		nr.buffers[ip] = make(map[uint8](chan []byte))
@@ -94,8 +93,6 @@ func (nr *Network_Reader) bind(ip string, protocol uint8) (<-chan []byte, error)
 }
 
 func (nr *Network_Reader) unbind(ip string, protocol uint8) error {
-	// TODO: take into account the protocol
-
 	protoBuf, ipOk := nr.buffers[ip]
 	if !ipOk {
 		return errors.New("IP not bound, cannot unbind")
