@@ -2,13 +2,14 @@ package main
 
 import (
 //    "fmt"
+    "errors"
 )
 
 const MAX_UDP_PACKET_LEN = 65507
 
 type UDP_Read_Manager struct {
 	reader    *IP_Reader
-	buff      map[uint16](chan []byte)
+	buff      map[uint16](map[string](chan []byte))
 }
 
 type UDP_Reader struct {
@@ -31,7 +32,7 @@ func NewUDP_Read_Manager() (*UDP_Read_Manager, error) {
 
 	x := &UDP_Read_Manager{
 		reader:    ipr,
-		buff:      make(map[uint16](chan []byte)),
+		buff:      make(map[uint16](map[string](chan []byte))),
 	}
 
 	go x.readAll()
@@ -41,7 +42,7 @@ func NewUDP_Read_Manager() (*UDP_Read_Manager, error) {
 
 func (x *UDP_Read_Manager) readAll() {
 	for {
-		_, payload, err := x.reader.ReadFrom()
+		ip, _, payload, err := x.reader.ReadFrom()
 		if err != nil {
 			continue
 		}
@@ -49,15 +50,19 @@ func (x *UDP_Read_Manager) readAll() {
 		//fmt.Println("UDP header and payload: ", payload)
 
 		dest := (((uint16)(payload[2])) * 256) + ((uint16)(payload[3]))
-		//fmt.Println(dest)
+        //fmt.Println(dest)
+
+        payload = payload[8:]
 		//fmt.Println(payload)
 
-		//fmt.Println(x.buff)
-		c, ok := x.buff[dest]
+		portBuf, ok := x.buff[dest]
 		//fmt.Println(ok)
-		payload = payload[8:]
 		if ok {
-			go func() { c <- payload }()
+            if c, ok := portBuf[ip]; ok {
+                go func() { c <- payload }()
+            } else if c, ok := portBuf["*"]; ok {
+                go func() { c <- payload }()
+            }
 		} else {
 			// drop packet
 		}
@@ -65,8 +70,18 @@ func (x *UDP_Read_Manager) readAll() {
 }
 
 func (x *UDP_Read_Manager) NewUDP(port uint16, ip string) (*UDP_Reader, error) {
-	x.buff[port] = make(chan []byte)
-	return &UDP_Reader{port: port, bytes: x.buff[port], manager: x, ipAddress: ip}, nil
+    // add the port if not already there
+	if _, found := x.buff[port]; !found {
+        x.buff[port] = make(map[string](chan []byte))
+    }
+
+    // add the ip to the port's list
+    if _, found := x.buff[port][ip]; !found {
+        x.buff[port][ip] = make(chan []byte)
+        return &UDP_Reader{port: port, bytes: x.buff[port][ip], manager: x, ipAddress: ip}, nil
+    } else {
+        return nil, errors.New("Another application is already listening to that port.")
+    }
 }
 
 func (c *UDP_Reader) read(size int) ([]byte, error) {
