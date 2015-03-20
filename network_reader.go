@@ -40,7 +40,7 @@ func NewNetwork_Reader() (*Network_Reader, error) {
 	}
 
 	nr := &Network_Reader{
-		fd: fd,
+		fd:      fd,
 		buffers: make(map[uint8](map[string](chan []byte))),
 	}
 	go nr.readAll()
@@ -67,24 +67,30 @@ func (nr *Network_Reader) readAll() {
 		protocol := uint8(buf[9])
 		ip := net.IPv4(buf[12], buf[13], buf[14], buf[15]).String()
 
+		if protocol == 17 {
+			fmt.Println(protocol)
+			fmt.Println(buf)
+		}
 		if protoBuf, foundProto := nr.buffers[protocol]; foundProto {
+			fmt.Println("Dealing with packet")
 			if c, foundIP := protoBuf[ip]; foundIP {
 				go func() { c <- buf }()
 			} else if c, foundAll := protoBuf["*"]; foundAll {
-                go func() { c <- buf }()
-            }
+				go func() { c <- buf }()
+			}
 		}
 	}
 }
 
 func (nr *Network_Reader) bind(ip string, protocol uint8) (<-chan []byte, error) {
-    // create the protocol buffer if it doesn't exist already
+	// create the protocol buffer if it doesn't exist already
 	_, protoOk := nr.buffers[protocol]
 	if !protoOk {
 		nr.buffers[protocol] = make(map[string](chan []byte))
+		fmt.Println("Bound to", protocol)
 	}
 
-    // add the IP binding, if possible
+	// add the IP binding, if possible
 	if _, IP_exists := nr.buffers[protocol][ip]; !IP_exists {
 		// doesn't exist in map already
 		nr.buffers[protocol][ip] = make(chan []byte, 1)
