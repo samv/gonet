@@ -64,9 +64,9 @@ func (x *UDP_Read_Manager) readAll() {
 	}
 }
 
-func (x *UDP_Read_Manager) NewUDP(port uint16) (*UDP_Reader, error) {
+func (x *UDP_Read_Manager) NewUDP(port uint16, ip string) (*UDP_Reader, error) {
 	x.buff[port] = make(chan []byte)
-	return &UDP_Reader{port: port, bytes: x.buff[port], manager: x}, nil
+	return &UDP_Reader{port: port, bytes: x.buff[port], manager: x, ipAddress: ip}, nil
 }
 
 func (c *UDP_Reader) read(size int) ([]byte, error) {

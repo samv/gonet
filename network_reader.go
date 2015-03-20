@@ -20,7 +20,7 @@ func NewNetwork_Reader_IP(dst string, protocol uint8) (*Network_Reader_IP, error
 
 type Network_Reader struct {
 	fd      int
-	buffers map[string](map[uint8](chan []byte))
+	buffers map[uint8](map[string](chan []byte))
 	//buffers map[uint8](chan []byte)
 }
 
@@ -41,8 +41,7 @@ func NewNetwork_Reader() (*Network_Reader, error) {
 
 	nr := &Network_Reader{
 		fd: fd,
-		//buffers: make(map[uint8](chan []byte)),
-		buffers: make(map[string](map[uint8](chan []byte))),
+		buffers: make(map[uint8](map[string](chan []byte))),
 	}
 	go nr.readAll()
 
@@ -68,41 +67,42 @@ func (nr *Network_Reader) readAll() {
 		protocol := uint8(buf[9])
 		ip := net.IPv4(buf[12], buf[13], buf[14], buf[15]).String()
 
-		if protoBuf, found := nr.buffers[ip]; found {
-			if c, foundProto := protoBuf[protocol]; foundProto {
+		if protoBuf, foundProto := nr.buffers[protocol]; foundProto {
+			if c, foundIP := protoBuf[ip]; foundIP {
 				go func() { c <- buf }()
-			}
+			} else if c, foundAll := protoBuf["*"]; foundAll {
+                go func() { c <- buf }()
+            }
 		}
 	}
 }
 
 func (nr *Network_Reader) bind(ip string, protocol uint8) (<-chan []byte, error) {
-	_, ipOk := nr.buffers[ip]
-	if !ipOk {
-		nr.buffers[ip] = make(map[uint8](chan []byte))
+    // create the protocol buffer if it doesn't exist already
+	_, protoOk := nr.buffers[protocol]
+	if !protoOk {
+		nr.buffers[protocol] = make(map[string](chan []byte))
 	}
-	protoBuf, _ := nr.buffers[ip]
-	if _, ok := protoBuf[protocol]; !ok {
-		// doesn't exist in map already
-		protoBuf[protocol] = make(chan []byte, 1)
 
-		ret, _ := protoBuf[protocol]
+    // add the IP binding, if possible
+	if _, IP_exists := nr.buffers[protocol][ip]; !IP_exists {
+		// doesn't exist in map already
+		nr.buffers[protocol][ip] = make(chan []byte, 1)
+
+		ret, _ := nr.buffers[protocol][ip]
 		return ret, nil
 	}
-	return nil, errors.New("Protocol already bound.")
+	return nil, errors.New("IP already bound to.")
 }
 
 func (nr *Network_Reader) unbind(ip string, protocol uint8) error {
-	protoBuf, ipOk := nr.buffers[ip]
-	if !ipOk {
+	ipBuf, protoOk := nr.buffers[protocol]
+	if !protoOk {
 		return errors.New("IP not bound, cannot unbind")
 	}
 
-	if _, ok := protoBuf[protocol]; ok {
-		delete(protoBuf, protocol)
-		if len(protoBuf) == 0 {
-			delete(nr.buffers, ip)
-		}
+	if _, ok := ipBuf[ip]; ok {
+		delete(ipBuf, ip)
 		return nil
 	}
 	return errors.New("Not bound, can't unbind.")

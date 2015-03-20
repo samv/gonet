@@ -3,13 +3,13 @@ package main
 import "fmt"
 
 func main() {
-	rm, err := NewUDP_Read_Manager("127.0.0.1")
+	rm, err := NewUDP_Read_Manager()
 	if err != nil {
 		fmt.Println(err)
 		return
 	}
 
-	r, err := rm.NewUDP(20000)
+	r, err := rm.NewUDP(20000, "*")
 	if err != nil {
 		fmt.Println(err)
 		return
