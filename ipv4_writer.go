@@ -61,6 +61,16 @@ func NewIP_Writer(dst string, protocol uint8) (*IP_Writer, error) {
 }
 
 func (ipw *IP_Writer) WriteTo(p []byte) error {
+	pSlice := make([][]byte, len(p)/1480+1)
+	for i, _ := range pSlice {
+		if len(p) <= 1480 * (i + 1) {
+			pSlice[i] := p[1480*i : 1480*(i+1)]
+		} else {
+			pSlice[i] := p[1480*i:]
+		}
+	}
+
+	for index
 	totalLen := uint16(ipw.headerLen) + uint16(len(p))
 	fmt.Println("Total Len: ", totalLen)
 	packet := make([]byte, ipw.headerLen)
@@ -109,8 +119,7 @@ func (ipw *IP_Writer) WriteTo(p []byte) error {
 	packet = append(packet, p...)
 	fmt.Println("Full Packet:  ", packet)
 
-
-    // TODO: Allow IP fragmentation (use 1500 as MTU)
+	// TODO: Allow IP fragmentation (use 1500 as MTU)
 	return syscall.Sendto(ipw.fd, packet, 0, ipw.sockAddr)
 }
 
