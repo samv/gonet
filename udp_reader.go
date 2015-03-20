@@ -7,7 +7,6 @@ import (
 const MAX_UDP_PACKET_LEN = 65507
 
 type UDP_Read_Manager struct {
-	ipAddress string
 	reader    *IP_Reader
 	buff      map[uint16](chan []byte)
 }
@@ -16,15 +15,16 @@ type UDP_Reader struct {
 	manager *UDP_Read_Manager
 	bytes   <-chan []byte
 	port    uint16 // ports
+    ipAddress string
 }
 
-func NewUDP_Read_Manager(ip string) (*UDP_Read_Manager, error) {
+func NewUDP_Read_Manager() (*UDP_Read_Manager, error) {
 	nr, err := NewNetwork_Reader()
 	if err != nil {
 		return nil, err
 	}
 
-	ipr, err := nr.NewIP_Reader(ip, 17) // 17 for UDP
+	ipr, err := nr.NewIP_Reader("*", 17) // 17 for UDP
 	if err != nil {
 		return nil, err
 	}
@@ -32,7 +32,6 @@ func NewUDP_Read_Manager(ip string) (*UDP_Read_Manager, error) {
 	x := &UDP_Read_Manager{
 		reader:    ipr,
 		buff:      make(map[uint16](chan []byte)),
-		ipAddress: ip,
 	}
 
 	go x.readAll()
@@ -52,7 +51,7 @@ func (x *UDP_Read_Manager) readAll() {
 		dest := (((uint16)(payload[2])) * 256) + ((uint16)(payload[3]))
 		//fmt.Println(dest)
 		//fmt.Println(payload)
-		//
+
 		//fmt.Println(x.buff)
 		c, ok := x.buff[dest]
 		//fmt.Println(ok)
