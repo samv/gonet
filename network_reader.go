@@ -32,7 +32,7 @@ func NewNetwork_Reader() (*Network_Reader, error) {
 
 	// 17 = AF_PACKET
 	// see http://ideone.com/TGYlGc
-	fd, err := syscall.Socket(17, syscall.SOCK_DGRAM, 768)
+	fd, err := syscall.Socket(17, syscall.SOCK_RAW, 768)
 
 	if err != nil {
 		fmt.Println("AF_PACKET socket connection")
@@ -90,7 +90,7 @@ func (nr *Network_Reader) bind(ip string, protocol uint8) (<-chan []byte, error)
 		ret, _ := protoBuf[protocol]
 		return ret, nil
 	}
-	return nil, errors.New("Protocol already binded to.")
+	return nil, errors.New("Protocol already bound.")
 }
 
 func (nr *Network_Reader) unbind(ip string, protocol uint8) error {
@@ -108,7 +108,7 @@ func (nr *Network_Reader) unbind(ip string, protocol uint8) error {
 		}
 		return nil
 	}
-	return errors.New("Not binded, can't unbind.")
+	return errors.New("Not bound, can't unbind.")
 }
 
 func (nr *Network_Reader) getNextPacket(buf []byte) (int, error) {
