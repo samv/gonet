@@ -9,7 +9,7 @@ func main() {
 		return
 	}
 
-	r, err := rm.NewUDP(20000)
+	r, err := rm.NewUDP(20000, "*")
 	if err != nil {
 		fmt.Println(err)
 		return

@@ -2,8 +2,8 @@ package main
 
 import (
 	"errors"
+	"net"
 	//"fmt"
-	//    "net"
 	//    "syscall"
 	//"golang.org/x/net/ipv4"
 )
@@ -35,10 +35,12 @@ func slicePacket(b []byte) (hrd, payload []byte) {
 	return b[:hdrLen], b[hdrLen:]
 }
 
-func (ipr *IP_Reader) ReadFrom() (b, payload []byte, e error) {
+func (ipr *IP_Reader) ReadFrom() (ip string, b, payload []byte, e error) {
 	b = <-ipr.incomingPackets
 	//fmt.Println("Read Length: ", len(b))
 	//fmt.Println("Full Read Data: ", b)
+
+    ip = net.IPv4(b[12], b[13], b[14], b[15]).String()
 
 	hdr, p := slicePacket(b)
 
@@ -47,13 +49,13 @@ func (ipr *IP_Reader) ReadFrom() (b, payload []byte, e error) {
 		//fmt.Println("Header checksum verification failed. Packet dropped.")
 		//fmt.Println("Wrong header: ", hdr)
 		//fmt.Println("Payload (dropped): ", p)
-		return nil, nil, errors.New("Header checksum incorrect, packet dropped")
+		return "", nil, nil, errors.New("Header checksum incorrect, packet dropped")
 	}
 
 	//fmt.Println("Payload Length: ", len(p))
 	//fmt.Println("Full payload: ", p)
 
-	return b, p, nil
+	return ip, b, p, nil
 }
 
 func (ipr *IP_Reader) Close() error {
