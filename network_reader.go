@@ -67,10 +67,12 @@ func (nr *Network_Reader) readAll() {
 		protocol := uint8(buf[9])
 		ip := net.IPv4(buf[12], buf[13], buf[14], buf[15]).String()
 
-		fmt.Println(protocol, ip)
+        fmt.Println(ln)
+		//fmt.Println(protocol, ip)
 		if protocol == 17 {
 			fmt.Println(buf)
 		}
+        //fmt.Println(protocol, ip)
 		if protoBuf, foundProto := nr.buffers[protocol]; foundProto {
 			fmt.Println("Dealing with packet")
 			if c, foundIP := protoBuf[ip]; foundIP {

@@ -9,7 +9,7 @@ func main() {
 		return
 	}
 
-	r, err := rm.NewUDP(20000, "127.0.0.1")
+	r, err := rm.NewUDP(20000, "*")
 	if err != nil {
 		fmt.Println(err)
 		return
