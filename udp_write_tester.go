@@ -12,6 +12,11 @@ func main() {
 		return
 	}
 
+	fragmentTest := []byte{'h', 'e', 'l', 'l', 'o'}
+	for i := 0; i < 11; i++ {
+		fragmentTest = append(fragmentTest, fragmentTest...)
+	}
+	w.write(fragmentTest)
 	for {
 		err := w.write([]byte{'h', 'e', 'l', 'l', 'o'})
 		if err != nil {

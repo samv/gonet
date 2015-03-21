@@ -90,12 +90,13 @@ func (ipw *IP_Writer) WriteTo(p []byte) error {
 	header[18] = dstIP[14]
 	header[19] = dstIP[15]
 
-	for i := 0; i < len(p)/1480+1; i += 1480 {
-		if len(p) <= 1480*(i+1) {
+	for i := 0; i < len(p)/556+1; i += 1 {
+		fmt.Println("Looping fragmenting")
+		if len(p) <= 556*(i+1) {
 			header[6] = byte(0)
 		}
 		// TODO allow frag offset to be full 13 bits instead of current 8 (needs to use packet[6] as well
-		p[7] = byte(i) // Fragment offset
+		header[7] = byte(i * 576) // Fragment offset
 
 		totalLen := uint16(ipw.headerLen) + uint16(len(p))
 		fmt.Println("Total Len: ", totalLen)
@@ -111,12 +112,17 @@ func (ipw *IP_Writer) WriteTo(p []byte) error {
 		// Payload
 
 		newPacket := make([]byte, 1)
-		if len(p) <= 1480*(i+1) {
+		if len(p) <= 576*(i+1) {
+			fmt.Println("Full Pack")
+			fmt.Println("len", len(p[556*i:]))
 			header[6] = byte(0)
-			newPacket = append(header, p[1480*i:]...)
+			newPacket = append(header, p[556*i:]...)
 			fmt.Println("Full Packet:  ", newPacket)
+			fmt.Println("CALCULATED LEN:", i*576+len(p[556*i:]))
 		} else {
-			newPacket = append(header, p[1480*i:1480*(i+1)]...)
+			fmt.Println("Partial packet")
+			fmt.Println("len", len(p[556*i:556*(i+1)]))
+			newPacket = append(header, p[556*i:556*(i+1)]...)
 			fmt.Println("Full Packet:  ", newPacket)
 		}
 
