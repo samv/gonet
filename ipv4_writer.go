@@ -61,31 +61,14 @@ func NewIP_Writer(dst string, protocol uint8) (*IP_Writer, error) {
 }
 
 func (ipw *IP_Writer) WriteTo(p []byte) error {
-	pSlice := make([][]byte, len(p)/1480+1)
-	for i, _ := range pSlice {
-		if len(p) <= 1480 * (i + 1) {
-			pSlice[i] := p[1480*i : 1480*(i+1)]
-		} else {
-			pSlice[i] := p[1480*i:]
-		}
-	}
-
-	for index
-	totalLen := uint16(ipw.headerLen) + uint16(len(p))
-	fmt.Println("Total Len: ", totalLen)
 	packet := make([]byte, ipw.headerLen)
 	packet[0] = (byte)((ipw.version << 4) + (uint8)(ipw.headerLen/4)) // Version, IHL
 	packet[1] = 0
-	packet[2] = (byte)(totalLen >> 8) // Total Len
-	packet[3] = (byte)(totalLen)
-
 	id := ipw.identifier
 	packet[4] = byte(id >> 8) // Identification
 	packet[5] = byte(id)
 	ipw.identifier++
-
-	packet[6] = byte(1 << 6)         // Flags: Don't fragment
-	packet[7] = 0                    // Fragment Offset
+	packet[6] = byte(1 << 5)         // Flags: May fragment, more fragments
 	packet[8] = (byte)(ipw.ttl)      // Time to Live
 	packet[9] = (byte)(ipw.protocol) // Protocol
 
@@ -107,20 +90,39 @@ func (ipw *IP_Writer) WriteTo(p []byte) error {
 	packet[18] = dstIP[14]
 	packet[19] = dstIP[15]
 
-	// IPv4 header test (before checksum)
-	fmt.Println("Packet before checksum: ", packet)
+	for i, _ := range len(p)/1480+1 {
+		if len(p) <= 1480 * (i + 1) {
+			pSlice[i] := p[1480*i : 1480*(i+1)]
+		} else {
+			pSlice[i] := p[1480*i:]
+			packet[6] = byte(0) // Last fragment
+		}
+		// TODO allow frag offset to be full 13 bits instead of current 8 (needs to use packet[6] as well
+		p[7] = i // Fragment offset
 
-	// Checksum
-	checksum := calcChecksum(packet[:20], true)
-	packet[10] = byte(checksum >> 8)
-	packet[11] = byte(checksum)
+		totalLen := uint16(ipw.headerLen) + uint16(len(p))
+		fmt.Println("Total Len: ", totalLen)
+		packet[2] = (byte)(totalLen >> 8) // Total Len
+		packet[3] = (byte)(totalLen)
 
-	// Payload
-	packet = append(packet, p...)
-	fmt.Println("Full Packet:  ", packet)
+		// IPv4 header test (before checksum)
+		fmt.Println("Packet before checksum: ", packet)
+		// Checksum
+		checksum := calcChecksum(packet[:20], true)
+		packet[10] = byte(checksum >> 8)
+		packet[11] = byte(checksum)
+		// Payload
+		newPacket := append(packet, p...)
+		fmt.Println("Full Packet:  ", newPacket)
+
+		err := syscall.Sendto(ipw.fd, newPacket, 0, ipw.sockAddr)
+		if err != nil {
+			return err
+		}
+	}
 
 	// TODO: Allow IP fragmentation (use 1500 as MTU)
-	return syscall.Sendto(ipw.fd, packet, 0, ipw.sockAddr)
+	return nil
 }
 
 func (ipw *IP_Writer) Close() error {
