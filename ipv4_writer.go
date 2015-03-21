@@ -61,16 +61,16 @@ func NewIP_Writer(dst string, protocol uint8) (*IP_Writer, error) {
 }
 
 func (ipw *IP_Writer) WriteTo(p []byte) error {
-	packet := make([]byte, ipw.headerLen)
-	packet[0] = (byte)((ipw.version << 4) + (uint8)(ipw.headerLen/4)) // Version, IHL
-	packet[1] = 0
+	header := make([]byte, ipw.headerLen)
+	header[0] = (byte)((ipw.version << 4) + (uint8)(ipw.headerLen/4)) // Version, IHL
+	header[1] = 0
 	id := ipw.identifier
-	packet[4] = byte(id >> 8) // Identification
-	packet[5] = byte(id)
+	header[4] = byte(id >> 8) // Identification
+	header[5] = byte(id)
 	ipw.identifier++
-	packet[6] = byte(1 << 5)         // Flags: May fragment, more fragments
-	packet[8] = (byte)(ipw.ttl)      // Time to Live
-	packet[9] = (byte)(ipw.protocol) // Protocol
+	header[6] = byte(1 << 5)         // Flags: May fragment, more fragments
+	header[8] = (byte)(ipw.ttl)      // Time to Live
+	header[9] = (byte)(ipw.protocol) // Protocol
 
 	// Src and Dst IPs
 	srcIP := net.ParseIP(ipw.src)
@@ -81,39 +81,44 @@ func (ipw *IP_Writer) WriteTo(p []byte) error {
 	//    fmt.Println(srcIP[15])
 	dstIP := net.ParseIP(ipw.dst)
 	fmt.Println(dstIP)
-	packet[12] = srcIP[12]
-	packet[13] = srcIP[13]
-	packet[14] = srcIP[14]
-	packet[15] = srcIP[15]
-	packet[16] = dstIP[12]
-	packet[17] = dstIP[13]
-	packet[18] = dstIP[14]
-	packet[19] = dstIP[15]
+	header[12] = srcIP[12]
+	header[13] = srcIP[13]
+	header[14] = srcIP[14]
+	header[15] = srcIP[15]
+	header[16] = dstIP[12]
+	header[17] = dstIP[13]
+	header[18] = dstIP[14]
+	header[19] = dstIP[15]
 
-	for i, _ := range len(p)/1480+1 {
-		if len(p) <= 1480 * (i + 1) {
-			pSlice[i] := p[1480*i : 1480*(i+1)]
-		} else {
-			pSlice[i] := p[1480*i:]
-			packet[6] = byte(0) // Last fragment
+	for i := 0; i < len(p)/1480+1; i += 1480 {
+		if len(p) <= 1480*(i+1) {
+			header[6] = byte(0)
 		}
 		// TODO allow frag offset to be full 13 bits instead of current 8 (needs to use packet[6] as well
-		p[7] = i // Fragment offset
+		p[7] = byte(i) // Fragment offset
 
 		totalLen := uint16(ipw.headerLen) + uint16(len(p))
 		fmt.Println("Total Len: ", totalLen)
-		packet[2] = (byte)(totalLen >> 8) // Total Len
-		packet[3] = (byte)(totalLen)
+		header[2] = (byte)(totalLen >> 8) // Total Len
+		header[3] = (byte)(totalLen)
 
 		// IPv4 header test (before checksum)
-		fmt.Println("Packet before checksum: ", packet)
+		fmt.Println("Packet before checksum: ", header)
 		// Checksum
-		checksum := calcChecksum(packet[:20], true)
-		packet[10] = byte(checksum >> 8)
-		packet[11] = byte(checksum)
+		checksum := calcChecksum(header[:20], true)
+		header[10] = byte(checksum >> 8)
+		header[11] = byte(checksum)
 		// Payload
-		newPacket := append(packet, p...)
-		fmt.Println("Full Packet:  ", newPacket)
+
+		newPacket := make([]byte, 1)
+		if len(p) <= 1480*(i+1) {
+			header[6] = byte(0)
+			newPacket = append(header, p[1480*i:]...)
+			fmt.Println("Full Packet:  ", newPacket)
+		} else {
+			newPacket = append(header, p[1480*i:1480*(i+1)]...)
+			fmt.Println("Full Packet:  ", newPacket)
+		}
 
 		err := syscall.Sendto(ipw.fd, newPacket, 0, ipw.sockAddr)
 		if err != nil {
