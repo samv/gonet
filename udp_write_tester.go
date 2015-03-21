@@ -6,7 +6,7 @@ import (
 )
 
 func main() {
-	w, err := NewUDP_Writer(20001, 20000, "127.0.0.1")
+	w, err := NewUDP_Writer(20000, 20000, "127.0.0.1")
 	if err != nil {
 		fmt.Println(err)
 		return

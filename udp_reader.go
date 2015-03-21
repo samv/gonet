@@ -1,7 +1,7 @@
 package main
 
 import (
-//    "fmt"
+    //"fmt"
     "errors"
 )
 
@@ -49,18 +49,20 @@ func (x *UDP_Read_Manager) readAll() {
 		//fmt.Println(b)
 		//fmt.Println("UDP header and payload: ", payload)
 
-		dest := (((uint16)(payload[2])) * 256) + ((uint16)(payload[3]))
-        //fmt.Println(dest)
+		dst := (((uint16)(payload[2])) * 256) + ((uint16)(payload[3]))
+        //fmt.Println(dst)
 
         payload = payload[8:]
 		//fmt.Println(payload)
 
-		portBuf, ok := x.buff[dest]
+		portBuf, ok := x.buff[dst]
 		//fmt.Println(ok)
 		if ok {
             if c, ok := portBuf[ip]; ok {
+                //fmt.Println("Found exact IP match for port", dst)
                 go func() { c <- payload }()
             } else if c, ok := portBuf["*"]; ok {
+                //fmt.Println("Found default IP match for port", dst)
                 go func() { c <- payload }()
             }
 		} else {

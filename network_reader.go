@@ -26,13 +26,20 @@ type Network_Reader struct {
 
 const MAX_IP_PACKET_LEN = 65535
 
+const (
+    SOCK_DGRAM = 2
+    SOCK_RAW = 3
+    AF_PACKET = 17
+    HTONS_ETH_P_ALL = 768
+)
+
 func NewNetwork_Reader() (*Network_Reader, error) {
 	// 768 = htons(ETH_P_ALL) = htons(3)
 	// see http://ideone.com/2eunQu
 
 	// 17 = AF_PACKET
 	// see http://ideone.com/TGYlGc
-	fd, err := syscall.Socket(17, syscall.SOCK_RAW, 768)
+	fd, err := syscall.Socket(AF_PACKET, SOCK_RAW, HTONS_ETH_P_ALL)
 
 	if err != nil {
 		fmt.Println("AF_PACKET socket connection")
@@ -56,9 +63,12 @@ func (nr *Network_Reader) readAll() {
 		if err != nil {
 			fmt.Println(err)
 		}
+		buf = buf[:ln] // remove extra bytes off the end
 
-		buf = buf[:ln]
-		if len(buf) <= 20 {
+        buf = buf[14:] // remove ethernet header
+        //fmt.Println("After removing ethernet header", buf)
+
+        if len(buf) <= 20 {
 			continue
 		}
 
@@ -67,17 +77,19 @@ func (nr *Network_Reader) readAll() {
 		protocol := uint8(buf[9])
 		ip := net.IPv4(buf[12], buf[13], buf[14], buf[15]).String()
 
-		fmt.Println(protocol, ip)
-		if protocol == 17 {
+        //fmt.Println(ln)
+		//fmt.Println(protocol, ip)
+		/*if ln == 47 {
 			fmt.Println(buf)
-		}
+		}*/
+        //fmt.Println(protocol, ip)
 		if protoBuf, foundProto := nr.buffers[protocol]; foundProto {
-			fmt.Println("Dealing with packet")
+			//fmt.Println("Dealing with packet")
 			if c, foundIP := protoBuf[ip]; foundIP {
-				fmt.Println("Found exact")
+				//fmt.Println("Found exact")
 				go func() { c <- buf }()
 			} else if c, foundAll := protoBuf["*"]; foundAll {
-				fmt.Println("Found global")
+				//fmt.Println("Found global")
 				go func() { c <- buf }()
 			}
 		}
