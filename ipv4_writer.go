@@ -8,14 +8,15 @@ import (
 )
 
 type IP_Writer struct {
-	fd         int
-	sockAddr   syscall.Sockaddr
-	version    uint8
-	dst, src   string
-	headerLen  uint16
-	ttl        uint8
-	protocol   uint8
-	identifier uint16
+	fd          int
+	sockAddr    syscall.Sockaddr
+	version     uint8
+	dst, src    string
+	headerLen   uint16
+	ttl         uint8
+	protocol    uint8
+	identifier  uint16
+	maxFragSize uint16
 }
 
 func NewIP_Writer(dst string, protocol uint8) (*IP_Writer, error) {
@@ -48,15 +49,16 @@ func NewIP_Writer(dst string, protocol uint8) (*IP_Writer, error) {
 	}
 
 	return &IP_Writer{
-		fd:         fd,
-		sockAddr:   addr,
-		version:    4,
-		headerLen:  20,
-		dst:        dst,
-		src:        "127.0.0.1",
-		ttl:        8,
-		protocol:   17,
-		identifier: 20000,
+		fd:          fd,
+		sockAddr:    addr,
+		version:     4,
+		headerLen:   20,
+		dst:         dst,
+		src:         "127.0.0.1",
+		ttl:         8,
+		protocol:    17,
+		identifier:  20000,
+		maxFragSize: 1500,
 	}, nil
 }
 
@@ -90,14 +92,14 @@ func (ipw *IP_Writer) WriteTo(p []byte) error {
 	header[18] = dstIP[14]
 	header[19] = dstIP[15]
 
-	for i := 0; i < len(p)/556+1; i += 1 {
+	for i := 0; i < len(p)/(ipw.maxFragSize-ipw.headerLen)+1; i += 1 {
 		fmt.Println("Looping fragmenting")
-		if len(p) <= 556*(i+1) {
+		if len(p) <= (ipw.maxFragSize-ipw.headerLen)*(i+1) {
 			header[6] = byte(0)
 		}
-		fmt.Println("off", i*576, byte((i*576)>>8), byte(i*576))
-		header[6] += byte((i * 576) >> 8)
-		header[7] = byte(i * 576) // Fragment offset
+		fmt.Println("off", i*ipw.maxFragSize, byte((i*ipw.maxFragSize)>>8), byte(i*ipw.maxFragSize))
+		header[6] += byte((i * ipw.maxFragSize) >> 8)
+		header[7] = byte(i * ipw.maxFragSize) // Fragment offset
 
 		totalLen := uint16(ipw.headerLen) + uint16(len(p))
 		fmt.Println("Total Len: ", totalLen)
@@ -113,17 +115,17 @@ func (ipw *IP_Writer) WriteTo(p []byte) error {
 		// Payload
 
 		newPacket := make([]byte, 1)
-		if len(p) <= 576*(i+1) {
+		if len(p) <= ipw.maxFragSize*(i+1) {
 			fmt.Println("Full Pack")
-			fmt.Println("len", len(p[556*i:]))
+			fmt.Println("len", len(p[(ipw.maxFragSize-ipw.headerLen)*i:]))
 			header[6] = byte(0)
-			newPacket = append(header, p[556*i:]...)
+			newPacket = append(header, p[(ipw.maxFragSize-ipw.headerLen)*i:]...)
 			fmt.Println("Full Packet:  ", newPacket)
-			fmt.Println("CALCULATED LEN:", i*576+len(p[556*i:]))
+			fmt.Println("CALCULATED LEN:", i*ipw.maxFragSize+len(p[(ipw.maxFragSize-ipw.headerLen)*i:]))
 		} else {
 			fmt.Println("Partial packet")
-			fmt.Println("len", len(p[556*i:556*(i+1)]))
-			newPacket = append(header, p[556*i:556*(i+1)]...)
+			fmt.Println("len", len(p[(ipw.maxFragSize-ipw.headerLen)*i:(ipw.maxFragSize-ipw.headerLen)*(i+1)]))
+			newPacket = append(header, p[(ipw.maxFragSize-ipw.headerLen)*i:(ipw.maxFragSize-ipw.headerLen)*(i+1)]...)
 			fmt.Println("Full Packet:  ", newPacket)
 		}
 
