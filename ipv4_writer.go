@@ -95,7 +95,8 @@ func (ipw *IP_Writer) WriteTo(p []byte) error {
 		if len(p) <= 556*(i+1) {
 			header[6] = byte(0)
 		}
-		// TODO allow frag offset to be full 13 bits instead of current 8 (needs to use packet[6] as well
+		fmt.Println("off", i*576, byte((i*576)>>8), byte(i*576))
+		header[6] += byte((i * 576) >> 8)
 		header[7] = byte(i * 576) // Fragment offset
 
 		totalLen := uint16(ipw.headerLen) + uint16(len(p))
