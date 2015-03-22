@@ -104,7 +104,7 @@ func (ipw *IP_Writer) WriteTo(p []byte) error {
 
 		offset := (i * maxFragSize) / 8
 		header[6] += byte(offset >> 8)
-		header[7] = byte(i * offset) // Fragment offset
+		header[7] = byte(offset) // Fragment offset
 
 		totalLen := uint16(0)
 
