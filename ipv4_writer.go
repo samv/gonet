@@ -109,7 +109,7 @@ func (ipw *IP_Writer) WriteTo(p []byte) error {
 		// Payload
 		newPacket := make([]byte, 1)
 		if len(p) <= maxFragSize*(i+1) {
-			totalLen = uint16(ipw.headerLen) + uint16(len(p[maxPaySize*i:maxPaySize*(i+1)]))
+			totalLen = uint16(ipw.headerLen) + uint16(len(p[maxPaySize*i:]))
 			fmt.Println("Full Pack")
 			fmt.Println("len", len(p[maxPaySize*i:]))
 			header[6] = byte(0)
@@ -129,7 +129,7 @@ func (ipw *IP_Writer) WriteTo(p []byte) error {
 			fmt.Println("Full Packet:  ", newPacket)
 			fmt.Println("CALCULATED LEN:", i*maxFragSize+len(p[maxPaySize*i:]))
 		} else {
-			totalLen = uint16(ipw.headerLen) + uint16(len(p[maxPaySize*i:]))
+			totalLen = uint16(ipw.headerLen) + uint16(len(p[maxPaySize*i:maxPaySize*(i+1)]))
 			fmt.Println("Partial packet")
 			fmt.Println("len", len(p[maxPaySize*i:maxPaySize*(i+1)]))
 
