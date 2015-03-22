@@ -104,30 +104,46 @@ func (ipw *IP_Writer) WriteTo(p []byte) error {
 		header[6] += byte((i * maxFragSize) >> 8)
 		header[7] = byte(i * maxFragSize) // Fragment offset
 
-		totalLen := uint16(ipw.headerLen) + uint16(len(p))
-		fmt.Println("Total Len: ", totalLen)
-		header[2] = (byte)(totalLen >> 8) // Total Len
-		header[3] = (byte)(totalLen)
+		totalLen := uint16(0)
 
-		// IPv4 header test (before checksum)
-		fmt.Println("Packet before checksum: ", header)
-		// Checksum
-		checksum := calcChecksum(header[:20], true)
-		header[10] = byte(checksum >> 8)
-		header[11] = byte(checksum)
 		// Payload
-
 		newPacket := make([]byte, 1)
 		if len(p) <= maxFragSize*(i+1) {
+			totalLen = uint16(ipw.headerLen) + uint16(len(p[maxPaySize*i:maxPaySize*(i+1)]))
 			fmt.Println("Full Pack")
 			fmt.Println("len", len(p[maxPaySize*i:]))
 			header[6] = byte(0)
+
+			fmt.Println("Total Len: ", totalLen)
+			header[2] = (byte)(totalLen >> 8) // Total Len
+			header[3] = (byte)(totalLen)
+
+			// IPv4 header test (before checksum)
+			fmt.Println("Packet before checksum: ", header)
+			// Checksum
+			checksum := calcChecksum(header[:20], true)
+			header[10] = byte(checksum >> 8)
+			header[11] = byte(checksum)
+
 			newPacket = append(header, p[maxPaySize*i:]...)
 			fmt.Println("Full Packet:  ", newPacket)
 			fmt.Println("CALCULATED LEN:", i*maxFragSize+len(p[maxPaySize*i:]))
 		} else {
+			totalLen = uint16(ipw.headerLen) + uint16(len(p[maxPaySize*i:]))
 			fmt.Println("Partial packet")
 			fmt.Println("len", len(p[maxPaySize*i:maxPaySize*(i+1)]))
+
+			fmt.Println("Total Len: ", totalLen)
+			header[2] = (byte)(totalLen >> 8) // Total Len
+			header[3] = (byte)(totalLen)
+
+			// IPv4 header test (before checksum)
+			fmt.Println("Packet before checksum: ", header)
+			// Checksum
+			checksum := calcChecksum(header[:20], true)
+			header[10] = byte(checksum >> 8)
+			header[11] = byte(checksum)
+
 			newPacket = append(header, p[maxPaySize*i:maxPaySize*(i+1)]...)
 			fmt.Println("Full Packet:  ", newPacket)
 		}
