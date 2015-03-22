@@ -2,7 +2,7 @@ package main
 
 import (
 	"fmt"
-	"time"
+	//"time"
 )
 
 func main() {
@@ -17,12 +17,12 @@ func main() {
 		fragmentTest = append(fragmentTest, fragmentTest...)
 	}
 	w.write(fragmentTest)
-	for {
+	/*for {
 		err := w.write([]byte{'h', 'e', 'l', 'l', 'o'})
 		if err != nil {
 			fmt.Println(err)
 		}
 
 		time.Sleep(500 * time.Millisecond)
-	}
+	}*/
 }
