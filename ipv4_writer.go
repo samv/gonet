@@ -101,8 +101,10 @@ func (ipw *IP_Writer) WriteTo(p []byte) error {
 			header[6] = byte(0)
 		}
 		fmt.Println("off", i*maxFragSize, byte((i*maxFragSize)>>8), byte(i*maxFragSize))
-		header[6] += byte((i * maxFragSize) >> 8)
-		header[7] = byte(i * maxFragSize) // Fragment offset
+
+		offset := (i * maxFragSize) / 8
+		header[6] += byte(offset >> 8)
+		header[7] = byte(i * offset) // Fragment offset
 
 		totalLen := uint16(0)
 
