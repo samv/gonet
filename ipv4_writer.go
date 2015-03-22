@@ -92,14 +92,17 @@ func (ipw *IP_Writer) WriteTo(p []byte) error {
 	header[18] = dstIP[14]
 	header[19] = dstIP[15]
 
-	for i := 0; i < len(p)/(ipw.maxFragSize-ipw.headerLen)+1; i += 1 {
+	maxFragSize := int(ipw.maxFragSize)
+	maxPaySize := maxFragSize - int(ipw.headerLen)
+
+	for i := 0; i < len(p)/maxPaySize+1; i += 1 {
 		fmt.Println("Looping fragmenting")
-		if len(p) <= (ipw.maxFragSize-ipw.headerLen)*(i+1) {
+		if len(p) <= maxPaySize*(i+1) {
 			header[6] = byte(0)
 		}
-		fmt.Println("off", i*ipw.maxFragSize, byte((i*ipw.maxFragSize)>>8), byte(i*ipw.maxFragSize))
-		header[6] += byte((i * ipw.maxFragSize) >> 8)
-		header[7] = byte(i * ipw.maxFragSize) // Fragment offset
+		fmt.Println("off", i*maxFragSize, byte((i*maxFragSize)>>8), byte(i*maxFragSize))
+		header[6] += byte((i * maxFragSize) >> 8)
+		header[7] = byte(i * maxFragSize) // Fragment offset
 
 		totalLen := uint16(ipw.headerLen) + uint16(len(p))
 		fmt.Println("Total Len: ", totalLen)
@@ -115,17 +118,17 @@ func (ipw *IP_Writer) WriteTo(p []byte) error {
 		// Payload
 
 		newPacket := make([]byte, 1)
-		if len(p) <= ipw.maxFragSize*(i+1) {
+		if len(p) <= maxFragSize*(i+1) {
 			fmt.Println("Full Pack")
-			fmt.Println("len", len(p[(ipw.maxFragSize-ipw.headerLen)*i:]))
+			fmt.Println("len", len(p[maxPaySize*i:]))
 			header[6] = byte(0)
-			newPacket = append(header, p[(ipw.maxFragSize-ipw.headerLen)*i:]...)
+			newPacket = append(header, p[maxPaySize*i:]...)
 			fmt.Println("Full Packet:  ", newPacket)
-			fmt.Println("CALCULATED LEN:", i*ipw.maxFragSize+len(p[(ipw.maxFragSize-ipw.headerLen)*i:]))
+			fmt.Println("CALCULATED LEN:", i*maxFragSize+len(p[maxPaySize*i:]))
 		} else {
 			fmt.Println("Partial packet")
-			fmt.Println("len", len(p[(ipw.maxFragSize-ipw.headerLen)*i:(ipw.maxFragSize-ipw.headerLen)*(i+1)]))
-			newPacket = append(header, p[(ipw.maxFragSize-ipw.headerLen)*i:(ipw.maxFragSize-ipw.headerLen)*(i+1)]...)
+			fmt.Println("len", len(p[maxPaySize*i:maxPaySize*(i+1)]))
+			newPacket = append(header, p[maxPaySize*i:maxPaySize*(i+1)]...)
 			fmt.Println("Full Packet:  ", newPacket)
 		}
 
