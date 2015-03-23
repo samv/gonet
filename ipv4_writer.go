@@ -70,7 +70,6 @@ func (ipw *IP_Writer) WriteTo(p []byte) error {
 	header[4] = byte(id >> 8) // Identification
 	header[5] = byte(id)
 	ipw.identifier++
-	header[6] = byte(1 << 5)         // Flags: May fragment, more fragments
 	header[8] = (byte)(ipw.ttl)      // Time to Live
 	header[9] = (byte)(ipw.protocol) // Protocol
 
@@ -99,11 +98,15 @@ func (ipw *IP_Writer) WriteTo(p []byte) error {
 		fmt.Println("Looping fragmenting")
 		if len(p) <= maxPaySize*(i+1) {
 			header[6] = byte(0)
+		} else {
+			header[6] = byte(1 << 5) // Flags: May fragment, more fragments
 		}
 		fmt.Println("off", i*maxFragSize, byte((i*maxFragSize)>>8), byte(i*maxFragSize))
 
-		offset := (i * maxFragSize) / 8
+		offset := (i * maxPaySize) / 8
+		fmt.Println("Header 6 before:", header[6])
 		header[6] += byte(offset >> 8)
+		fmt.Println("Header 6 after:", header[6])
 		header[7] = byte(offset) // Fragment offset
 
 		totalLen := uint16(0)
@@ -114,7 +117,7 @@ func (ipw *IP_Writer) WriteTo(p []byte) error {
 			totalLen = uint16(ipw.headerLen) + uint16(len(p[maxPaySize*i:]))
 			fmt.Println("Full Pack")
 			fmt.Println("len", len(p[maxPaySize*i:]))
-			header[6] = byte(0)
+			//header[6] = byte(0)
 
 			fmt.Println("Total Len: ", totalLen)
 			header[2] = (byte)(totalLen >> 8) // Total Len
@@ -155,6 +158,7 @@ func (ipw *IP_Writer) WriteTo(p []byte) error {
 			return err
 		}
 	}
+	fmt.Println("PAY LEN", len(p))
 
 	// TODO: Allow IP fragmentation (use 1500 as MTU)
 	return nil
