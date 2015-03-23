@@ -112,7 +112,11 @@ func (ipr *IP_Reader) ReadFrom() (ip string, b, payload []byte, e error) {
 								fullPacketHdr[7] = 0
 
 								// send the packet back into processing
-								go func() { finished <- append(fullPacketHdr, payload...); fmt.Println("FINISHED") }()
+								go func() {
+									finished <- append(fullPacketHdr, payload...)
+									fmt.Println("FINISHED")
+									fmt.Println(append(fullPacketHdr, payload...))
+								}()
 								fmt.Println("Just wrote back in")
 								return
 							}
