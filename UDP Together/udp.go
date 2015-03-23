@@ -24,8 +24,6 @@ func NewUDP_Manager(ip string) (*UDP_manager, error) {
 	//    return nil, err
 	//}
 
-	// TODO: Separate the server UDP and client UDP connections
-
 	ipw, err := NewIP_Writer(ip, 17) // 17 for UDP
 	if err != nil {
 		return nil, err

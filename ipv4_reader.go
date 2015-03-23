@@ -44,7 +44,7 @@ func (ipr *IP_Reader) ReadFrom() (ip string, b, payload []byte, e error) {
 	ip = net.IPv4(b[12], b[13], b[14], b[15]).String()
 	hdr, p := slicePacket(b)
 
-	if hdr[6]>>5 == 0 { // if not fragment
+	if (hdr[6]>>5) & 0x01 == 0 { // if not fragment
 		// verify checksum
 		if calcChecksum(hdr, false) != 0 {
 			//fmt.Println("Header checksum verification failed. Packet dropped.")
@@ -74,7 +74,7 @@ func (ipr *IP_Reader) ReadFrom() (ip string, b, payload []byte, e error) {
 						delete(extraFrags, uint64(len(payload)))
 						payload = append(payload, storedFrag...)
 					}
-					if hdr[6]>>5 == 1 {
+					if (hdr[6]>>5) & 0x1 == 1 {
 						return ip, b, payload, nil
 					}
 				} else {
