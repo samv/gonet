@@ -96,7 +96,7 @@ func (nr *Network_Reader) readAll() {
 	}
 }
 
-func (nr *Network_Reader) bind(ip string, protocol uint8) (<-chan []byte, error) {
+func (nr *Network_Reader) bind(ip string, protocol uint8) (chan []byte, error) {
 	// create the protocol buffer if it doesn't exist already
 	_, protoOk := nr.buffers[protocol]
 	if !protoOk {
