@@ -41,7 +41,9 @@ func slicePacket(b []byte) (hrd, payload []byte) {
 const FRAGMENT_TIMEOUT = 15
 
 func (ipr *IP_Reader) ReadFrom() (ip string, b, payload []byte, e error) {
+	fmt.Println("STARTING READ")
 	b = <-ipr.incomingPackets
+	fmt.Println("RAW READ COMPLETED")
 	//fmt.Println("Read Length: ", len(b))
 	//fmt.Println("Full Read Data: ", b)
 
@@ -49,6 +51,7 @@ func (ipr *IP_Reader) ReadFrom() (ip string, b, payload []byte, e error) {
 	hdr, p := slicePacket(b)
 
 	packetOffset := uint16(hdr[6]&0x1f)<<8 + uint16(hdr[7])
+	fmt.Println("PACK OFF", packetOffset, "HEADER FLAGS", (hdr[6] >> 5))
 	if ((hdr[6]>>5)&0x01 == 0) && (packetOffset == 0) { // if not fragment
 		// verify checksum
 		if calcChecksum(hdr, false) != 0 {
@@ -60,7 +63,7 @@ func (ipr *IP_Reader) ReadFrom() (ip string, b, payload []byte, e error) {
 
 		//fmt.Println("Payload Length: ", len(p))
 		//fmt.Println("Full payload: ", p)
-
+		fmt.Println("PACKET COMPLETELY READ")
 		return ip, b, p, nil
 	} else {
 		bufID := string([]byte{hdr[12], hdr[13], hdr[14], hdr[15], // the source IP
@@ -109,7 +112,7 @@ func (ipr *IP_Reader) ReadFrom() (ip string, b, payload []byte, e error) {
 								fullPacketHdr[7] = 0
 
 								// send the packet back into processing
-								go func() { finished <- append(fullPacketHdr, payload...) }()
+								go func() { finished <- append(fullPacketHdr, payload...); fmt.Println("FINISHED") }()
 								fmt.Println("Just wrote back in")
 								return
 							}
