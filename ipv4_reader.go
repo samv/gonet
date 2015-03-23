@@ -2,9 +2,9 @@ package main
 
 import (
 	"errors"
+	"fmt"
 	"net"
 	"time"
-	//"fmt"
 	//    "syscall"
 	//"golang.org/x/net/ipv4"
 )
@@ -59,15 +59,26 @@ func (ipr *IP_Reader) ReadFrom() (ip string, b, payload []byte, e error) {
 		return ip, b, p, nil
 	} else {
 		payload := p
-		t := time.NOW()
+		extraFrags := make(map[uint64]([]byte))
+		t := time.Now()
 		for time.Since(t).Seconds() < 0.25 {
 			select {
-			case frag = <-ipr.incomingPackets:
-				hdr, p := slicePacket(b)
-				append(payload, p...)
-				//TODO Make it work for any order - right now it must receive packets in order
-				if hdr[6]>>5 == 5 {
-					return ip, b, payload, nil
+			case frag := <-ipr.incomingPackets:
+				hdr, p := slicePacket(frag)
+				fmt.Println("RECEIVED FRAG")
+				fmt.Println("Offset:", 8*(uint64(hdr[6]&0x1f)<<8+uint64(hdr[7])))
+				fmt.Println(len(payload))
+				if (int(hdr[6]&0x1f)<<8+int(hdr[7]))*8 == len(payload) {
+					payload = append(payload, p...)
+					for storedFrag, found := extraFrags[uint64(len(payload))]; found; {
+						delete(extraFrags, uint64(len(payload)))
+						payload = append(payload, storedFrag...)
+					}
+					if hdr[6]>>5 == 1 {
+						return ip, b, payload, nil
+					}
+				} else {
+					extraFrags[8*(uint64(p[6])<<3>>11+uint64(p[7]))] = p
 				}
 			}
 		}

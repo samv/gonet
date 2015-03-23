@@ -15,13 +15,13 @@ func main() {
 		return
 	}
 
-	for {
-		p, err := r.read(MAX_UDP_PACKET_LEN)
-		if err != nil {
-			fmt.Println(err)
-			continue
-		}
-
-		fmt.Println("Payload: ", p)
+	//for {
+	p, err := r.read(MAX_UDP_PACKET_LEN)
+	if err != nil {
+		fmt.Println(err)
+		//continue
 	}
+
+	fmt.Println("Payload: ", p)
+	//}
 }
