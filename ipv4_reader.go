@@ -14,7 +14,7 @@ type IP_Reader struct {
 	nr              *Network_Reader
 	protocol        uint8
 	ip              string
-    fragBuf  map[string](chan []byte)
+	fragBuf         map[string](chan []byte)
 }
 
 func (nr *Network_Reader) NewIP_Reader(ip string, protocol uint8) (*IP_Reader, error) {
@@ -28,7 +28,7 @@ func (nr *Network_Reader) NewIP_Reader(ip string, protocol uint8) (*IP_Reader, e
 		nr:              nr,
 		protocol:        protocol,
 		ip:              ip,
-        fragBuf: make(map[string](chan []byte)),
+		fragBuf:         make(map[string](chan []byte)),
 	}, nil
 }
 
@@ -48,8 +48,8 @@ func (ipr *IP_Reader) ReadFrom() (ip string, b, payload []byte, e error) {
 	ip = net.IPv4(b[12], b[13], b[14], b[15]).String()
 	hdr, p := slicePacket(b)
 
-    packetOffset := uint16(hdr[6] & 0x1f) << 8 + uint16(hdr[7])
-	if ((hdr[6]>>5) & 0x01 == 0) && (packetOffset == 0) { // if not fragment
+	packetOffset := uint16(hdr[6]&0x1f)<<8 + uint16(hdr[7])
+	if ((hdr[6]>>5)&0x01 == 0) && (packetOffset == 0) { // if not fragment
 		// verify checksum
 		if calcChecksum(hdr, false) != 0 {
 			//fmt.Println("Header checksum verification failed. Packet dropped.")
@@ -63,76 +63,77 @@ func (ipr *IP_Reader) ReadFrom() (ip string, b, payload []byte, e error) {
 
 		return ip, b, p, nil
 	} else {
-        bufID := string([]byte{hdr[12], hdr[13], hdr[14], hdr[15], // the source IP
-            hdr[16], hdr[17], hdr[18], hdr[19], // the destination IP
-            hdr[9], // protocol
-            hdr[4], hdr[5], // identification
-        })
+		bufID := string([]byte{hdr[12], hdr[13], hdr[14], hdr[15], // the source IP
+			hdr[16], hdr[17], hdr[18], hdr[19], // the destination IP
+			hdr[9],         // protocol
+			hdr[4], hdr[5], // identification
+		})
 
-        if c, ok := ipr.fragBuf[bufID]; ok {
-            // the fragment has already started
-            go func() { c <- b }()
-        } else {
-            // create the fragment buffer
-            ipr.fragBuf[bufID] = make(chan []byte)
+		if c, ok := ipr.fragBuf[bufID]; ok {
+			// the fragment has already started
+			go func() { c <- b }()
+		} else {
+			// create the fragment buffer
+			ipr.fragBuf[bufID] = make(chan []byte)
 
-            // create the packet assembler in a goroutine to allow the program to continue
-            go func(in <-chan []byte, finished chan <- []byte) {
-                payload := <-in
-                extraFrags := make(map[uint64]([]byte))
-                goalLen := int64(-1)
-                t := time.Now()
-                for time.Since(t).Seconds() <= FRAGMENT_TIMEOUT {
-                    select {
-                    case frag := <-in:
-                        hdr, p := slicePacket(frag)
-                        offset := 8 * (uint64(hdr[6] & 0x1f)<<8 + uint64(hdr[7]))
-                        if (hdr[6] >> 5) & 0x01 == 0 {
-                            totalLen := uint64(hdr[2] << 8 + hdr[3])
-                            goalLen = int64(offset + totalLen)
-                        }
-                        fmt.Println("RECEIVED FRAG")
-                        fmt.Println("Offset:", offset)
-                        fmt.Println(len(payload))
-                        if offset == uint64(len(payload)) {
-                            payload = append(payload, p...)
-                            for storedFrag, found := extraFrags[uint64(len(payload))]; found; {
-                                delete(extraFrags, uint64(len(payload)))
-                                payload = append(payload, storedFrag...)
-                            }
-                            if int64(len(payload)) == goalLen {
-                                fullPacketHdr := hdr
-                                totalLen := uint16(fullPacketHdr[0] & 0x0F) * 4 + uint16(len(payload))
-                                fullPacketHdr[2] = byte(totalLen >> 8)
-                                fullPacketHdr[3] = byte(totalLen)
-                                fullPacketHdr[6] = 0
-                                fullPacketHdr[7] = 0
+			// create the packet assembler in a goroutine to allow the program to continue
+			go func(in <-chan []byte, finished chan<- []byte) {
+				payload := <-in
+				extraFrags := make(map[uint64]([]byte))
+				//goalLen := int64(-1)
+				t := time.Now()
+				for time.Since(t).Seconds() <= FRAGMENT_TIMEOUT {
+					select {
+					case frag := <-in:
+						hdr, p := slicePacket(frag)
+						offset := 8 * (uint64(hdr[6]&0x1f)<<8 + uint64(hdr[7]))
+						if (hdr[6]>>5)&0x01 == 0 {
+							//totalLen := uint64(hdr[2]<<8 + hdr[3])
+							//goalLen = int64(offset + totalLen)
+						}
+						fmt.Println("RECEIVED FRAG")
+						fmt.Println("Offset:", offset)
+						fmt.Println(len(payload))
+						if offset == uint64(len(payload)) {
+							payload = append(payload, p...)
+							for storedFrag, found := extraFrags[uint64(len(payload))]; found; {
+								delete(extraFrags, uint64(len(payload)))
+								payload = append(payload, storedFrag...)
+							}
+							if (hdr[6]>>5)&0x01 == 0 {
+								fullPacketHdr := hdr
+								totalLen := uint16(fullPacketHdr[0]&0x0F)*4 + uint16(len(payload))
+								fullPacketHdr[2] = byte(totalLen >> 8)
+								fullPacketHdr[3] = byte(totalLen)
+								fullPacketHdr[6] = 0
+								fullPacketHdr[7] = 0
 
-                                // send the packet back into processing
-                                go func() { finished <- append(fullPacketHdr, payload...) }()
-                                fmt.Println("Just wrote back in")
-                            }
-                        } else {
-                            extraFrags[8*(uint64(p[6])<<3>>11+uint64(p[7]))] = p
-                        }
-                    default:
-                        // make the timeout actually have a chance of being hit
-                    }
-                }
+								// send the packet back into processing
+								go func() { finished <- append(fullPacketHdr, payload...) }()
+								fmt.Println("Just wrote back in")
+								return
+							}
+						} else {
+							extraFrags[8*(uint64(p[6])<<3>>11+uint64(p[7]))] = p
+						}
+					default:
+						// make the timeout actually have a chance of being hit
+					}
+				}
 
-                // drop the packet upon timeout
-                fmt.Println(errors.New("Fragments took too long, packet dropped"))
-                return
-            }(ipr.fragBuf[bufID], ipr.incomingPackets)
+				// drop the packet upon timeout
+				fmt.Println(errors.New("Fragments took too long, packet dropped"))
+				return
+			}(ipr.fragBuf[bufID], ipr.incomingPackets)
 
-            // send in the first fragment
-            ipr.fragBuf[bufID] <- p
+			// send in the first fragment
+			ipr.fragBuf[bufID] <- p
 
-            // TODO: Remove the fragment buffer after some time
-        }
+			// TODO: Remove the fragment buffer after some time
+		}
 
-        // after dealing with the fragment, try reading again
-        return ipr.ReadFrom()
+		// after dealing with the fragment, try reading again
+		return ipr.ReadFrom()
 	}
 }
 
