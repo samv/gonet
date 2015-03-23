@@ -80,22 +80,27 @@ func (ipr *IP_Reader) ReadFrom() (ip string, b, payload []byte, e error) {
             go func(in <-chan []byte, finished chan <- []byte) {
                 payload := <-in
                 extraFrags := make(map[uint64]([]byte))
+                goalLen := int64(-1)
                 t := time.Now()
                 for time.Since(t).Seconds() <= FRAGMENT_TIMEOUT {
                     select {
-                    case frag := <-in: // TODO: make this read non-blocking, as the timeout may never be hit
+                    case frag := <-in:
                         hdr, p := slicePacket(frag)
+                        offset := 8 * (uint64(hdr[6] & 0x1f)<<8 + uint64(hdr[7]))
+                        if (hdr[6] >> 5) & 0x01 == 0 {
+                            totalLen := uint64(hdr[2] << 8 + hdr[3])
+                            goalLen = int64(offset + totalLen)
+                        }
                         fmt.Println("RECEIVED FRAG")
-                        fmt.Println("Offset:", 8*(uint64(hdr[6]&0x1f)<<8+uint64(hdr[7])))
+                        fmt.Println("Offset:", offset)
                         fmt.Println(len(payload))
-                        if (int(hdr[6]&0x1f)<<8+int(hdr[7]))*8 == len(payload) {
+                        if offset == uint64(len(payload)) {
                             payload = append(payload, p...)
                             for storedFrag, found := extraFrags[uint64(len(payload))]; found; {
                                 delete(extraFrags, uint64(len(payload)))
                                 payload = append(payload, storedFrag...)
                             }
-                            if (hdr[6]>>5) & 0x1 == 1 {
-                                // TODO: is this cutting off after the second fragment?
+                            if int64(len(payload)) == goalLen {
                                 fullPacketHdr := hdr
                                 totalLen := uint16(fullPacketHdr[0] & 0x0F) * 4 + uint16(len(payload))
                                 fullPacketHdr[2] = byte(totalLen >> 8)
@@ -104,7 +109,8 @@ func (ipr *IP_Reader) ReadFrom() (ip string, b, payload []byte, e error) {
                                 fullPacketHdr[7] = 0
 
                                 // send the packet back into processing
-                                finished <- append(fullPacketHdr, payload...)
+                                go func() { finished <- append(fullPacketHdr, payload...) }()
+                                fmt.Println("Just wrote back in")
                             }
                         } else {
                             extraFrags[8*(uint64(p[6])<<3>>11+uint64(p[7]))] = p
