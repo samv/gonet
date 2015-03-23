@@ -38,6 +38,8 @@ func slicePacket(b []byte) (hrd, payload []byte) {
 	return b[:hdrLen], b[hdrLen:]
 }
 
+const FRAGMENT_TIMEOUT = 0.25
+
 func (ipr *IP_Reader) ReadFrom() (ip string, b, payload []byte, e error) {
 	b = <-ipr.incomingPackets
 	//fmt.Println("Read Length: ", len(b))
@@ -79,7 +81,7 @@ func (ipr *IP_Reader) ReadFrom() (ip string, b, payload []byte, e error) {
                 payload := <-in
                 extraFrags := make(map[uint64]([]byte))
                 t := time.Now()
-                for time.Since(t).Seconds() < 0.25 {
+                for time.Since(t).Seconds() <= FRAGMENT_TIMEOUT {
                     select {
                     case frag := <-in: // TODO: make this read non-blocking, as the timeout may never be hit
                         hdr, p := slicePacket(frag)
@@ -87,7 +89,6 @@ func (ipr *IP_Reader) ReadFrom() (ip string, b, payload []byte, e error) {
                         fmt.Println("Offset:", 8*(uint64(hdr[6]&0x1f)<<8+uint64(hdr[7])))
                         fmt.Println(len(payload))
                         if (int(hdr[6]&0x1f)<<8+int(hdr[7]))*8 == len(payload) {
-                            // TODO: allow the packets to come in any order
                             payload = append(payload, p...)
                             for storedFrag, found := extraFrags[uint64(len(payload))]; found; {
                                 delete(extraFrags, uint64(len(payload)))
@@ -108,6 +109,8 @@ func (ipr *IP_Reader) ReadFrom() (ip string, b, payload []byte, e error) {
                         } else {
                             extraFrags[8*(uint64(p[6])<<3>>11+uint64(p[7]))] = p
                         }
+                    default:
+                        // make the timeout actually have a chance of being hit
                     }
                 }
 
