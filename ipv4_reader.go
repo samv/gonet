@@ -3,6 +3,7 @@ package main
 import (
 	"errors"
 	"net"
+	"time"
 	//"fmt"
 	//    "syscall"
 	//"golang.org/x/net/ipv4"
@@ -40,22 +41,38 @@ func (ipr *IP_Reader) ReadFrom() (ip string, b, payload []byte, e error) {
 	//fmt.Println("Read Length: ", len(b))
 	//fmt.Println("Full Read Data: ", b)
 
-    ip = net.IPv4(b[12], b[13], b[14], b[15]).String()
-
+	ip = net.IPv4(b[12], b[13], b[14], b[15]).String()
 	hdr, p := slicePacket(b)
 
-	// verify checksum
-	if calcChecksum(hdr, false) != 0 {
-		//fmt.Println("Header checksum verification failed. Packet dropped.")
-		//fmt.Println("Wrong header: ", hdr)
-		//fmt.Println("Payload (dropped): ", p)
-		return "", nil, nil, errors.New("Header checksum incorrect, packet dropped")
+	if hdr[6]>>5 == 0 { // if not fragment
+		// verify checksum
+		if calcChecksum(hdr, false) != 0 {
+			//fmt.Println("Header checksum verification failed. Packet dropped.")
+			//fmt.Println("Wrong header: ", hdr)
+			//fmt.Println("Payload (dropped): ", p)
+			return "", nil, nil, errors.New("Header checksum incorrect, packet dropped")
+		}
+
+		//fmt.Println("Payload Length: ", len(p))
+		//fmt.Println("Full payload: ", p)
+
+		return ip, b, p, nil
+	} else {
+		payload := p
+		t := time.NOW()
+		for time.Since(t).Seconds() < 0.25 {
+			select {
+			case frag = <-ipr.incomingPackets:
+				hdr, p := slicePacket(b)
+				append(payload, p...)
+				//TODO Make it work for any order - right now it must receive packets in order
+				if hdr[6]>>5 == 5 {
+					return ip, b, payload, nil
+				}
+			}
+		}
+		return "", nil, nil, errors.New("Fragments took too long, packet dropped")
 	}
-
-	//fmt.Println("Payload Length: ", len(p))
-	//fmt.Println("Full payload: ", p)
-
-	return ip, b, p, nil
 }
 
 func (ipr *IP_Reader) Close() error {
