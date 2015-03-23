@@ -38,7 +38,7 @@ func slicePacket(b []byte) (hrd, payload []byte) {
 	return b[:hdrLen], b[hdrLen:]
 }
 
-const FRAGMENT_TIMEOUT = 0.25
+const FRAGMENT_TIMEOUT = 15
 
 func (ipr *IP_Reader) ReadFrom() (ip string, b, payload []byte, e error) {
 	b = <-ipr.incomingPackets
@@ -116,6 +116,7 @@ func (ipr *IP_Reader) ReadFrom() (ip string, b, payload []byte, e error) {
 
                 // drop the packet upon timeout
                 fmt.Println(errors.New("Fragments took too long, packet dropped"))
+                return
             }(ipr.fragBuf[bufID], ipr.incomingPackets)
 
             // send in the first fragment
