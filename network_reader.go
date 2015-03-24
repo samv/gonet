@@ -27,10 +27,10 @@ type Network_Reader struct {
 const MAX_IP_PACKET_LEN = 65535
 
 const (
-    SOCK_DGRAM = 2
-    SOCK_RAW = 3
-    AF_PACKET = 17
-    HTONS_ETH_P_ALL = 768
+	SOCK_DGRAM      = 2
+	SOCK_RAW        = 3
+	AF_PACKET       = 17
+	HTONS_ETH_P_ALL = 768
 )
 
 func NewNetwork_Reader() (*Network_Reader, error) {
@@ -65,10 +65,10 @@ func (nr *Network_Reader) readAll() {
 		}
 		buf = buf[:ln] // remove extra bytes off the end
 
-        buf = buf[14:] // remove ethernet header
-        //fmt.Println("After removing ethernet header", buf)
+		buf = buf[14:] // remove ethernet header
+		//fmt.Println("After removing ethernet header", buf)
 
-        if len(buf) <= 20 {
+		if len(buf) <= 20 {
 			continue
 		}
 
@@ -77,12 +77,12 @@ func (nr *Network_Reader) readAll() {
 		protocol := uint8(buf[9])
 		ip := net.IPv4(buf[12], buf[13], buf[14], buf[15]).String()
 
-        //fmt.Println(ln)
+		//fmt.Println(ln)
 		//fmt.Println(protocol, ip)
 		/*if ln == 47 {
 			fmt.Println(buf)
 		}*/
-        //fmt.Println(protocol, ip)
+		//fmt.Println(protocol, ip)
 		if protoBuf, foundProto := nr.buffers[protocol]; foundProto {
 			//fmt.Println("Dealing with packet")
 			if c, foundIP := protoBuf[ip]; foundIP {

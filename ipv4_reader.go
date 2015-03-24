@@ -110,12 +110,14 @@ func (ipr *IP_Reader) ReadFrom() (ip string, b, payload []byte, e error) {
 								fullPacketHdr[3] = byte(totalLen)
 								fullPacketHdr[6] = 0
 								fullPacketHdr[7] = 0
+								check := calcChecksum(fullPacketHdr, false)
+								fullPacketHdr[10] = byte(check >> 8)
+								fullPacketHdr[11] = byte(check)
 
 								// send the packet back into processing
 								go func() {
 									finished <- append(fullPacketHdr, payload...)
 									fmt.Println("FINISHED")
-									fmt.Println(append(fullPacketHdr, payload...))
 								}()
 								fmt.Println("Just wrote back in")
 								return
