@@ -41,9 +41,9 @@ func slicePacket(b []byte) (hrd, payload []byte) {
 const FRAGMENT_TIMEOUT = 15
 
 func (ipr *IP_Reader) ReadFrom() (ip string, b, payload []byte, e error) {
-	fmt.Println("STARTING READ")
+	//fmt.Println("STARTING READ")
 	b = <-ipr.incomingPackets
-	fmt.Println("RAW READ COMPLETED")
+	//fmt.Println("RAW READ COMPLETED")
 	fmt.Println("Read Length: ", len(b))
 	//fmt.Println("Full Read Data: ", b)
 
@@ -58,10 +58,10 @@ func (ipr *IP_Reader) ReadFrom() (ip string, b, payload []byte, e error) {
 	}
 
 	packetOffset := uint16(hdr[6]&0x1f)<<8 + uint16(hdr[7])
-	fmt.Println("PACK OFF", packetOffset, "HEADER FLAGS", (hdr[6] >> 5))
+	//fmt.Println("PACK OFF", packetOffset, "HEADER FLAGS", (hdr[6] >> 5))
 	if ((hdr[6]>>5)&0x01 == 0) && (packetOffset == 0) { // if not fragment
 		// verify checksum
-		if calcChecksum(hdr, false) != 0 {
+		if verifyChecksum(hdr) != 0 {
 			//fmt.Println("Header checksum verification failed. Packet dropped.")
 			//fmt.Println("Wrong header: ", hdr)
 			//fmt.Println("Payload (dropped): ", p)
@@ -70,7 +70,7 @@ func (ipr *IP_Reader) ReadFrom() (ip string, b, payload []byte, e error) {
 
 		//fmt.Println("Payload Length: ", len(p))
 		//fmt.Println("Full payload: ", p)
-		fmt.Println("PACKET COMPLETELY READ")
+		//fmt.Println("PACKET COMPLETELY READ")
 		return ip, b, p, nil
 	} else {
 		bufID := string([]byte{hdr[12], hdr[13], hdr[14], hdr[15], // the source IP
@@ -101,9 +101,9 @@ func (ipr *IP_Reader) ReadFrom() (ip string, b, payload []byte, e error) {
 							//totalLen := uint64(hdr[2]<<8 + hdr[3])
 							//goalLen = int64(offset + totalLen)
 						}
-						fmt.Println("RECEIVED FRAG")
-						fmt.Println("Offset:", offset)
-						fmt.Println(len(payload))
+						//fmt.Println("RECEIVED FRAG")
+						//fmt.Println("Offset:", offset)
+						//fmt.Println(len(payload))
 						if offset == uint64(len(payload)) {
 							payload = append(payload, p...)
 							for storedFrag, found := extraFrags[uint64(len(payload))]; found; {
@@ -117,16 +117,16 @@ func (ipr *IP_Reader) ReadFrom() (ip string, b, payload []byte, e error) {
 								fullPacketHdr[3] = byte(totalLen)
 								fullPacketHdr[6] = 0
 								fullPacketHdr[7] = 0
-								fullPacketHdr[10] = 0
-								fullPacketHdr[11] = 0
-								check := calcChecksum(fullPacketHdr[:20], false)
+								//fullPacketHdr[10] = 0
+								//fullPacketHdr[11] = 0
+								check := calculateChecksum(fullPacketHdr[:20])
 								fullPacketHdr[10] = byte(check >> 8)
 								fullPacketHdr[11] = byte(check)
 
 								// send the packet back into processing
 								go func() {
 									finished <- append(fullPacketHdr, payload...)
-									fmt.Println("FINISHED")
+									//fmt.Println("FINISHED")
 								}()
 								fmt.Println("Just wrote back in")
 								return
@@ -151,7 +151,7 @@ func (ipr *IP_Reader) ReadFrom() (ip string, b, payload []byte, e error) {
 		}
 
 		// after dealing with the fragment, try reading again
-		fmt.Println("RECURSE")
+		//fmt.Println("RECURSE")
 		return ipr.ReadFrom()
 	}
 }
