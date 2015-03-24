@@ -19,8 +19,14 @@ type IP_Writer struct {
 	maxFragSize uint16
 }
 
+const (
+	SOCK_RAW  = 3
+	AF_PACKET = 17
+	ETH_P_ALL = 768
+)
+
 func NewIP_Writer(dst string, protocol uint8) (*IP_Writer, error) {
-	fd, err := syscall.Socket(syscall.AF_INET, syscall.SOCK_RAW, syscall.IPPROTO_RAW)
+	fd, err := syscall.Socket(AF_PACKET, SOCK_RAW, ETH_P_ALL)
 	if err != nil {
 		fmt.Println("Write's socket failed")
 		return nil, err
@@ -33,14 +39,21 @@ func NewIP_Writer(dst string, protocol uint8) (*IP_Writer, error) {
 	}
 	fmt.Println("Full Address: ", dstIPAddr)
 
-	addr := &syscall.SockaddrInet4{
-		Port: 20000,
-		Addr: [4]byte{
-			dstIPAddr.IP[12],
-			dstIPAddr.IP[13],
-			dstIPAddr.IP[14],
-			dstIPAddr.IP[15],
+	addr := &syscall.SockaddrLinklayer{
+		Protocol: 0x0800, //IP
+		Addr: [8]byte{
+			0x08,
+			0x00,
+			0x27,
+			0x9e,
+			0x29,
+			0x63,
 		},
+	}
+
+	err = syscall.Sendto(fd, []byte{0x08, 0x00, 0x27, 0x9e, 0x29, 0x63, 0x08, 0x00, 0x27, 0x9e, 0x29, 0x63, 0x08, 0x00}, 0, addr) //Random bytes
+	if err != nil {
+		fmt.Println(err)
 	}
 
 	err = syscall.Connect(fd, addr)
