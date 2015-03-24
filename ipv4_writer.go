@@ -126,7 +126,7 @@ func (ipw *IP_Writer) WriteTo(p []byte) error {
 			// IPv4 header test (before checksum)
 			fmt.Println("Packet before checksum: ", header)
 			// Checksum
-			checksum := calcChecksum(header[:20], true)
+			checksum := calculateChecksum(header[:20])
 			header[10] = byte(checksum >> 8)
 			header[11] = byte(checksum)
 
@@ -145,7 +145,7 @@ func (ipw *IP_Writer) WriteTo(p []byte) error {
 			// IPv4 header test (before checksum)
 			fmt.Println("Packet before checksum: ", header)
 			// Checksum
-			checksum := calcChecksum(header[:20], true)
+			checksum := calculateChecksum(header[:20])
 			header[10] = byte(checksum >> 8)
 			header[11] = byte(checksum)
 
