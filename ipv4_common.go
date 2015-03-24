@@ -4,13 +4,9 @@ import (
 //    "fmt"
 )
 
-func calcChecksum(head []byte, excludeChecksum bool) uint16 {
+func checksum(head []byte) uint16 {
 	totalSum := uint64(0)
 	for ind, elem := range head {
-		if (ind == 10 || ind == 11) && excludeChecksum { // Ignore the checksum in some situations
-			continue
-		}
-
 		if ind%2 == 0 {
 			totalSum += (uint64(elem) << 8)
 		} else {
@@ -33,4 +29,13 @@ func calcChecksum(head []byte, excludeChecksum bool) uint16 {
 	//fmt.Println("Checksum: ", flip)
 
 	return flip
+}
+
+func calculateChecksum(header []byte) uint16 {
+    header[10] = 0
+    header[11] = 0
+    return checksum(header)
+}
+func verifyChecksum(header []byte) uint16 {
+    return checksum(header)
 }
