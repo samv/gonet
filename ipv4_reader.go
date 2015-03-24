@@ -49,18 +49,18 @@ func (ipr *IP_Reader) ReadFrom() (ip string, b, payload []byte, e error) {
 
 	hdr, p := slicePacket(b)
 
-    // extract source IP and protocol
-    ip = net.IPv4(hdr[12], hdr[13], hdr[14], hdr[15]).String()
-    proto := uint8(hdr[9])
-    if !( (ipr.ip == ip || ipr.ip == "*") && ipr.protocol == proto) {
-        fmt.Println("Not interested in packet: dropping.")
-        return ipr.ReadFrom()
-    }
+	// extract source IP and protocol
+	ip = net.IPv4(hdr[12], hdr[13], hdr[14], hdr[15]).String()
+	proto := uint8(hdr[9])
+	if !((ipr.ip == ip || ipr.ip == "*") && ipr.protocol == proto) {
+		fmt.Println("Not interested in packet: dropping.")
+		return ipr.ReadFrom()
+	}
 
 	packetOffset := uint16(hdr[6]&0x1f)<<8 + uint16(hdr[7])
 	fmt.Println("PACK OFF", packetOffset, "HEADER FLAGS", (hdr[6] >> 5))
 	if ((hdr[6]>>5)&0x01 == 0) && (packetOffset == 0) { // if not fragment
-        // verify checksum
+		// verify checksum
 		if calcChecksum(hdr, false) != 0 {
 			//fmt.Println("Header checksum verification failed. Packet dropped.")
 			//fmt.Println("Wrong header: ", hdr)
@@ -117,7 +117,9 @@ func (ipr *IP_Reader) ReadFrom() (ip string, b, payload []byte, e error) {
 								fullPacketHdr[3] = byte(totalLen)
 								fullPacketHdr[6] = 0
 								fullPacketHdr[7] = 0
-								check := calcChecksum(fullPacketHdr, false)
+								fullPacketHdr[10] = 0
+								fullPacketHdr[11] = 0
+								check := calcChecksum(fullPacketHdr[:20], false)
 								fullPacketHdr[10] = byte(check >> 8)
 								fullPacketHdr[11] = byte(check)
 
@@ -150,7 +152,7 @@ func (ipr *IP_Reader) ReadFrom() (ip string, b, payload []byte, e error) {
 
 		// after dealing with the fragment, try reading again
 		fmt.Println("RECURSE")
-        return ipr.ReadFrom()
+		return ipr.ReadFrom()
 	}
 }
 

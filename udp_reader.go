@@ -44,6 +44,8 @@ func (x *UDP_Read_Manager) readAll() {
 	for {
 		ip, _, payload, err := x.reader.ReadFrom()
 		if err != nil {
+
+			fmt.Println(err)
 			continue
 		}
 		//fmt.Println(b)
