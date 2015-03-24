@@ -1,7 +1,7 @@
 package main
 
 import (
-    //"fmt"
+    "fmt"
     "errors"
 )
 
@@ -59,7 +59,7 @@ func (x *UDP_Read_Manager) readAll() {
 		//fmt.Println(ok)
 		if ok {
             if c, ok := portBuf[ip]; ok {
-                //fmt.Println("Found exact IP match for port", dst)
+                fmt.Println("Found exact IP match for port", dst)
                 go func() { c <- payload }()
             } else if c, ok := portBuf["*"]; ok {
                 //fmt.Println("Found default IP match for port", dst)
