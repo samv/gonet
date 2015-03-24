@@ -19,14 +19,8 @@ type IP_Writer struct {
 	maxFragSize uint16
 }
 
-const (
-	SOCK_RAW  = 3
-	AF_PACKET = 17
-	ETH_P_ALL = 768
-)
-
 func NewIP_Writer(dst string, protocol uint8) (*IP_Writer, error) {
-	fd, err := syscall.Socket(AF_PACKET, SOCK_RAW, ETH_P_ALL)
+	fd, err := syscall.Socket(AF_PACKET, SOCK_RAW, HTONS_ETH_P_ALL)
 	if err != nil {
 		fmt.Println("Write's socket failed")
 		return nil, err

@@ -4,6 +4,14 @@ import (
 //    "fmt"
 )
 
+const (
+    MAX_IP_PACKET_LEN = 65535
+    SOCK_DGRAM      = 2
+    SOCK_RAW        = 3
+    AF_PACKET       = 17
+    HTONS_ETH_P_ALL = 768
+)
+
 func checksum(head []byte) uint16 {
 	totalSum := uint64(0)
 	for ind, elem := range head {

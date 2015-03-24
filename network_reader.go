@@ -24,14 +24,7 @@ type Network_Reader struct {
 	//buffers map[uint8](chan []byte)
 }
 
-const MAX_IP_PACKET_LEN = 65535
 
-const (
-	SOCK_DGRAM      = 2
-	SOCK_RAW        = 3
-	AF_PACKET       = 17
-	HTONS_ETH_P_ALL = 768
-)
 
 func NewNetwork_Reader() (*Network_Reader, error) {
 	// 768 = htons(ETH_P_ALL) = htons(3)
