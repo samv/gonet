@@ -39,7 +39,7 @@ func NewIP_Writer(dst string, protocol uint8) (*IP_Writer, error) {
         Protocol: HTONS_ETH_P_IP, // should be inherited anyway
 		Addr: myMACAddr, // sending to myself
         Halen: ETH_ALEN, // may not be correct
-        Ifindex: 4, // TODO: don't hard code this... fix it later
+        Ifindex: MyIfIndex, // TODO: don't hard code this... fix it later
 	}
 
 	err = syscall.Sendto(fd, []byte{0x08, 0x00, 0x27, 0x9e, 0x29, 0x63, 0x08, 0x00, 0x27, 0x9e, 0x29, 0x63, 0x08, 0x00}, 0, addr) //Random bytes
