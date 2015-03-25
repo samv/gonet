@@ -5,11 +5,18 @@ import (
 )
 
 const (
+// 768 = htons(ETH_P_ALL) = htons(3)
+// see http://ideone.com/2eunQu
+
+// 17 = AF_PACKET
+// see http://ideone.com/TGYlGc
     MAX_IP_PACKET_LEN = 65535
     SOCK_DGRAM      = 2
     SOCK_RAW        = 3
     AF_PACKET       = 17
     HTONS_ETH_P_ALL = 768
+    HTONS_ETH_P_IP  = 8
+    ETH_ALEN        = 6
 )
 
 func checksum(head []byte) uint16 {

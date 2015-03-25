@@ -57,6 +57,8 @@ func (ipr *IP_Reader) ReadFrom() (ip string, b, payload []byte, e error) {
 		return ipr.ReadFrom()
 	}
 
+    // TODO: verify the checksum outside, not inside
+
 	packetOffset := uint16(hdr[6]&0x1f)<<8 + uint16(hdr[7])
 	//fmt.Println("PACK OFF", packetOffset, "HEADER FLAGS", (hdr[6] >> 5))
 	if ((hdr[6]>>5)&0x01 == 0) && (packetOffset == 0) { // if not fragment
@@ -65,6 +67,7 @@ func (ipr *IP_Reader) ReadFrom() (ip string, b, payload []byte, e error) {
 			//fmt.Println("Header checksum verification failed. Packet dropped.")
 			//fmt.Println("Wrong header: ", hdr)
 			//fmt.Println("Payload (dropped): ", p)
+            // TODO: return a different packet after dropping instead of returning an error
 			return "", nil, nil, errors.New("Header checksum incorrect, packet dropped")
 		}
 
@@ -110,6 +113,7 @@ func (ipr *IP_Reader) ReadFrom() (ip string, b, payload []byte, e error) {
 								delete(extraFrags, uint64(len(payload)))
 								payload = append(payload, storedFrag...)
 							}
+                            // TODO: make this work even if the last sent packet isn't the last on received
 							if (hdr[6]>>5)&0x01 == 0 {
 								fullPacketHdr := hdr
 								totalLen := uint16(fullPacketHdr[0]&0x0F)*4 + uint16(len(payload))
@@ -147,7 +151,7 @@ func (ipr *IP_Reader) ReadFrom() (ip string, b, payload []byte, e error) {
 			// send in the first fragment
 			ipr.fragBuf[bufID] <- p
 
-			// TODO: Remove the fragment buffer after some time
+			// TODO: Clear/Remove the fragment buffer after some time
 		}
 
 		// after dealing with the fragment, try reading again

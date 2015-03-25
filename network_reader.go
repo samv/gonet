@@ -27,11 +27,6 @@ type Network_Reader struct {
 
 
 func NewNetwork_Reader() (*Network_Reader, error) {
-	// 768 = htons(ETH_P_ALL) = htons(3)
-	// see http://ideone.com/2eunQu
-
-	// 17 = AF_PACKET
-	// see http://ideone.com/TGYlGc
 	fd, err := syscall.Socket(AF_PACKET, SOCK_RAW, HTONS_ETH_P_ALL)
 
 	if err != nil {
