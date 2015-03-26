@@ -166,6 +166,9 @@ func (ipw *IP_Writer) WriteTo(p []byte) error {
 			fmt.Println("Full Packet:  ", newPacket)
 		}
 
+        // add on the ethernet header
+        newPacket = append(etherHead, newPacket...)
+
 		err := syscall.Sendto(ipw.fd, newPacket, 0, ipw.sockAddr)
 		if err != nil {
 			return err
