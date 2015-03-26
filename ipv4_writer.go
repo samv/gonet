@@ -69,6 +69,13 @@ func NewIP_Writer(dst string, protocol uint8) (*IP_Writer, error) {
 }
 
 func (ipw *IP_Writer) WriteTo(p []byte) error {
+    // build the ethernet header
+    etherHead :=  append(append(
+        myMACSlice, // dst MAC
+        myMACSlice...), // src MAC
+        0x08, 0x00, // ethertype (IP)
+    )
+
 	header := make([]byte, ipw.headerLen)
 	header[0] = (byte)((ipw.version << 4) + (uint8)(ipw.headerLen/4)) // Version, IHL
 	header[1] = 0

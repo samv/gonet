@@ -4,6 +4,15 @@ import (
 //    "fmt"
 )
 
+var myMACAddr = func(mac []byte) [8]byte {
+    mac = append(mac, 0, 0)
+    var data [8]byte
+    for i := 0; i < 8; i++ {
+        data[i] = mac[i]
+    }
+    return data
+}(myMACSlice)
+
 const (
 // 768 = htons(ETH_P_ALL) = htons(3)
 // see http://ideone.com/2eunQu
