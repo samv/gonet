@@ -24,7 +24,8 @@ const (
     SOCK_RAW        = 3
     AF_PACKET       = 17
     HTONS_ETH_P_ALL = 768
-    HTONS_ETH_P_IP  = 8
+    ETHERTYPE_IP    = 0x0800
+    ETHERTYPE_APR   = 0x0806
     ETH_ALEN        = 6
 )
 

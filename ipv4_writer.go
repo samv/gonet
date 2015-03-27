@@ -36,7 +36,7 @@ func NewIP_Writer(dst string, protocol uint8) (*IP_Writer, error) {
 	addr := &syscall.SockaddrLinklayer{
         //Protocol: 0x0800, //IP
         // Family is AF_PACKET
-        Protocol: HTONS_ETH_P_IP, // should be inherited anyway
+        Protocol: ETHERTYPE_IP, // should be inherited anyway
 		Addr: myMACAddr, // sending to myself
         Halen: ETH_ALEN, // may not be correct
         Ifindex: MyIfIndex, // TODO: don't hard code this... fix it later
@@ -46,7 +46,7 @@ func NewIP_Writer(dst string, protocol uint8) (*IP_Writer, error) {
 	if err != nil {
 		fmt.Println("ERROR returned by syscall.Sendto", err)
 	} else {
-        fmt.Println("Send the test packet")
+        fmt.Println("Sent the test packet")
     }
 
 	/*err = syscall.Connect(fd, addr)
