@@ -2,7 +2,7 @@ package main
 
 import (
 	"fmt"
-	//"time"
+	"time"
 )
 
 func main() {
@@ -21,7 +21,8 @@ func main() {
 	data := []byte{'h', 'e', 'l', 'l', 'o'}
     for {
         err = w.write(data)
-        fmt.Println(err)
+        fmt.Println("Error", err)
+        time.Sleep(5000 * time.Millisecond)
     }
 	/*for {
 		err := w.write([]byte{'h', 'e', 'l', 'l', 'o'})

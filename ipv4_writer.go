@@ -70,11 +70,15 @@ func NewIP_Writer(dst string, protocol uint8) (*IP_Writer, error) {
 
 func (ipw *IP_Writer) WriteTo(p []byte) error {
     // build the ethernet header
-    etherHead :=  append(append(
+    /*etherHead :=  append(append(
         myMACSlice, // dst MAC
         myMACSlice...), // src MAC
         0x08, 0x00, // ethertype (IP)
-    )
+    )*/
+    etherHead := []byte{
+        0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 8, 0,
+    }
+    fmt.Println("My header:", etherHead)
 
 	header := make([]byte, ipw.headerLen)
 	header[0] = (byte)((ipw.version << 4) + (uint8)(ipw.headerLen/4)) // Version, IHL
@@ -168,6 +172,7 @@ func (ipw *IP_Writer) WriteTo(p []byte) error {
 
         // add on the ethernet header
         newPacket = append(etherHead, newPacket...)
+        fmt.Println("Full Packet with ethernet header:", newPacket)
 
 		err := syscall.Sendto(ipw.fd, newPacket, 0, ipw.sockAddr)
 		if err != nil {
