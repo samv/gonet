@@ -29,12 +29,7 @@ func (c *UDP_Writer) write(x []byte) error {
 
 	x = append(UDPHeader, x...)
 
-	err := c.writer.WriteTo(x)
-	if err != nil {
-		//fmt.Println(err)
-		return err
-	}
-	return nil
+	return c.writer.WriteTo(x)
 }
 func (c *UDP_Writer) close() error {
 	return nil
