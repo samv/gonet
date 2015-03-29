@@ -22,7 +22,7 @@ func main() {
     for {
         err = w.write(data)
         fmt.Println("Error", err)
-        time.Sleep(2000 * time.Millisecond)
+        time.Sleep(500 * time.Millisecond)
     }
 	/*for {
 		err := w.write([]byte{'h', 'e', 'l', 'l', 'o'})
