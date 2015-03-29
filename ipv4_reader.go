@@ -57,7 +57,7 @@ func (ipr *IP_Reader) ReadFrom() (ip string, b, payload []byte, e error) {
 		return ipr.ReadFrom()
 	}
 
-    // TODO: verify the checksum outside, not inside
+	// TODO: verify the checksum outside, not inside
 
 	packetOffset := uint16(hdr[6]&0x1f)<<8 + uint16(hdr[7])
 	//fmt.Println("PACK OFF", packetOffset, "HEADER FLAGS", (hdr[6] >> 5))
@@ -67,7 +67,7 @@ func (ipr *IP_Reader) ReadFrom() (ip string, b, payload []byte, e error) {
 			//fmt.Println("Header checksum verification failed. Packet dropped.")
 			//fmt.Println("Wrong header: ", hdr)
 			//fmt.Println("Payload (dropped): ", p)
-            // TODO: return a different packet after dropping instead of returning an error
+			// TODO: return a different packet after dropping instead of returning an error
 			return "", nil, nil, errors.New("Header checksum incorrect, packet dropped")
 		}
 
@@ -93,7 +93,7 @@ func (ipr *IP_Reader) ReadFrom() (ip string, b, payload []byte, e error) {
 			go func(in <-chan []byte, finished chan<- []byte) {
 				payload := <-in
 				extraFrags := make(map[uint64]([]byte))
-				//goalLen := int64(-1)
+				goalLen := int64(-1)
 				t := time.Now()
 				for time.Since(t).Seconds() <= FRAGMENT_TIMEOUT {
 					select {
@@ -101,8 +101,8 @@ func (ipr *IP_Reader) ReadFrom() (ip string, b, payload []byte, e error) {
 						hdr, p := slicePacket(frag)
 						offset := 8 * (uint64(hdr[6]&0x1f)<<8 + uint64(hdr[7]))
 						if (hdr[6]>>5)&0x01 == 0 {
-							//totalLen := uint64(hdr[2]<<8 + hdr[3])
-							//goalLen = int64(offset + totalLen)
+							totalLen := uint64(hdr[2]<<8 + hdr[3])
+							goalLen = int64(offset + totalLen)
 						}
 						//fmt.Println("RECEIVED FRAG")
 						//fmt.Println("Offset:", offset)
@@ -113,8 +113,8 @@ func (ipr *IP_Reader) ReadFrom() (ip string, b, payload []byte, e error) {
 								delete(extraFrags, uint64(len(payload)))
 								payload = append(payload, storedFrag...)
 							}
-                            // TODO: make this work even if the last sent packet isn't the last on received
-							if (hdr[6]>>5)&0x01 == 0 {
+							// TODO: make this work even if the last sent packet isn't the last on received
+							if (hdr[6]>>5)&0x01 == 0 || len(payload) >= goalLen {
 								fullPacketHdr := hdr
 								totalLen := uint16(fullPacketHdr[0]&0x0F)*4 + uint16(len(payload))
 								fullPacketHdr[2] = byte(totalLen >> 8)
