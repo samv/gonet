@@ -5,28 +5,28 @@ import (
 )
 
 var myMACAddr = func(mac []byte) [8]byte {
-    mac = append(mac, 0, 0)
-    var data [8]byte
-    for i := 0; i < 8; i++ {
-        data[i] = mac[i]
-    }
-    return data
+	mac = append(mac, 0, 0)
+	var data [8]byte
+	for i := 0; i < 8; i++ {
+		data[i] = mac[i]
+	}
+	return data
 }(myMACSlice)
 
 const (
-// 768 = htons(ETH_P_ALL) = htons(3)
-// see http://ideone.com/2eunQu
+	// 768 = htons(ETH_P_ALL) = htons(3)
+	// see http://ideone.com/2eunQu
 
-// 17 = AF_PACKET
-// see http://ideone.com/TGYlGc
-    MAX_IP_PACKET_LEN = 65535
-    SOCK_DGRAM      = 2
-    SOCK_RAW        = 3
-    AF_PACKET       = 17
-    HTONS_ETH_P_ALL = 768
-    ETHERTYPE_IP    = 0x0800
-    ETHERTYPE_APR   = 0x0806
-    ETH_ALEN        = 6
+	// 17 = AF_PACKET
+	// see http://ideone.com/TGYlGc
+	MAX_IP_PACKET_LEN = 65535
+	SOCK_DGRAM        = 2
+	SOCK_RAW          = 3
+	AF_PACKET         = 17
+	HTONS_ETH_P_ALL   = 768
+	ETHERTYPE_IP      = 0x0800
+	ETHERTYPE_APR     = 0x0806
+	ETH_ALEN          = 6
 )
 
 func checksum(head []byte) uint16 {
@@ -57,10 +57,10 @@ func checksum(head []byte) uint16 {
 }
 
 func calculateChecksum(header []byte) uint16 {
-    header[10] = 0
-    header[11] = 0
-    return checksum(header)
+	header[10] = 0
+	header[11] = 0
+	return checksum(header)
 }
 func verifyChecksum(header []byte) uint16 {
-    return checksum(header)
+	return checksum(header)
 }
