@@ -93,17 +93,13 @@ func (ipr *IP_Reader) ReadFrom() (ip string, b, payload []byte, e error) {
 			go func(in <-chan []byte, finished chan<- []byte) {
 				payload := <-in
 				extraFrags := make(map[uint64]([]byte))
-				goalLen := int64(-1)
 				t := time.Now()
+				recvLast := false
 				for time.Since(t).Seconds() <= FRAGMENT_TIMEOUT {
 					select {
 					case frag := <-in:
 						hdr, p := slicePacket(frag)
 						offset := 8 * (uint64(hdr[6]&0x1f)<<8 + uint64(hdr[7]))
-						if (hdr[6]>>5)&0x01 == 0 {
-							totalLen := uint64(hdr[2]<<8 + hdr[3])
-							goalLen = int64(offset + totalLen)
-						}
 						//fmt.Println("RECEIVED FRAG")
 						//fmt.Println("Offset:", offset)
 						//fmt.Println(len(payload))
@@ -113,8 +109,7 @@ func (ipr *IP_Reader) ReadFrom() (ip string, b, payload []byte, e error) {
 								delete(extraFrags, uint64(len(payload)))
 								payload = append(payload, storedFrag...)
 							}
-							// TODO: make this work even if the last sent packet isn't the last on received
-							if (hdr[6]>>5)&0x01 == 0 || len(payload) >= goalLen {
+							if (hdr[6]>>5)&0x01 == 0 || recvLast && len(extraFrags) == 0 {
 								fullPacketHdr := hdr
 								totalLen := uint16(fullPacketHdr[0]&0x0F)*4 + uint16(len(payload))
 								fullPacketHdr[2] = byte(totalLen >> 8)
@@ -137,6 +132,9 @@ func (ipr *IP_Reader) ReadFrom() (ip string, b, payload []byte, e error) {
 							}
 						} else {
 							extraFrags[8*(uint64(p[6])<<3>>11+uint64(p[7]))] = p
+							if (hdr[6]>>5)&0x01 == 0 {
+								recvLast = true
+							}
 						}
 					default:
 						// make the timeout actually have a chance of being hit
