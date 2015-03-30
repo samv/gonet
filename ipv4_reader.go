@@ -38,8 +38,6 @@ func slicePacket(b []byte) (hrd, payload []byte) {
     return b[:hdrLen], b[hdrLen:]
 }
 
-const FRAGMENT_TIMEOUT = 15
-
 func (ipr *IP_Reader) ReadFrom() (ip string, b, payload []byte, e error) {
     //fmt.Println("STARTING READ")
     b = <-ipr.incomingPackets

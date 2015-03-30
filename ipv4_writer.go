@@ -3,13 +3,12 @@ package main
 import (
 	"fmt"
 	"net"
-	"syscall"
 	//"errors"
+	//"syscall"
 )
 
 type IP_Writer struct {
-	fd          int
-	sockAddr    syscall.Sockaddr
+    nw          *Network_Writer
 	version     uint8
 	dst, src    string
 	headerLen   uint16
@@ -20,11 +19,11 @@ type IP_Writer struct {
 }
 
 func NewIP_Writer(dst string, protocol uint8) (*IP_Writer, error) {
-	fd, err := syscall.Socket(AF_PACKET, SOCK_RAW, HTONS_ETH_P_ALL)
-	if err != nil {
-		fmt.Println("Write's socket failed")
-		return nil, err
-	}
+    // create its own network_writer
+    nw, err := NewNetwork_Writer()
+    if err != nil {
+        return nil, err
+    }
 
 	dstIPAddr, err := net.ResolveIPAddr("ip", dst)
 	if err != nil {
@@ -33,53 +32,27 @@ func NewIP_Writer(dst string, protocol uint8) (*IP_Writer, error) {
 	}
 	fmt.Println("Full Address: ", dstIPAddr)
 
-	addr := &syscall.SockaddrLinklayer{
-        //Protocol: 0x0800, //IP
-        // Family is AF_PACKET
-        Protocol: ETHERTYPE_IP, // should be inherited anyway
-		Addr: myMACAddr, // sending to myself
-        Halen: ETH_ALEN, // may not be correct
-        Ifindex: MyIfIndex, // TODO: don't hard code this... fix it later
-	}
-
-	err = syscall.Sendto(fd, []byte{0x08, 0x00, 0x27, 0x9e, 0x29, 0x63, 0x08, 0x00, 0x27, 0x9e, 0x29, 0x63, 0x08, 0x00}, 0, addr) //Random bytes
-	if err != nil {
-		fmt.Println("ERROR returned by syscall.Sendto", err)
-	} else {
-        fmt.Println("Sent the test packet")
-    }
-
 	/*err = syscall.Connect(fd, addr)
 	if err != nil {
 		return nil, errors.New("Failed to connect.")
 	}*/
 
 	return &IP_Writer{
-		fd:          fd,
-		sockAddr:    addr,
+		//fd:          fd,
+		//sockAddr:    addr,
+        nw:          nw,
 		version:     4,
 		headerLen:   20,
 		dst:         dst,
-		src:         "127.0.0.1",
+		src:         "127.0.0.1", // fix this based on dst
 		ttl:         8,
-		protocol:    17,
+		protocol:    protocol,
 		identifier:  20000,
-		maxFragSize: 1500,
+		maxFragSize: MTU, // determine this dynamically with LLDP
 	}, nil
 }
 
 func (ipw *IP_Writer) WriteTo(p []byte) error {
-    // build the ethernet header
-    /*etherHead :=  append(append(
-        myMACSlice, // dst MAC
-        myMACSlice...), // src MAC
-        0x08, 0x00, // ethertype (IP)
-    )*/
-    etherHead := []byte{
-        0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 8, 0,
-    }
-    fmt.Println("My header:", etherHead)
-
 	header := make([]byte, ipw.headerLen)
 	header[0] = (byte)((ipw.version << 4) + (uint8)(ipw.headerLen/4)) // Version, IHL
 	header[1] = 0
@@ -170,23 +143,19 @@ func (ipw *IP_Writer) WriteTo(p []byte) error {
 			fmt.Println("Full Packet:  ", newPacket)
 		}
 
-        // add on the ethernet header
-        newPacket = append(etherHead, newPacket...)
-        fmt.Println("Full Packet with ethernet header:", newPacket)
-
-		err := syscall.Sendto(ipw.fd, newPacket, 0, ipw.sockAddr)
+        // write the bytes
+        err := ipw.nw.write(newPacket)
 		if err != nil {
 			return err
 		}
 	}
 	fmt.Println("PAY LEN", len(p))
 
-	// TODO: Allow IP fragmentation (use 1500 as MTU)
 	return nil
 }
 
 func (ipw *IP_Writer) Close() error {
-	return syscall.Close(ipw.fd)
+	return ipw.nw.close()
 }
 
 /* h := &ipv4.Header{

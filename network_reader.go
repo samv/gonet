@@ -24,8 +24,6 @@ type Network_Reader struct {
 	//buffers map[uint8](chan []byte)
 }
 
-
-
 func NewNetwork_Reader() (*Network_Reader, error) {
 	fd, err := syscall.Socket(AF_PACKET, SOCK_RAW, HTONS_ETH_P_ALL)
 
@@ -60,8 +58,6 @@ func (nr *Network_Reader) readAll() {
 		if len(buf) <= 20 {
 			continue
 		}
-
-		// TODO: assemble IP fragments
 
 		protocol := uint8(buf[9])
 		ip := net.IPv4(buf[12], buf[13], buf[14], buf[15]).String()
