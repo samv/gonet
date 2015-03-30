@@ -91,7 +91,7 @@ func (ipr *IP_Reader) ReadFrom() (ip string, b, payload []byte, e error) {
 
             // create the packet assembler in a goroutine to allow the program to continue
             go func(in <-chan []byte, finished chan<- []byte) {
-                payload := make([]byte)
+                payload := make([]byte, 0)
                 extraFrags := make(map[uint64]([]byte))
                 t := time.Now()
                 recvLast := false
