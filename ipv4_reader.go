@@ -55,20 +55,18 @@ func (ipr *IP_Reader) ReadFrom() (ip string, b, payload []byte, e error) {
         return ipr.ReadFrom()
     }
 
-    // TODO: verify the checksum outside, not inside
+    // verify checksum
+    if verifyChecksum(hdr) != 0 {
+        //fmt.Println("Header checksum verification failed. Packet dropped.")
+        //fmt.Println("Wrong header: ", hdr)
+        //fmt.Println("Payload (dropped): ", p)
+        fmt.Println("Header checksum incorrect, packet dropped")
+        return ipr.ReadFrom() // return another packet instead
+    }
 
     packetOffset := uint16(hdr[6]&0x1f)<<8 + uint16(hdr[7])
     //fmt.Println("PACK OFF", packetOffset, "HEADER FLAGS", (hdr[6] >> 5))
     if ((hdr[6]>>5)&0x01 == 0) && (packetOffset == 0) { // if not fragment
-        // verify checksum
-        if verifyChecksum(hdr) != 0 {
-            //fmt.Println("Header checksum verification failed. Packet dropped.")
-            //fmt.Println("Wrong header: ", hdr)
-            //fmt.Println("Payload (dropped): ", p)
-            // TODO: return a different packet after dropping instead of returning an error
-            return "", nil, nil, errors.New("Header checksum incorrect, packet dropped")
-        }
-
         //fmt.Println("Payload Length: ", len(p))
         //fmt.Println("Full payload: ", p)
         //fmt.Println("PACKET COMPLETELY READ")
