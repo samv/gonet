@@ -51,7 +51,7 @@ func (nr *Network_Reader) readAll() {
 		}
 		buf = buf[:ln] // remove extra bytes off the end
 
-        fmt.Println("Ethernet header:", buf[:14])
+        //fmt.Println("Ethernet header:", buf[:14])
 		buf = buf[14:] // remove ethernet header
 		//fmt.Println("After removing ethernet header", buf)
 
