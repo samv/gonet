@@ -60,7 +60,7 @@ func fragmentAssembler(in <-chan []byte, quit <-chan bool, finished chan<- []byt
             //fmt.Println(len(payload))
 
             // add to map
-            offset := 8 * (uint64(hdr[6]) & 0x1F + uint64(hdr[7]))
+            offset := 8 * (uint64(hdr[6] & 0x1F) << 8 + uint64(hdr[7]))
             fmt.Println("Offset:", offset)
             extraFrags[offset] = p
 
