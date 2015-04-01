@@ -43,8 +43,10 @@ func NewNetwork_Reader() (*Network_Reader, error) {
 
 func (nr *Network_Reader) readAll() {
 	for {
+        // read twice to account for the double receiving
 		buf := make([]byte, MAX_IP_PACKET_LEN)
-		ln, err := nr.getNextPacket(buf)
+		_, err  := nr.getNextPacket(buf)
+        ln, err := nr.getNextPacket(buf)
 
 		if err != nil {
 			fmt.Println(err)

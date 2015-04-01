@@ -21,7 +21,7 @@ const (
 	// see http://ideone.com/TGYlGc
 	MAX_IP_PACKET_LEN = 65535
 	MTU               = 1500
-	FRAGMENT_TIMEOUT  = 3
+	FRAGMENT_TIMEOUT  = 5
 	SOCK_DGRAM        = 2
 	SOCK_RAW          = 3
 	AF_PACKET         = 17

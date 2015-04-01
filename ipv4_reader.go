@@ -48,6 +48,8 @@ func fragmentAssembler(in <-chan []byte, quit <-chan bool, finished chan<- []byt
     for {
         select {
         case <- quit:
+            fmt.Println("quitting upon force quit")
+            done <- true
             return
         case frag := <-in:
             fmt.Println("got a fragment packet. len:", len(frag))
@@ -68,10 +70,19 @@ func fragmentAssembler(in <-chan []byte, quit <-chan bool, finished chan<- []byt
             }
 
             // add to payload
-            for storedFrag, found := extraFrags[uint64(len(payload))]; found; {
-                delete(extraFrags, uint64(len(payload)))
-                payload = append(payload, storedFrag...)
+            fmt.Println("Begin to add to the payload")
+            for {
+                if storedFrag, found := extraFrags[uint64(len(payload))]; found {
+                    fmt.Println("New Payload Len: ", len(payload))
+                    delete(extraFrags, uint64(len(payload)))
+                    payload = append(payload, storedFrag...)
+                } else {
+                    break
+                }
             }
+            fmt.Println("Finished add to the payload")
+
+            // deal with the payload
             if recvLast && len(extraFrags) == 0 {
 				fmt.Println("Done")
                 // correct the header
@@ -122,9 +133,9 @@ func killFragmentAssembler(quit chan<- bool, done <-chan bool, bufID string) {
     if !finished {
         fmt.Println("Force quitting")
         quit <- true
-        // TODO: wait for the quit to complete (with done)
+        <-done // wait until it is done
     }
-    fmt.Println("Frag Assemble Finished")
+    fmt.Println("Frag Assemble Ended, finished:", finished)
     // TODO: clean the buffer for bufID
 }
 
