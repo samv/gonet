@@ -64,11 +64,12 @@ func fragmentAssembler(in <-chan []byte, quit <-chan bool, finished chan<- []byt
 			}
 
 			// add to payload
-			for storedFrag, found := extraFrags[uint64(len(payload))]; found; {
+			if storedFrag, found := extraFrags[uint64(len(payload))]; found {
 				delete(extraFrags, uint64(len(payload)))
 				payload = append(payload, storedFrag...)
 			}
 			if recvLast && len(extraFrags) == 0 {
+				fmt.Println("Done")
 				// correct the header
 				fullPacketHdr := hdr
 				totalLen := uint16(fullPacketHdr[0]&0x0F)*4 + uint16(len(payload))
@@ -91,6 +92,7 @@ func fragmentAssembler(in <-chan []byte, quit <-chan bool, finished chan<- []byt
 				done <- true
 				return // from goroutine
 			}
+			fmt.Println("Looping")
 		default:
 			// make the timeout actually have a chance of being hit
 		}
