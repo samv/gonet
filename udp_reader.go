@@ -93,6 +93,7 @@ func (c *UDP_Reader) read(size int) ([]byte, error) {
 	if len(data) > size {
 		data = data[:size]
 	}
+    // TODO: verify the checksum
 	return data, nil
 }
 

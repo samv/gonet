@@ -120,11 +120,13 @@ func fragmentAssembler(in <-chan []byte, quit <-chan bool, finished chan<- []byt
 
 func killFragmentAssembler(quit chan<- bool, done <-chan bool, bufID string) {
     // sends quit to the assembler if it doesn't send done
+    // TODO: use time.after for timeout
     t := time.Now()
     finished := false
 	for time.Since(t).Seconds() <= FRAGMENT_TIMEOUT {
         select {
         case <-done:
+            finished = true
             fmt.Println("Recieved done msg.")
             return
         default:

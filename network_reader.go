@@ -54,6 +54,12 @@ func (nr *Network_Reader) readAll() {
 		buf = buf[:ln] // remove extra bytes off the end
 
         //fmt.Println("Ethernet header:", buf[:14])
+        // TODO: verify the ethernet protocol legitimately
+        eth_protocol := uint16(buf[12]) << 8 | uint16(buf[13])
+        if eth_protocol != ETHERTYPE_IP {
+            fmt.Println("Dropping Ethernet packet for wrong protocol:", eth_protocol)
+            continue;
+        }
 		buf = buf[14:] // remove ethernet header
 		//fmt.Println("After removing ethernet header", buf)
 
