@@ -24,21 +24,7 @@ type Network_Reader struct {
 	//buffers map[uint8](chan []byte)
 }
 
-const MAX_IP_PACKET_LEN = 65535
-
-const (
-	SOCK_DGRAM      = 2
-	SOCK_RAW        = 3
-	AF_PACKET       = 17
-	HTONS_ETH_P_ALL = 768
-)
-
 func NewNetwork_Reader() (*Network_Reader, error) {
-	// 768 = htons(ETH_P_ALL) = htons(3)
-	// see http://ideone.com/2eunQu
-
-	// 17 = AF_PACKET
-	// see http://ideone.com/TGYlGc
 	fd, err := syscall.Socket(AF_PACKET, SOCK_RAW, HTONS_ETH_P_ALL)
 
 	if err != nil {
@@ -57,22 +43,29 @@ func NewNetwork_Reader() (*Network_Reader, error) {
 
 func (nr *Network_Reader) readAll() {
 	for {
+        // read twice to account for the double receiving
 		buf := make([]byte, MAX_IP_PACKET_LEN)
-		ln, err := nr.getNextPacket(buf)
+		_, err  := nr.getNextPacket(buf)
+        ln, err := nr.getNextPacket(buf)
 
 		if err != nil {
 			fmt.Println(err)
 		}
 		buf = buf[:ln] // remove extra bytes off the end
 
+        //fmt.Println("Ethernet header:", buf[:14])
+        // TODO: verify the ethernet protocol legitimately
+        eth_protocol := uint16(buf[12]) << 8 | uint16(buf[13])
+        if eth_protocol != ETHERTYPE_IP {
+            fmt.Println("Dropping Ethernet packet for wrong protocol:", eth_protocol)
+            continue;
+        }
 		buf = buf[14:] // remove ethernet header
 		//fmt.Println("After removing ethernet header", buf)
 
 		if len(buf) <= 20 {
 			continue
 		}
-
-		// TODO: assemble IP fragments
 
 		protocol := uint8(buf[9])
 		ip := net.IPv4(buf[12], buf[13], buf[14], buf[15]).String()

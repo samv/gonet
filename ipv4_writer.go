@@ -1,15 +1,14 @@
 package main
 
 import (
-	"errors"
 	"fmt"
 	"net"
-	"syscall"
+	//"errors"
+	//"syscall"
 )
 
 type IP_Writer struct {
-	fd          int
-	sockAddr    syscall.Sockaddr
+    nw          *Network_Writer
 	version     uint8
 	dst, src    string
 	headerLen   uint16
@@ -20,11 +19,11 @@ type IP_Writer struct {
 }
 
 func NewIP_Writer(dst string, protocol uint8) (*IP_Writer, error) {
-	fd, err := syscall.Socket(syscall.AF_INET, syscall.SOCK_RAW, syscall.IPPROTO_RAW)
-	if err != nil {
-		fmt.Println("Write's socket failed")
-		return nil, err
-	}
+    // create its own network_writer
+    nw, err := NewNetwork_Writer()
+    if err != nil {
+        return nil, err
+    }
 
 	dstIPAddr, err := net.ResolveIPAddr("ip", dst)
 	if err != nil {
@@ -33,32 +32,23 @@ func NewIP_Writer(dst string, protocol uint8) (*IP_Writer, error) {
 	}
 	fmt.Println("Full Address: ", dstIPAddr)
 
-	addr := &syscall.SockaddrInet4{
-		Port: 20000,
-		Addr: [4]byte{
-			dstIPAddr.IP[12],
-			dstIPAddr.IP[13],
-			dstIPAddr.IP[14],
-			dstIPAddr.IP[15],
-		},
-	}
-
-	err = syscall.Connect(fd, addr)
+	/*err = syscall.Connect(fd, addr)
 	if err != nil {
 		return nil, errors.New("Failed to connect.")
-	}
+	}*/
 
 	return &IP_Writer{
-		fd:          fd,
-		sockAddr:    addr,
+		//fd:          fd,
+		//sockAddr:    addr,
+        nw:          nw,
 		version:     4,
 		headerLen:   20,
 		dst:         dst,
-		src:         "127.0.0.1",
+		src:         "127.0.0.1", // fix this based on dst
 		ttl:         8,
-		protocol:    17,
+		protocol:    protocol,
 		identifier:  20000,
-		maxFragSize: 1500,
+		maxFragSize: MTU, // determine this dynamically with LLDP
 	}, nil
 }
 
@@ -153,19 +143,19 @@ func (ipw *IP_Writer) WriteTo(p []byte) error {
 			fmt.Println("Full Packet:  ", newPacket)
 		}
 
-		err := syscall.Sendto(ipw.fd, newPacket, 0, ipw.sockAddr)
+        // write the bytes
+        err := ipw.nw.write(newPacket)
 		if err != nil {
 			return err
 		}
 	}
 	fmt.Println("PAY LEN", len(p))
 
-	// TODO: Allow IP fragmentation (use 1500 as MTU)
 	return nil
 }
 
 func (ipw *IP_Writer) Close() error {
-	return syscall.Close(ipw.fd)
+	return ipw.nw.close()
 }
 
 /* h := &ipv4.Header{
