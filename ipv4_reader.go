@@ -40,7 +40,7 @@ func slicePacket(b []byte) (hrd, payload []byte) {
     return b[:hdrLen], b[hdrLen:]
 }
 
-func fragmentAssembler(in <-chan []byte, quit <-chan bool, finished chan<- []byte, done chan<- bool) {
+func fragmentAssembler(in <-chan []byte, quit <-chan bool, didQuit chan<- bool, finished chan<- []byte, done chan bool) {
     payload := make([]byte, 0)
     extraFrags := make(map[uint64]([]byte))
     recvLast := false
@@ -48,8 +48,8 @@ func fragmentAssembler(in <-chan []byte, quit <-chan bool, finished chan<- []byt
     for {
         select {
         case <- quit:
-            fmt.Println("quitting upon force quit")
-            done <- true
+            fmt.Println("quitting upon quit signal")
+            didQuit <- true
             return
         case frag := <-in:
             fmt.Println("got a fragment packet. len:", len(frag))
@@ -118,26 +118,18 @@ func fragmentAssembler(in <-chan []byte, quit <-chan bool, finished chan<- []byt
     return
 }
 
-func killFragmentAssembler(quit chan<- bool, done <-chan bool, bufID string) {
+func killFragmentAssembler(quit chan<- bool, didQuit <-chan bool, done <-chan bool, bufID string) {
     // sends quit to the assembler if it doesn't send done
-    // TODO: use time.after for timeout
-    t := time.Now()
-    finished := false
-	for time.Since(t).Seconds() <= FRAGMENT_TIMEOUT {
-        select {
-        case <-done:
-            finished = true
-            fmt.Println("Recieved done msg.")
-            return
-        default:
-        }
-    }
-    if !finished {
-        fmt.Println("Force quitting")
-        quit <- true
-        <-done // wait until it is done
-    }
-    fmt.Println("Frag Assemble Ended, finished:", finished)
+	select {
+	case <-time.After(time.Second * FRAGMENT_TIMEOUT):
+		fmt.Println("Force quitting")
+		quit <- true
+		<- didQuit // will block until it has been received
+	case <-done:
+		fmt.Println("Recieved done msg.")
+	}
+
+    fmt.Println("Frag Assemble Ended, finished")
     // TODO: clean the buffer for bufID
 }
 
@@ -195,10 +187,11 @@ func (ipr *IP_Reader) ReadFrom() (ip string, b, payload []byte, e error) {
             ipr.fragBuf[bufID] = make(chan []byte)
             quit := make(chan bool)
             done := make(chan bool)
+			didQuit := make(chan bool)
 
             // create the packet assembler in a goroutine to allow the program to continue
-            go fragmentAssembler(ipr.fragBuf[bufID], quit, ipr.incomingPackets, done)
-            go killFragmentAssembler(quit, done, bufID)
+            go fragmentAssembler(ipr.fragBuf[bufID], quit, didQuit, ipr.incomingPackets, done)
+            go killFragmentAssembler(quit, didQuit, done, bufID)
 
             // send in the first fragment
             ipr.fragBuf[bufID] <- b
