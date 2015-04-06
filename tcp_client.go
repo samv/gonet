@@ -16,7 +16,8 @@ func New_TCP_Client(src, dest uint16, dstIP string) (*TCP_Client, error) {
 }
 
 func (c *TCP_Client) connect() error {
-
+	// TODO Send SYN
+	// TODO Wait for SYN + ACK, send back ACK
 }
 
 func (c *TCP_Client) write() error {

@@ -28,7 +28,9 @@ func New_TCP_Server_Manager() (*TCP_Server_Manager, error) {
 }
 
 func (*TCP_Server_Manager) Listen(port uint16, ip string) (*TCP_Server, error) {
-
+	// TODO Listen for SYN
+	// TODO Send back SYN + ACK
+	// TODO Wait for ACK
 }
 
 func (*TCP_Server) Close() {}
