@@ -11,7 +11,7 @@ type UDP_Writer struct {
 }
 
 func NewUDP_Writer(src, dest uint16, dstIP string) (*UDP_Writer, error) {
-	write, err := NewIP_Writer(dstIP, 17) // 17 for UDP
+	write, err := NewIP_Writer(dstIP, UDP_PROTO)
 	if err != nil {
 		return nil, err
 	}

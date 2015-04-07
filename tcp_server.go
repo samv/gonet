@@ -1,6 +1,6 @@
 package main
 
-type TCP_Server struct {
+type TCP_Connection struct {
 }
 
 type TCP_Server_Manager struct {
@@ -14,7 +14,7 @@ func New_TCP_Server_Manager() (*TCP_Server_Manager, error) {
 		return nil, err
 	}
 
-	ipr, err := nr.NewIP_Reader("*", 6)
+	ipr, err := nr.NewIP_Reader("*", TCP_PROTO)
 	if err != nil {
 		return nil, err
 	}
@@ -27,10 +27,23 @@ func New_TCP_Server_Manager() (*TCP_Server_Manager, error) {
 	return x, nil
 }
 
-func (*TCP_Server_Manager) Listen(port uint16, ip string) (*TCP_Server, error) {
+// TODO: bind function
+
+func (*TCP_Server_Manager) Listen(port uint16, ip string) error {
 	// TODO Listen for SYN
 	// TODO Send back SYN + ACK
 	// TODO Wait for ACK
+	return nil
 }
 
-func (*TCP_Server) Close() {}
+func (*TCP_Server_Manager) Accept() (*TCP_Connection, error) {
+	return nil, nil
+}
+
+func (*TCP_Connection) Recv() error {
+	return nil
+}
+
+func (*TCP_Connection) Close() error {
+	return nil
+}

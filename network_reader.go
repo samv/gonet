@@ -67,6 +67,7 @@ func (nr *Network_Reader) readAll() {
 			continue
 		}
 
+		// TODO: ensure that the protocol is IP (0x0800)
 		protocol := uint8(buf[9])
 		ip := net.IPv4(buf[12], buf[13], buf[14], buf[15]).String()
 
