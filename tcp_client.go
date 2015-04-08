@@ -1,8 +1,13 @@
 package main
 
+import (
+	"net"
+)
+
 type TCP_Client struct {
 	ipAddress string // destination ip address
 	writer    *IP_Writer
+	reader    *IP_Reader
 	src, dst  uint16 // ports
 }
 
@@ -12,7 +17,17 @@ func New_TCP_Client(src, dest uint16, dstIP string) (*TCP_Client, error) {
 		return nil, err
 	}
 
-	return &TCP_Client{src: src, dst: dest, ipAddress: dstIP, writer: write}, nil
+	nr, err := NewNetwork_Reader()
+	if err != nil {
+		return nil, err
+	}
+
+	ipr, err := nr.NewIP_Reader("*", TCP_PROTO)
+	if err != nil {
+		return nil, err
+	}
+
+	return &TCP_Client{src: src, dst: dest, ipAddress: dstIP, writer: write, reader: ipr}, nil
 }
 
 func (c *TCP_Client) Connect() error {
@@ -44,6 +59,11 @@ func (c *TCP_Client) Connect() error {
 		0, 0, // TODO calc checksum, right now just set to 0
 		0, 0, // URG pointer, only matters where URG flag is set.
 	}
+	checksum := checksum(append(append(append(SYN, net.ParseIP(c.writer.src)...), net.ParseIP(c.writer.dst)...), []byte{byte(TCP_PROTO >> 8), byte(TCP_PROTO), byte(20 >> 8), byte(20)}...))
+	SYN[16] = byte(checksum >> 8)
+	SYN[17] = byte(checksum)
+
+	c.writer.WriteTo(SYN)
 
 	// TODO Wait for SYN + ACK, send back ACK
 
