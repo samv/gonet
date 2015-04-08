@@ -17,7 +17,7 @@ func New_TCP_Client(src, dest uint16, dstIP string) (*TCP_Client, error) {
 		return nil, err
 	}
 
-	nr, err := NewNetwork_Reader()
+	nr, err := NewNetwork_Reader() // TODO: create a global var for the network reader
 	if err != nil {
 		return nil, err
 	}

@@ -24,7 +24,7 @@ func (c *UDP_Writer) write(x []byte) error {
 		(byte)(c.src >> 8), (byte)(c.src), // Source port in byte slice
 		(byte)(c.dst >> 8), (byte)(c.dst), // Destination port in byte slice
 		(byte)((8 + len(x)) >> 8), (byte)(8 + len(x)), // Length in bytes of UDP header + data
-		0, 0, // Checksum
+		0, 0, // Checksum TODO: calculate the checksum correctly
 	}
 
 	x = append(UDPHeader, x...)

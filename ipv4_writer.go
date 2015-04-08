@@ -44,11 +44,11 @@ func NewIP_Writer(dst string, protocol uint8) (*IP_Writer, error) {
 		version:     4,
 		headerLen:   20,
 		dst:         dst,
-		src:         "127.0.0.1", // fix this based on dst
+		src:         "127.0.0.1", // TODO fix this based on dst
 		ttl:         8,
 		protocol:    protocol,
 		identifier:  20000,
-		maxFragSize: MTU, // determine this dynamically with LLDP
+		maxFragSize: MTU, // TODO determine this dynamically with LLDP
 	}, nil
 }
 
