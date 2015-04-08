@@ -4,20 +4,18 @@ import socket
 
 
 TCP_IP = '127.0.0.1'
-TCP_PORT = 2001
-BUFFER_SIZE = 20
-MESSAGE = "wut"
+TCP_PORT = 5005
+BUFFER_SIZE = 20  # Normally 1024, but we want fast response
 
 s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
 s.bind((TCP_IP, TCP_PORT))
-print 'swag'
 s.listen(1)
-print 'pro'
+
 conn, addr = s.accept()
 print 'Connection address:', addr
 while 1:
-	data = conn.recv(BUFFER_SIZe)
-	if not data: break
-	print "received data:", data
-	conn.send(data)
+    data = conn.recv(BUFFER_SIZE)
+    if not data: break
+    print "received data:", data
+    conn.send(data)  # echo
 conn.close()
