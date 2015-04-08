@@ -25,7 +25,7 @@ func NewUDP_Read_Manager() (*UDP_Read_Manager, error) {
 		return nil, err
 	}
 
-	ipr, err := nr.NewIP_Reader("*", UDP_PROTO) // 17 for UDP
+	ipr, err := nr.NewIP_Reader("*", UDP_PROTO)
 	if err != nil {
 		return nil, err
 	}
@@ -44,7 +44,6 @@ func (x *UDP_Read_Manager) readAll() {
 	for {
 		ip, _, payload, err := x.reader.ReadFrom()
 		if err != nil {
-
 			fmt.Println(err)
 			continue
 		}

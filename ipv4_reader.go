@@ -122,7 +122,7 @@ func killFragmentAssembler(quit chan<- bool, didQuit <-chan bool, done <-chan bo
     // sends quit to the assembler if it doesn't send done
 	select {
 	case <-time.After(time.Second * FRAGMENT_TIMEOUT):
-		fmt.Println("Force quitting")
+		fmt.Println("Force quitting packet assembler")
 		quit <- true
 		<- didQuit // will block until it has been received
 	case <-done:

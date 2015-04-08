@@ -2,21 +2,15 @@ package main
 
 import (
 	"net"
+	"fmt"
 )
 
-type TCP_Client struct {
-	ipAddress string // destination ip address
-	writer    *IP_Writer
-	reader    *IP_Reader
-	src, dst  uint16 // ports
+type TCP_Client_Manager struct {
+	reader *IP_Reader
+	readBuffer map[uint16](map[string](chan []byte)) // dst protocol, ip
 }
 
-func New_TCP_Client(src, dest uint16, dstIP string) (*TCP_Client, error) {
-	write, err := NewIP_Writer(dstIP, TCP_PROTO)
-	if err != nil {
-		return nil, err
-	}
-
+func New_TCP_Client_Manager() (*TCP_Client_Manager, error) {
 	nr, err := NewNetwork_Reader() // TODO: create a global var for the network reader
 	if err != nil {
 		return nil, err
@@ -27,7 +21,40 @@ func New_TCP_Client(src, dest uint16, dstIP string) (*TCP_Client, error) {
 		return nil, err
 	}
 
-	return &TCP_Client{src: src, dst: dest, ipAddress: dstIP, writer: write, reader: ipr}, nil
+	cm := &TCP_Client_Manager{
+		reader: ipr,
+		readBuffer: make(map[uint16](map[string](chan []byte))),
+	}
+
+	go cm.readAll()
+
+	return cm, nil
+}
+
+func (cm *TCP_Client_Manager) readAll() {
+	for {
+		ip, _, payload, err := cm.reader.ReadFrom()
+		if err != nil {
+			fmt.Println("TCP readAll error", err)
+			continue
+		}
+		fmt.Println("Recved IP:", ip, "with payload", payload)
+	}
+}
+
+type TCP_Client struct {
+	manager   *TCP_Client_Manager
+	writer *IP_Writer
+	ipAddress string // destination ip address
+	src, dst  uint16 // ports
+}
+
+func (x *TCP_Client_Manager) New_TCP_Client(src, dst uint16, dstIP string) (*TCP_Client, error) {
+	write, err := NewIP_Writer(dstIP, TCP_PROTO)
+	if err != nil {
+		return nil, err
+	}
+	return &TCP_Client{src: src, dst: dst, ipAddress: dstIP, manager: x, writer: write}, nil
 }
 
 func (c *TCP_Client) Connect() error {
@@ -71,9 +98,9 @@ func (c *TCP_Client) Connect() error {
 }
 
 func (c *TCP_Client) Send(data []byte) error {
-	return nil
+	return nil // TODO: implement TCP_Client send
 }
 
 func (c *TCP_Client) Close() error {
-	return nil
+	return nil // TODO: free manager read buffer
 }

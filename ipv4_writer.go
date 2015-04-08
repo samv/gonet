@@ -25,12 +25,12 @@ func NewIP_Writer(dst string, protocol uint8) (*IP_Writer, error) {
         return nil, err
     }
 
-	dstIPAddr, err := net.ResolveIPAddr("ip", dst)
+	/*dstIPAddr, err := net.ResolveIPAddr("ip", dst)
 	if err != nil {
 		//fmt.Println(err)
 		return nil, err
 	}
-	fmt.Println("Full Address: ", dstIPAddr)
+	fmt.Println("Full Address: ", dstIPAddr)*/
 
 	/*err = syscall.Connect(fd, addr)
 	if err != nil {
@@ -65,13 +65,13 @@ func (ipw *IP_Writer) WriteTo(p []byte) error {
 
 	// Src and Dst IPs
 	srcIP := net.ParseIP(ipw.src)
-	fmt.Println(srcIP)
-	//    fmt.Println(srcIP[12])
-	//    fmt.Println(srcIP[13])
-	//    fmt.Println(srcIP[14])
-	//    fmt.Println(srcIP[15])
+	//fmt.Println(srcIP)
+	//fmt.Println(srcIP[12])
+	//fmt.Println(srcIP[13])
+	//fmt.Println(srcIP[14])
+	//fmt.Println(srcIP[15])
 	dstIP := net.ParseIP(ipw.dst)
-	fmt.Println(dstIP)
+	//fmt.Println(dstIP)
 	header[12] = srcIP[12]
 	header[13] = srcIP[13]
 	header[14] = srcIP[14]
@@ -85,18 +85,18 @@ func (ipw *IP_Writer) WriteTo(p []byte) error {
 	maxPaySize := maxFragSize - int(ipw.headerLen)
 
 	for i := 0; i < len(p)/maxPaySize+1; i += 1 {
-		fmt.Println("Looping fragmenting")
+		//fmt.Println("Looping fragmenting")
 		if len(p) <= maxPaySize*(i+1) {
 			header[6] = byte(0)
 		} else {
 			header[6] = byte(1 << 5) // Flags: May fragment, more fragments
 		}
-		fmt.Println("off", i*maxFragSize, byte((i*maxFragSize)>>8), byte(i*maxFragSize))
+		//fmt.Println("off", i*maxFragSize, byte((i*maxFragSize)>>8), byte(i*maxFragSize))
 
 		offset := (i * maxPaySize) / 8
-		fmt.Println("Header 6 before:", header[6])
+		//fmt.Println("Header 6 before:", header[6])
 		header[6] += byte(offset >> 8)
-		fmt.Println("Header 6 after:", header[6])
+		//fmt.Println("Header 6 after:", header[6])
 		header[7] = byte(offset) // Fragment offset
 
 		totalLen := uint16(0)
@@ -105,42 +105,43 @@ func (ipw *IP_Writer) WriteTo(p []byte) error {
 		newPacket := make([]byte, 1)
 		if len(p) <= maxFragSize*(i+1) {
 			totalLen = uint16(ipw.headerLen) + uint16(len(p[maxPaySize*i:]))
-			fmt.Println("Full Pack")
-			fmt.Println("len", len(p[maxPaySize*i:]))
+			//fmt.Println("Full Pack")
+			//fmt.Println("len", len(p[maxPaySize*i:]))
 			//header[6] = byte(0)
 
-			fmt.Println("Total Len: ", totalLen)
+			//fmt.Println("Total Len: ", totalLen)
 			header[2] = (byte)(totalLen >> 8) // Total Len
 			header[3] = (byte)(totalLen)
 
 			// IPv4 header test (before checksum)
-			fmt.Println("Packet before checksum: ", header)
+			//fmt.Println("Packet before checksum: ", header)
 			// Checksum
 			checksum := calculateChecksum(header[:20])
 			header[10] = byte(checksum >> 8)
 			header[11] = byte(checksum)
 
 			newPacket = append(header, p[maxPaySize*i:]...)
-			fmt.Println("Full Packet:  ", newPacket)
-			fmt.Println("CALCULATED LEN:", i*maxFragSize+len(p[maxPaySize*i:]))
+			fmt.Println("Full Packet to Send in IPv4 Writer:", newPacket, "(len ", len(newPacket), ")")
+			//fmt.Println("CALCULATED LEN:", i*maxFragSize+len(p[maxPaySize*i:]))
 		} else {
 			totalLen = uint16(ipw.headerLen) + uint16(len(p[maxPaySize*i:maxPaySize*(i+1)]))
-			fmt.Println("Partial packet")
-			fmt.Println("len", len(p[maxPaySize*i:maxPaySize*(i+1)]))
+			//fmt.Println("Partial packet")
+			//fmt.Println("len", len(p[maxPaySize*i:maxPaySize*(i+1)]))
 
-			fmt.Println("Total Len: ", totalLen)
+			//fmt.Println("Total Len: ", totalLen)
 			header[2] = (byte)(totalLen >> 8) // Total Len
 			header[3] = (byte)(totalLen)
 
 			// IPv4 header test (before checksum)
-			fmt.Println("Packet before checksum: ", header)
+			//fmt.Println("Packet before checksum: ", header)
+
 			// Checksum
 			checksum := calculateChecksum(header[:20])
 			header[10] = byte(checksum >> 8)
 			header[11] = byte(checksum)
 
 			newPacket = append(header, p[maxPaySize*i:maxPaySize*(i+1)]...)
-			fmt.Println("Full Packet:  ", newPacket)
+			fmt.Println("Full Packet Frag to Send in IPv4 Writer:", newPacket, "(len ", len(newPacket), ")")
 		}
 
         // write the bytes
@@ -149,7 +150,7 @@ func (ipw *IP_Writer) WriteTo(p []byte) error {
 			return err
 		}
 	}
-	fmt.Println("PAY LEN", len(p))
+	//fmt.Println("PAY LEN", len(p))
 
 	return nil
 }
