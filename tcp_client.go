@@ -49,6 +49,17 @@ type TCP_Client struct {
 	src, dst  uint16 // ports
 }
 
+const (
+	TCP_FIN = 0x01
+	TCP_SYN = 0x02
+	TCP_RSH = 0x04
+	TCP_PSH = 0x08
+	TCP_ACK = 0x10
+	TCP_URG = 0x20
+	TCP_ECE = 0x40
+	TCP_CWR = 0x80
+)
+
 func (x *TCP_Client_Manager) New_TCP_Client(src, dst uint16, dstIP string) (*TCP_Client, error) {
 	write, err := NewIP_Writer(dstIP, TCP_PROTO)
 	if err != nil {
@@ -72,14 +83,14 @@ func (c *TCP_Client) Connect() error {
 			// bits 5-7 inclusive are reserved, always 0
 			// bit 8 is flag 0(NS flag), set to 0 here because only SYN
 		),
-		(byte)( // Flags 1-8 inclusive
+		(byte)(// Flags 1-8 inclusive
 			// CWR
 			// ECE
 			// URG
 			// ACK
 			// PSH
 			// RST
-			1 << 1, //SYN
+			0 | TCP_SYN, //SYN
 			// FIN
 		),
 		(byte)(window >> 8), (byte)(window),
