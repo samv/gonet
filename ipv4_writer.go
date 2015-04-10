@@ -8,7 +8,7 @@ import (
 )
 
 type IP_Writer struct {
-    nw          *Network_Writer
+	nw          *Network_Writer
 	version     uint8
 	dst, src    string
 	headerLen   uint16
@@ -19,11 +19,11 @@ type IP_Writer struct {
 }
 
 func NewIP_Writer(dst string, protocol uint8) (*IP_Writer, error) {
-    // create its own network_writer
-    nw, err := NewNetwork_Writer()
-    if err != nil {
-        return nil, err
-    }
+	// create its own network_writer
+	nw, err := NewNetwork_Writer()
+	if err != nil {
+		return nil, err
+	}
 
 	/*dstIPAddr, err := net.ResolveIPAddr("ip", dst)
 	if err != nil {
@@ -40,12 +40,12 @@ func NewIP_Writer(dst string, protocol uint8) (*IP_Writer, error) {
 	return &IP_Writer{
 		//fd:          fd,
 		//sockAddr:    addr,
-        nw:          nw,
+		nw:          nw,
 		version:     4,
 		headerLen:   20,
 		dst:         dst,
 		src:         "127.0.0.1", // TODO fix this based on dst
-		ttl:         8,
+		ttl:         64,
 		protocol:    protocol,
 		identifier:  20000,
 		maxFragSize: MTU, // TODO determine this dynamically with LLDP
@@ -144,8 +144,8 @@ func (ipw *IP_Writer) WriteTo(p []byte) error {
 			fmt.Println("Full Packet Frag to Send in IPv4 Writer:", newPacket, "(len ", len(newPacket), ")")
 		}
 
-        // write the bytes
-        err := ipw.nw.write(newPacket)
+		// write the bytes
+		err := ipw.nw.write(newPacket)
 		if err != nil {
 			return err
 		}
