@@ -73,13 +73,14 @@ func (c *TCP_Client) Connect() error {
 	initSeqNumber := uint32(3425) // Can be any number between 0 and 2^32 inclusive, TODO this needs to be changed later, it can't be predictable.
 	initAckNumber := uint32(0)    // Always 0 at start
 	window := uint16(43690)       // TODO calc using http://ithitman.blogspot.com/2013/02/understanding-tcp-window-window-scaling.html
+	headerLen := 40
 	SYN := []byte{
 		(byte)(c.src >> 8), (byte)(c.src), // Source port in byte
 		(byte)(c.dst >> 8), (byte)(c.dst), // Destination port in byte slice
 		(byte)(initSeqNumber >> 24), (byte)(initSeqNumber >> 16), (byte)(initSeqNumber >> 8), (byte)(initSeqNumber),
 		(byte)(initAckNumber >> 24), (byte)(initAckNumber >> 16), (byte)(initAckNumber >> 8), (byte)(initAckNumber),
 		(byte)(
-			10 << 4, // Size of header in 32 bit chunks. It is always 5 unless options are used. This is also the data offset.
+			(headerLen/4) << 4, // Size of header in 32 bit chunks. It is always 5 unless options are used. This is also the data offset.
 			// bits 5-7 inclusive are reserved, always 0
 			// bit 8 is flag 0(NS flag), set to 0 here because only SYN
 		),
@@ -98,7 +99,7 @@ func (c *TCP_Client) Connect() error {
 		0, 0, // URG pointer, only matters where URG flag is set.
 		0x02, 0x04, 0xff, 0xd7, 0x04, 0x02, 0x08, 0x0a, 0x02, 0x64, 0x80, 0x8b, 0, 0, 0, 0, 0x01, 0x03, 0x03, 0x07,
 	}
-	checksum := checksum(append(append(append(SYN, net.ParseIP(c.writer.src)...), net.ParseIP(c.writer.dst)...), []byte{byte(TCP_PROTO >> 8), byte(TCP_PROTO), byte(20 >> 8), byte(20)}...))
+	checksum := checksum(append(append(append(SYN, net.ParseIP(c.writer.src)...), net.ParseIP(c.writer.dst)...), []byte{byte(TCP_PROTO >> 8), byte(TCP_PROTO), byte(headerLen >> 8), byte(headerLen)}...))
 	SYN[16] = byte(checksum >> 8)
 	SYN[17] = byte(checksum)
 
