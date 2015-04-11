@@ -3,15 +3,16 @@ package main
 import (
 	"net"
 	"fmt"
+	"golang.org/x/net/ipv4"
 )
 
 type TCP_Client_Manager struct {
-	reader *IP_Reader
+	//reader *IP_Reader
 	readBuffer map[uint16](map[string](chan []byte)) // dst protocol, ip
 }
 
 func New_TCP_Client_Manager() (*TCP_Client_Manager, error) {
-	nr, err := NewNetwork_Reader() // TODO: create a global var for the network reader
+	/*nr, err := NewNetwork_Reader() // TODO: create a global var for the network reader
 	if err != nil {
 		return nil, err
 	}
@@ -19,19 +20,19 @@ func New_TCP_Client_Manager() (*TCP_Client_Manager, error) {
 	ipr, err := nr.NewIP_Reader("*", TCP_PROTO)
 	if err != nil {
 		return nil, err
-	}
+	}*/
 
 	cm := &TCP_Client_Manager{
-		reader: ipr,
+		//reader: ipr,
 		readBuffer: make(map[uint16](map[string](chan []byte))),
 	}
 
-	go cm.readAll()
+	//go cm.readAll()
 
 	return cm, nil
 }
 
-func (cm *TCP_Client_Manager) readAll() {
+/*func (cm *TCP_Client_Manager) readAll() {
 	for {
 		ip, _, payload, err := cm.reader.ReadFrom()
 		if err != nil {
@@ -40,12 +41,14 @@ func (cm *TCP_Client_Manager) readAll() {
 		}
 		fmt.Println("Recved IP:", ip, "with payload", payload)
 	}
-}
+}*/
 
 type TCP_Client struct {
 	manager   *TCP_Client_Manager
-	writer *IP_Writer
+	//writer *IP_Writer
+	conn   *ipv4.RawConn
 	ipAddress string // destination ip address
+	srcIP     string // src ip address
 	src, dst  uint16 // ports
 }
 
@@ -61,11 +64,32 @@ const (
 )
 
 func (x *TCP_Client_Manager) New_TCP_Client(src, dst uint16, dstIP string) (*TCP_Client, error) {
-	write, err := NewIP_Writer(dstIP, TCP_PROTO)
+	/*write, err := NewIP_Writer(dstIP, TCP_PROTO)
 	if err != nil {
 		return nil, err
+	}*/
+
+	p, err := net.ListenPacket("ip4:6", dstIP)
+	if err != nil {
+		fmt.Println(err)
+		return nil, err
 	}
-	return &TCP_Client{src: src, dst: dst, ipAddress: dstIP, manager: x, writer: write}, nil
+
+	r, err := ipv4.NewRawConn(p)
+	if err != nil {
+		fmt.Println(err)
+		return nil, err
+	}
+
+	return &TCP_Client{
+		src: src,
+		dst: dst,
+		ipAddress: dstIP,
+		srcIP: "127.0.0.1",
+		manager: x,
+		//writer: write,
+		conn: r,
+	}, nil
 }
 
 func (c *TCP_Client) Connect() error {
@@ -99,11 +123,30 @@ func (c *TCP_Client) Connect() error {
 		0, 0, // URG pointer, only matters where URG flag is set.
 		0x02, 0x04, 0xff, 0xd7, 0x04, 0x02, 0x08, 0x0a, 0x02, 0x64, 0x80, 0x8b, 0, 0, 0, 0, 0x01, 0x03, 0x03, 0x07,
 	}
-	checksum := checksum(append(append(append(SYN, net.ParseIP(c.writer.src)...), net.ParseIP(c.writer.dst)...), []byte{byte(TCP_PROTO >> 8), byte(TCP_PROTO), byte(headerLen >> 8), byte(headerLen)}...))
+	checksum := checksum(append(append(append(SYN, net.ParseIP(/*c.writer.src*/c.srcIP)...), net.ParseIP(/*c.writer.dst*/c.ipAddress)...), []byte{byte(TCP_PROTO >> 8), byte(TCP_PROTO), byte(headerLen >> 8), byte(headerLen)}...))
 	SYN[16] = byte(checksum >> 8)
 	SYN[17] = byte(checksum)
 
-	c.writer.WriteTo(SYN)
+	//c.writer.WriteTo(SYN)
+	err := c.conn.WriteTo(&ipv4.Header{
+		Version:  ipv4.Version, // protocol version
+		Len:      20, // header length
+		TOS:      0, // type-of-service (0 is everything normal)
+		TotalLen: len(SYN) + 20, // packet total length (octets)
+		ID:       0, // identification
+		Flags:    ipv4.DontFragment, // flags
+		FragOff:  0, // fragment offset
+		TTL:      64, // time-to-live (maximum lifespan in seconds)
+		Protocol: 6, // next protocol (17 is UDP)
+		Checksum: 0, // checksum (apparently autocomputed)
+		//Src:    net.IPv4(127, 0, 0, 1), // source address, apparently done automatically
+		Dst: net.ParseIP(c.ipAddress), // destination address
+		//Options                         // options, extension headers
+	}, SYN, nil)
+	fmt.Println("Sent data")
+	if err != nil {
+		fmt.Println("Raw conn send", err)
+	}
 
 	// TODO Wait for SYN + ACK, send back ACK
 
