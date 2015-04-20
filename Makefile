@@ -1,4 +1,6 @@
 # Makefile for go program
+# iptables command: sudo iptables -I INPUT -p tcp --sport 20102 -j DROP
+
 all: udp tcp
 
 udp: udp_read udp_write
