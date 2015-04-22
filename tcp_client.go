@@ -10,12 +10,12 @@ import (
 
 const tcp_buff_sz = 10
 
-type TCP_Client_Manager struct {
+type TCP_Main struct {
 	tcp_reader *IP_Reader
 	readBuffer map[uint16](map[uint16](map[string](chan []byte))) // dst, src port, ip
 }
 
-func New_TCP_Client_Manager() (*TCP_Client_Manager, error) {
+func New_TCP_Main() (*TCP_Main, error) {
 	nr, err := NewNetwork_Reader() // TODO: create a global var for the network reader
 	if err != nil {
 		return nil, err
@@ -26,7 +26,7 @@ func New_TCP_Client_Manager() (*TCP_Client_Manager, error) {
 		return nil, err
 	}
 
-	cm := &TCP_Client_Manager{
+	cm := &TCP_Main{
 		tcp_reader: ipr,
 		readBuffer: make(map[uint16](map[uint16](map[string](chan []byte)))),
 	}
@@ -36,7 +36,7 @@ func New_TCP_Client_Manager() (*TCP_Client_Manager, error) {
 	return cm, nil
 }
 
-func (cm *TCP_Client_Manager) bind(srcport, dstport uint16, ip string) (chan []byte, error) {
+func (cm *TCP_Main) bind(srcport, dstport uint16, ip string) (chan []byte, error) {
 	if _, ok := cm.readBuffer[dstport]; !ok {
 		cm.readBuffer[dstport] = make(map[uint16](map[string](chan []byte)))
 	}
@@ -53,7 +53,7 @@ func (cm *TCP_Client_Manager) bind(srcport, dstport uint16, ip string) (chan []b
 	return cm.readBuffer[dstport][srcport][ip], nil
 }
 
-func (cm *TCP_Client_Manager) readAll() {
+func (cm *TCP_Main) readAll() {
 	for {
 		ip, _, payload, err := cm.tcp_reader.ReadFrom()
 		if err != nil {
@@ -78,8 +78,8 @@ func (cm *TCP_Client_Manager) readAll() {
 	}
 }
 
-type TCP_Client struct {
-	manager   *TCP_Client_Manager
+type TCB struct {
+	manager   *TCP_Main
 	read      chan []byte
 	writer    *ipv4.RawConn
 	ipAddress string // destination ip address
@@ -103,7 +103,7 @@ const (
 	CLOSED
 )
 
-func (x *TCP_Client_Manager) New_TCP_Client(src, dst uint16, dstIP string) (*TCP_Client, error) {
+func (x *TCP_Main) New_TCB(src, dst uint16, dstIP string) (*TCB, error) {
 	/*write, err := NewIP_Writer(dstIP, TCP_PROTO)
 	if err != nil {
 		return nil, err
@@ -127,7 +127,7 @@ func (x *TCP_Client_Manager) New_TCP_Client(src, dst uint16, dstIP string) (*TCP
 		return nil, err
 	}
 
-	return &TCP_Client{
+	return &TCB{
 		src: src,
 		dst: dst,
 		ipAddress: dstIP,
@@ -151,7 +151,7 @@ const (
 	TCP_CWR = 0x80
 )
 
-func (c *TCP_Client) Connect() error {
+func (c *TCB) Connect() error {
 	// SYN
 	window := uint16(43690)       // TODO calc using http://ithitman.blogspot.com/2013/02/understanding-tcp-window-window-scaling.html
 	headerLenSYN := 40
@@ -257,10 +257,10 @@ func (c *TCP_Client) Connect() error {
 	return nil
 }
 
-func (c *TCP_Client) Send(data []byte) error {
+func (c *TCB) Send(data []byte) error {
 	return nil // TODO: implement TCP_Client send
 }
 
-func (c *TCP_Client) Close() error {
+func (c *TCB) Close() error {
 	return nil // TODO: free manager read buffer
 }
