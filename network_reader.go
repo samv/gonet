@@ -57,7 +57,7 @@ func (nr *Network_Reader) readAll() {
         // TODO: verify the ethernet protocol legitimately
         eth_protocol := uint16(buf[12]) << 8 | uint16(buf[13])
         if eth_protocol != ETHERTYPE_IP { // verify that protocol is 0x0800 for IP
-            fmt.Println("Dropping Ethernet packet for wrong protocol:", eth_protocol)
+            //fmt.Println("Dropping Ethernet packet for wrong protocol:", eth_protocol) TODO log this error
             continue;
         }
 		buf = buf[14:] // remove ethernet header

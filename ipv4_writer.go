@@ -3,6 +3,7 @@ package main
 import (
 	"fmt"
 	"net"
+	"golang.org/x/net/ipv4"
 	//"errors"
 	//"syscall"
 )
@@ -41,13 +42,13 @@ func NewIP_Writer(dst string, protocol uint8) (*IP_Writer, error) {
 		//fd:          fd,
 		//sockAddr:    addr,
 		nw:          nw,
-		version:     4,
-		headerLen:   20,
+		version:     ipv4.Version,
+		headerLen:   IP_HEADER_LEN,
 		dst:         dst,
 		src:         "127.0.0.1", // TODO fix this based on dst
-		ttl:         64,
+		ttl:         DEFAULT_TTL,
 		protocol:    protocol,
-		identifier:  20000,
+		identifier:  20000, // TODO generate this properly
 		maxFragSize: MTU, // TODO determine this dynamically with LLDP
 	}, nil
 }

@@ -37,6 +37,11 @@ const (
 	TCP_PROTO = 6
 )
 
+const (
+	DEFAULT_TTL = 64
+	IP_HEADER_LEN = 20
+)
+
 func checksum(head []byte) uint16 {
 	totalSum := uint64(0)
 	for ind, elem := range head {
