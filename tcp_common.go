@@ -1,11 +1,11 @@
 package main
 
 import (
-	"fmt"
-	"net"
 	"crypto/rand"
-	"golang.org/x/net/ipv4"
 	"errors"
+	"fmt"
+	"golang.org/x/net/ipv4"
+	"net"
 )
 
 // Finite State Machine
@@ -48,8 +48,9 @@ const (
 // Global src, dst port and ip registry for TCP binding
 type TCP_Port_Manager_Type struct {
 	tcp_reader *IP_Reader
-	incoming map[uint16](map[uint16](map[string](chan []byte))) // dst, src port, remote ip
+	incoming   map[uint16](map[uint16](map[string](chan []byte))) // dst, src port, remote ip
 }
+
 // TODO TCP_Port_Manager_Type should have an unbind function
 func (m *TCP_Port_Manager_Type) bind(srcport, dstport uint16, ip string) (chan []byte, error) {
 	// dstport is the local one here, srcport is the remote
@@ -105,13 +106,14 @@ func (m *TCP_Port_Manager_Type) readAll() {
 		}
 
 		if output != nil {
-			go func(){ output <- payload }()
+			go func() { output <- payload }()
 		} else {
 			// TODO send a rst if nothing is binded to the dst port, src port, and remote ip
 			//fmt.Println(errors.New("Dst/Src port + ip not binded to"))
 		}
 	}
 }
+
 var TCP_Port_Manager = func() *TCP_Port_Manager_Type {
 	nr, err := NewNetwork_Reader() // TODO: create a global var for the network reader
 	if err != nil {
@@ -127,7 +129,7 @@ var TCP_Port_Manager = func() *TCP_Port_Manager_Type {
 
 	m := &TCP_Port_Manager_Type{
 		tcp_reader: ipr,
-		incoming: make(map[uint16](map[uint16](map[string](chan []byte)))),
+		incoming:   make(map[uint16](map[uint16](map[string](chan []byte)))),
 	}
 	go m.readAll()
 	return m
@@ -135,30 +137,30 @@ var TCP_Port_Manager = func() *TCP_Port_Manager_Type {
 
 type TCP_Header struct {
 	srcport, dstport uint16
-	seq, ack uint32
+	seq, ack         uint32
 	// will do data offset automatically
-	flags uint8
+	flags  uint8
 	window uint16
 	// checksum will be automatic
-	urg uint16
+	urg     uint16
 	options []byte
 }
 
 func Make_TCP_Header(h *TCP_Header, dstIP, srcIP string) ([]byte, error) {
 	// pad options with 0's
-	for len(h.options) % 4 != 0 {
+	for len(h.options)%4 != 0 {
 		h.options = append(h.options, 0)
 	}
 
 	headerLen := uint8(TCP_BASIC_HEADER_SZ + len(h.options)) // size of header in 32 bit (4 byte) chunks
 
 	header := append([]byte{
-		(byte)(h.srcport >> 8),     (byte)(h.srcport), // Source port in byte slice
-		(byte)(h.dstport >> 8),     (byte)(h.dstport), // Destination port in byte slice
+		(byte)(h.srcport >> 8), (byte)(h.srcport), // Source port in byte slice
+		(byte)(h.dstport >> 8), (byte)(h.dstport), // Destination port in byte slice
 		(byte)(h.seq >> 24), (byte)(h.seq >> 16), (byte)(h.seq >> 8), (byte)(h.seq), // seq
 		(byte)(h.ack >> 24), (byte)(h.ack >> 16), (byte)(h.ack >> 8), (byte)(h.ack), // ack
 		(byte)(
-		(headerLen / 4) << 4, // data offset.
+			(headerLen / 4) << 4, // data offset.
 		// bits 5-7 inclusive are reserved, always 0
 		// bit 8 is flag 0(NS flag), set to 0 here because only SYN
 		),
@@ -189,13 +191,13 @@ func Extract_TCP_Header(d []byte, rip, lip string) (h *TCP_Header, data []byte, 
 
 	// create the header
 	h = &TCP_Header{
-		srcport: uint16(d[0]) << 8 | uint16(d[1]),
-		dstport: uint16(d[2]) << 8 | uint16(d[3]),
-		seq: uint32(d[4]) << 24 | uint32(d[5]) << 16 | uint32(d[ 6]) << 8 | uint32(d[ 7]),
-		ack: uint32(d[8]) << 24 | uint32(d[9]) << 16 | uint32(d[10]) << 8 | uint32(d[11]),
-		flags: uint8(d[13]),
-		window: uint16(d[14]) << 8 | uint16(d[15]),
-		urg: uint16(d[18]) << 8 | uint16(d[19]),
+		srcport: uint16(d[0])<<8 | uint16(d[1]),
+		dstport: uint16(d[2])<<8 | uint16(d[3]),
+		seq:     uint32(d[4])<<24 | uint32(d[5])<<16 | uint32(d[6])<<8 | uint32(d[7]),
+		ack:     uint32(d[8])<<24 | uint32(d[9])<<16 | uint32(d[10])<<8 | uint32(d[11]),
+		flags:   uint8(d[13]),
+		window:  uint16(d[14])<<8 | uint16(d[15]),
+		urg:     uint16(d[18])<<8 | uint16(d[19]),
 		options: d[TCP_BASIC_HEADER_SZ:headerLen],
 	}
 	return h, d[headerLen:], nil
@@ -213,23 +215,23 @@ func genRandSeqNum() uint32 {
 	_, err := rand.Read(x)
 	if err != nil {
 		fmt.Println(errors.New("Failed to genRandSeqNum")) // TODO log instead of print
-		return 0 // TODO incorporate an error message
+		return 0                                           // TODO incorporate an error message
 	}
-	return uint32(x[0]) << 24 | uint32(x[1]) << 16 | uint32(x[2]) << 8 | uint32(x[3])
+	return uint32(x[0])<<24 | uint32(x[1])<<16 | uint32(x[2])<<8 | uint32(x[3])
 }
 
 func MyRawConnTCPWrite(w *ipv4.RawConn, tcp []byte, dst string) error {
 	return w.WriteTo(&ipv4.Header{
-		Version:  ipv4.Version, // protocol version
-		Len:      IP_HEADER_LEN, // header length
-		TOS:      0, // type-of-service (0 is everything normal)
+		Version:  ipv4.Version,             // protocol version
+		Len:      IP_HEADER_LEN,            // header length
+		TOS:      0,                        // type-of-service (0 is everything normal)
 		TotalLen: len(tcp) + IP_HEADER_LEN, // packet total length (octets)
-		ID:       0, // identification
-		Flags:    ipv4.DontFragment, // flags
-		FragOff:  0, // fragment offset
-		TTL:      DEFAULT_TTL, // time-to-live (maximum lifespan in seconds)
-		Protocol: TCP_PROTO, // next protocol
-		Checksum: 0, // checksum (autocomputed)
-		Dst: net.ParseIP(dst), // destination address
+		ID:       0,                        // identification
+		Flags:    ipv4.DontFragment,        // flags
+		FragOff:  0,                        // fragment offset
+		TTL:      DEFAULT_TTL,              // time-to-live (maximum lifespan in seconds)
+		Protocol: TCP_PROTO,                // next protocol
+		Checksum: 0,                        // checksum (autocomputed)
+		Dst:      net.ParseIP(dst),         // destination address
 	}, tcp, nil)
 }

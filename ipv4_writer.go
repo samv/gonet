@@ -2,8 +2,8 @@ package main
 
 import (
 	"fmt"
-	"net"
 	"golang.org/x/net/ipv4"
+	"net"
 	//"errors"
 	//"syscall"
 )
@@ -49,7 +49,7 @@ func NewIP_Writer(dst string, protocol uint8) (*IP_Writer, error) {
 		ttl:         DEFAULT_TTL,
 		protocol:    protocol,
 		identifier:  20000, // TODO generate this properly
-		maxFragSize: MTU, // TODO determine this dynamically with LLDP
+		maxFragSize: MTU,   // TODO determine this dynamically with LLDP
 	}, nil
 }
 

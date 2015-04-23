@@ -43,23 +43,23 @@ func NewNetwork_Reader() (*Network_Reader, error) {
 
 func (nr *Network_Reader) readAll() {
 	for {
-        // read twice to account for the double receiving
+		// read twice to account for the double receiving
 		buf := make([]byte, MAX_IP_PACKET_LEN)
-		_, err  := nr.getNextPacket(buf)
-        ln, err := nr.getNextPacket(buf)
+		_, err := nr.getNextPacket(buf)
+		ln, err := nr.getNextPacket(buf)
 
 		if err != nil {
 			fmt.Println(err)
 		}
 		buf = buf[:ln] // remove extra bytes off the end
 
-        //fmt.Println("Ethernet header:", buf[:14])
-        // TODO: verify the ethernet protocol legitimately
-        eth_protocol := uint16(buf[12]) << 8 | uint16(buf[13])
-        if eth_protocol != ETHERTYPE_IP { // verify that protocol is 0x0800 for IP
-            //fmt.Println("Dropping Ethernet packet for wrong protocol:", eth_protocol) TODO log this error
-            continue;
-        }
+		//fmt.Println("Ethernet header:", buf[:14])
+		// TODO: verify the ethernet protocol legitimately
+		eth_protocol := uint16(buf[12])<<8 | uint16(buf[13])
+		if eth_protocol != ETHERTYPE_IP { // verify that protocol is 0x0800 for IP
+			//fmt.Println("Dropping Ethernet packet for wrong protocol:", eth_protocol) TODO log this error
+			continue
+		}
 		buf = buf[14:] // remove ethernet header
 		//fmt.Println("After removing ethernet header", buf)
 
