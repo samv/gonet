@@ -1,8 +1,11 @@
 package main
 
 import (
+	"fmt"
 	"net"
+	"crypto/rand"
 	"golang.org/x/net/ipv4"
+	"errors"
 )
 
 // Finite State Machine
@@ -42,6 +45,94 @@ const (
 	TCP_CWR = 0x80
 )
 
+// Global src, dst port and ip registry for TCP binding
+type TCP_Port_Manager_Type struct {
+	tcp_reader *IP_Reader
+	incoming map[uint16](map[uint16](map[string](chan []byte))) // dst, src port, remote ip
+}
+// TODO TCP_Port_Manager_Type should have an unbind function
+func (m *TCP_Port_Manager_Type) bind(srcport, dstport uint16, ip string) (chan []byte, error) {
+	// dstport is the local one here, srcport is the remote
+	if _, ok := m.incoming[dstport]; !ok {
+		m.incoming[dstport] = make(map[uint16](map[string](chan []byte)))
+	}
+
+	// TODO add an option (for servers) for all srcports
+	if _, ok := m.incoming[dstport][srcport]; !ok {
+		m.incoming[dstport][srcport] = make(map[string](chan []byte))
+	}
+
+	if _, ok := m.incoming[dstport][srcport][ip]; ok {
+		return nil, errors.New("Ports and IP already binded to")
+	}
+
+	m.incoming[dstport][srcport][ip] = make(chan []byte, TCP_INCOMING_BUFF_SZ)
+	return m.incoming[dstport][srcport][ip], nil
+}
+func (m *TCP_Port_Manager_Type) readAll() {
+	for {
+		rip, lip, _, payload, err := m.tcp_reader.ReadFrom()
+		if err != nil {
+			fmt.Println("TCP readAll error", err) // TODO log instead of print
+			continue
+		}
+
+		header, _, err := Extract_TCP_Header(payload, rip, lip)
+		if err != nil {
+			fmt.Println(err)
+			continue
+		}
+
+		rport := header.srcport
+		lport := header.dstport
+
+		var output chan []byte = nil
+
+		if _, ok := m.incoming[lport]; ok {
+			if _, ok := m.incoming[lport][rport]; ok {
+				// TODO all option to send others to the server listen
+				if _, ok := m.incoming[lport][rport][rip]; ok {
+					output = m.incoming[lport][rport][rip]
+				} else if _, ok := m.incoming[lport][rport]["*"]; ok {
+					output = m.incoming[lport][rport]["*"]
+				}
+			}
+			if _, ok := m.incoming[lport][0]; ok {
+				if _, ok := m.incoming[lport][0]["*"]; ok {
+					output = m.incoming[lport][0]["*"]
+				}
+			}
+		}
+
+		if output != nil {
+			go func(){ output <- payload }()
+		} else {
+			// TODO send a rst if nothing is binded to the dst port, src port, and remote ip
+			//fmt.Println(errors.New("Dst/Src port + ip not binded to"))
+		}
+	}
+}
+var TCP_Port_Manager = func() *TCP_Port_Manager_Type {
+	nr, err := NewNetwork_Reader() // TODO: create a global var for the network reader
+	if err != nil {
+		fmt.Println(err)
+		return nil
+	}
+
+	ipr, err := nr.NewIP_Reader("*", TCP_PROTO)
+	if err != nil {
+		fmt.Println(err)
+		return nil
+	}
+
+	m := &TCP_Port_Manager_Type{
+		tcp_reader: ipr,
+		incoming: make(map[uint16](map[uint16](map[string](chan []byte)))),
+	}
+	go m.readAll()
+	return m
+}()
+
 type TCP_Header struct {
 	srcport, dstport uint16
 	seq, ack uint32
@@ -77,6 +168,7 @@ func Make_TCP_Header(h *TCP_Header, dstIP, srcIP string) ([]byte, error) {
 		byte(h.urg >> 8), byte(h.urg), // URG pointer, only matters where URG flag is set
 	}, h.options...)
 
+	// insert the checksum
 	cksum := calcTCPchecksum(header, srcIP, dstIP, headerLen)
 	header[16] = byte(cksum >> 8)
 	header[17] = byte(cksum)
@@ -84,11 +176,46 @@ func Make_TCP_Header(h *TCP_Header, dstIP, srcIP string) ([]byte, error) {
 	return header, nil
 }
 
+func Extract_TCP_Header(d []byte, rip, lip string) (h *TCP_Header, data []byte, err error) { // TODO: test this function
+	headerLen := (d[12] >> 4) * 4
+	if headerLen < TCP_BASIC_HEADER_SZ {
+		return nil, nil, errors.New("Bad TCP header size: Less than 20.")
+	}
+
+	// checksum verification
+	if !verifyTCPchecksum(d[:headerLen], rip, lip, headerLen) {
+		return nil, nil, errors.New("Bad TCP header checksum")
+	}
+
+	// create the header
+	h = &TCP_Header{
+		srcport: uint16(d[0]) << 8 | uint16(d[1]),
+		dstport: uint16(d[2]) << 8 | uint16(d[3]),
+		seq: uint32(d[4]) << 24 | uint32(d[5]) << 16 | uint32(d[ 6]) << 8 | uint32(d[ 7]),
+		ack: uint32(d[8]) << 24 | uint32(d[9]) << 16 | uint32(d[10]) << 8 | uint32(d[11]),
+		flags: uint8(d[13]),
+		window: uint16(d[14]) << 8 | uint16(d[15]),
+		urg: uint16(d[18]) << 8 | uint16(d[19]),
+		options: d[TCP_BASIC_HEADER_SZ:headerLen],
+	}
+	return h, d[headerLen:], nil
+}
+
 func calcTCPchecksum(header []byte, srcIP, dstIP string, headerLen uint8) uint16 {
 	return checksum(append(append(append(header, net.ParseIP(srcIP)...), net.ParseIP(dstIP)...), []byte{byte(TCP_PROTO >> 8), byte(TCP_PROTO), byte(headerLen >> 8), byte(headerLen)}...))
 }
-func verifyTCPchecksum() {
-	// TODO: implement TCP checksum verification
+func verifyTCPchecksum(header []byte, srcIP, dstIP string, headerLen uint8) bool {
+	// TODO: do TCP checksum verification
+	return true
+}
+func genRandSeqNum() uint32 {
+	x := make([]byte, 4) // four bytes
+	_, err := rand.Read(x)
+	if err != nil {
+		fmt.Println(errors.New("Failed to genRandSeqNum")) // TODO log instead of print
+		return 0 // TODO incorporate an error message
+	}
+	return uint32(x[0]) << 24 | uint32(x[1]) << 16 | uint32(x[2]) << 8 | uint32(x[3])
 }
 
 func MyRawConnTCPWrite(w *ipv4.RawConn, tcp []byte, dst string) error {
@@ -102,7 +229,7 @@ func MyRawConnTCPWrite(w *ipv4.RawConn, tcp []byte, dst string) error {
 		FragOff:  0, // fragment offset
 		TTL:      DEFAULT_TTL, // time-to-live (maximum lifespan in seconds)
 		Protocol: TCP_PROTO, // next protocol
-		Checksum: 0, // checksum (apparently autocomputed)
+		Checksum: 0, // checksum (autocomputed)
 		Dst: net.ParseIP(dst), // destination address
 	}, tcp, nil)
 }

@@ -4,102 +4,33 @@ import (
 	"net"
 	"fmt"
 	"golang.org/x/net/ipv4"
-	"errors"
 	//"time"
 )
 
-type TCP_Main struct {
-	tcp_reader *IP_Reader
-	readBuffer map[uint16](map[uint16](map[string](chan []byte))) // dst, src port, ip
-}
-
-func New_TCP_Main() (*TCP_Main, error) {
-	nr, err := NewNetwork_Reader() // TODO: create a global var for the network reader
-	if err != nil {
-		return nil, err
-	}
-
-	ipr, err := nr.NewIP_Reader("*", TCP_PROTO)
-	if err != nil {
-		return nil, err
-	}
-
-	cm := &TCP_Main{
-		tcp_reader: ipr,
-		readBuffer: make(map[uint16](map[uint16](map[string](chan []byte)))),
-	}
-
-	go cm.readAll()
-
-	return cm, nil
-}
-
-func (cm *TCP_Main) bind(srcport, dstport uint16, ip string) (chan []byte, error) {
-	if _, ok := cm.readBuffer[dstport]; !ok {
-		cm.readBuffer[dstport] = make(map[uint16](map[string](chan []byte)))
-	}
-
-	if _, ok := cm.readBuffer[dstport][srcport]; !ok {
-		cm.readBuffer[dstport][srcport] = make(map[string](chan []byte))
-	}
-
-	if _, ok := cm.readBuffer[dstport][srcport][ip]; ok {
-		return nil, errors.New("Ports and IP already binded to")
-	}
-
-	cm.readBuffer[dstport][srcport][ip] = make(chan []byte, TCP_INCOMING_BUFF_SZ)
-	return cm.readBuffer[dstport][srcport][ip], nil
-}
-
-func (cm *TCP_Main) readAll() {
-	for {
-		ip, _, payload, err := cm.tcp_reader.ReadFrom()
-		if err != nil {
-			fmt.Println("TCP readAll error", err)
-			continue
-		}
-		dstport := uint16(payload[0]) << 8 | uint16(payload[1]) // reversed to account
-		srcport := uint16(payload[2]) << 8 | uint16(payload[3]) // for server sending
-
-		if _, ok := cm.readBuffer[dstport]; ok {
-			if _, ok := cm.readBuffer[dstport][srcport]; ok {
-				if _, ok := cm.readBuffer[dstport][srcport][ip]; ok {
-					go func() { cm.readBuffer[dstport][srcport][ip] <- payload }()
-					continue
-				} else if _, ok := cm.readBuffer[dstport][srcport]["*"]; ok {
-					go func() { cm.readBuffer[dstport][srcport]["*"] <- payload }()
-					continue
-				}
-			}
-		}
-		//fmt.Println(errors.New("Dst/Src port + ip not binded to"))
-	}
-}
-
 type TCB struct {
-	manager   *TCP_Main
 	read      chan []byte
 	writer    *ipv4.RawConn
 	ipAddress string // destination ip address
 	srcIP     string // src ip address
-	src, dst  uint16 // ports
+	lport, rport uint16 // ports
 	seqNum, ackNum    uint32 // sequence number
-	state    uint
+	state    uint // from the FSM
+	kind     uint // type (server or client)
 }
 
-func (x *TCP_Main) New_TCB(src, dst uint16, dstIP string) (*TCB, error) {
+func New_TCB_From_Client(local, remote uint16, dstIP string) (*TCB, error) {
 	/*write, err := NewIP_Writer(dstIP, TCP_PROTO)
 	if err != nil {
 		return nil, err
 	}*/
 
-	read, err := x.bind(src, dst, dstIP)
+	read, err := TCP_Port_Manager.bind(remote, local, dstIP)
 	if err != nil {
 		fmt.Println(err)
 		return nil, err
 	}
 
-	p, err := net.ListenPacket(fmt.Sprintf("ip4:%d", TCP_PROTO), dstIP)
+	p, err := net.ListenPacket(fmt.Sprintf("ip4:%d", TCP_PROTO), dstIP) // only for read, not for write
 	if err != nil {
 		fmt.Println(err)
 		return nil, err
@@ -112,26 +43,26 @@ func (x *TCP_Main) New_TCB(src, dst uint16, dstIP string) (*TCB, error) {
 	}
 
 	return &TCB{
-		src: src,
-		dst: dst,
+		lport: local,
+		rport: remote,
 		ipAddress: dstIP,
 		srcIP: "127.0.0.1", // TODO: don't hardcode the srcIP
-		manager: x,
 		read: read,
 		writer: r,
-		seqNum: uint32(3425), // Can be any number between 0 and 2^32 inclusive, TODO this needs to be changed later, it can't be predictable.
+		seqNum: genRandSeqNum(), // TODO verify that this works
 		ackNum: uint32(0),    // Always 0 at start
 		state: CLOSED,
+		kind: TCP_CLIENT,
 	}, nil
 }
 
-func (c *TCB) Connect() error {
+func (c *TCB) Connect() error { // TODO set the states for the FSM throughout
 	// SYN
 	window := uint16(43690) // TODO calc using http://ithitman.blogspot.com/2013/02/understanding-tcp-window-window-scaling.html
 
 	SYN, _ := Make_TCP_Header(&TCP_Header{
-		srcport: c.src,
-		dstport: c.dst,
+		srcport: c.lport,
+		dstport: c.rport,
 		seq: c.seqNum,
 		ack: c.ackNum,
 		flags: TCP_SYN,
@@ -149,7 +80,7 @@ func (c *TCB) Connect() error {
 
 	// TODO: resend SYN on timeout
 
-	// SYN-ACK
+	// SYN-ACK // TODO set the state for the FSM
 	// TODO also prepare for http://www.tcpipguide.com/free/t_TCPConnectionEstablishmentProcessTheThreeWayHandsh-4.htm (Simultaneous Open Connection Establishment)
 	fmt.Println("Waiting for syn-ack")
 	synack := <- c.read
@@ -162,8 +93,8 @@ func (c *TCB) Connect() error {
 	c.ackNum = B+1
 
 	ACK, _ := Make_TCP_Header(&TCP_Header{
-		srcport: c.src,
-		dstport: c.dst,
+		srcport: c.lport,
+		dstport: c.rport,
 		seq: c.seqNum,
 		ack: c.ackNum,
 		flags: TCP_ACK,
@@ -177,6 +108,7 @@ func (c *TCB) Connect() error {
 	if err != nil {
 		fmt.Println("Raw conn send", err)
 	}
+	// TODO set the state for the FSM
 
 	return nil
 }

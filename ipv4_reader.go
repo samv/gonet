@@ -133,7 +133,7 @@ func killFragmentAssembler(quit chan<- bool, didQuit <-chan bool, done <-chan bo
     // TODO: clean the buffer for bufID
 }
 
-func (ipr *IP_Reader) ReadFrom() (ip string, b, payload []byte, e error) {
+func (ipr *IP_Reader) ReadFrom() (rip, lip string, b, payload []byte, e error) {
     //fmt.Println("STARTING READ")
     b = <-ipr.incomingPackets
     //fmt.Println("RAW READ COMPLETED")
@@ -144,18 +144,16 @@ func (ipr *IP_Reader) ReadFrom() (ip string, b, payload []byte, e error) {
     hdr, p := slicePacket(b)
 
     // extract source IP and protocol
-    ip = net.IPv4(hdr[12], hdr[13], hdr[14], hdr[15]).String()
+    rip = net.IPv4(hdr[12], hdr[13], hdr[14], hdr[15]).String()
+    lip = net.IPv4(hdr[16], hdr[17], hdr[18], hdr[19]).String()
     proto := uint8(hdr[9])
-    if !((ipr.ip == ip || ipr.ip == "*") && ipr.protocol == proto) {
+    if !((ipr.ip == rip || ipr.ip == "*") && ipr.protocol == proto) {
         fmt.Println("Not interested in packet: dropping.")
         return ipr.ReadFrom()
     }
 
     // verify checksum
     if verifyChecksum(hdr) != 0 {
-        //fmt.Println("Header checksum verification failed. Packet dropped.")
-        //fmt.Println("Wrong header: ", hdr)
-        //fmt.Println("Payload (dropped): ", p)
         fmt.Println("Header checksum incorrect, packet dropped")
         return ipr.ReadFrom() // return another packet instead
     }
@@ -167,7 +165,7 @@ func (ipr *IP_Reader) ReadFrom() (ip string, b, payload []byte, e error) {
         //fmt.Println("Payload Length: ", len(p))
         //fmt.Println("Full payload: ", p)
         //fmt.Println("PACKET COMPLETELY READ")
-        return ip, b, p, nil
+        return rip, lip, b, p, nil
     } else {
         // is a fragment
         bufID := string([]byte{hdr[12], hdr[13], hdr[14], hdr[15], // the source IP
