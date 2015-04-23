@@ -150,6 +150,7 @@ func (c *TCB) Connect() error {
 	// TODO: resend SYN on timeout
 
 	// SYN-ACK
+	// TODO also prepare for http://www.tcpipguide.com/free/t_TCPConnectionEstablishmentProcessTheThreeWayHandsh-4.htm (Simultaneous Open Connection Establishment)
 	fmt.Println("Waiting for syn-ack")
 	synack := <- c.read
 	// TODO: verify the syn-ack flags (seq, ack, options-window scale, etc), and checksum
