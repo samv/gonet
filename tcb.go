@@ -49,10 +49,17 @@ func New_TCB(local, remote uint16, dstIP string, read chan *TCP_Packet, write *i
 }
 
 func (c *TCB) UpdateState(newState uint) {
-	c.stateUpdate.L.Lock()
 	c.state = newState
-	c.stateUpdate.Broadcast()
-	c.stateUpdate.L.Unlock()
+	go SendUpdate(c.stateUpdate)
+	if c.serverParent != nil {
+		go SendUpdate(c.serverParent.connQueueUpdate)
+	}
+}
+
+func SendUpdate(update *sync.Cond) {
+	update.L.Lock()
+	update.Broadcast()
+	update.L.Unlock()
 }
 
 func (c *TCB) PacketSender() {

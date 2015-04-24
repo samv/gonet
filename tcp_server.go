@@ -5,7 +5,7 @@ import (
 	"fmt"
 	"golang.org/x/net/ipv4"
 	"net"
-	"time"
+	"sync"
 )
 
 type Server_TCB struct {
@@ -15,6 +15,7 @@ type Server_TCB struct {
 	state      uint
 	kind       uint
 	connQueue  chan *TCB
+	connQueueUpdate *sync.Cond
 }
 
 func New_Server_TCB() (*Server_TCB, error) {
@@ -25,6 +26,7 @@ func New_Server_TCB() (*Server_TCB, error) {
 		state:      CLOSED,
 		kind:       TCP_SERVER,
 		connQueue:  make(chan *TCB, TCP_LISTEN_QUEUE_SZ),
+		connQueueUpdate: sync.NewCond(&sync.Mutex{}),
 	}
 
 	return x, nil
@@ -117,15 +119,18 @@ func (s *Server_TCB) LongListener() {
 }
 
 func (s *Server_TCB) Accept() (c *TCB, rip string, rport uint16, err error) {
+	s.connQueueUpdate.L.Lock()
+	defer s.connQueueUpdate.L.Unlock()
 	for {
-		// TODO use a broadcast message to update only when changes occur
 		// TODO add a timeout
-		next := <-s.connQueue
-		if next.state == ESTABLISHED {
-			return next, next.ipAddress, next.rport, nil
+		for i := 0; i < len(s.connQueue); i++ {
+			next := <- s.connQueue
+			if next.state == ESTABLISHED {
+				return next, next.ipAddress, next.rport, nil
+			}
+			s.connQueue <- next
 		}
-		s.connQueue <- next
-		time.Sleep(500 * time.Millisecond)
+		s.connQueueUpdate.Wait()
 	}
 }
 
