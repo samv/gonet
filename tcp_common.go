@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"golang.org/x/net/ipv4"
 	"net"
+	"time"
 )
 
 // Finite State Machine
@@ -258,5 +259,21 @@ func MyRawConnTCPWrite(w *ipv4.RawConn, tcp []byte, dst string) error {
 func PrintErr(err error) {
 	if err != nil {
 		fmt.Println(err)
+	}
+}
+
+func ResendTimer(w *ipv4.RawConn, pay []byte, dst string, delay time.Duration, stop <-chan bool) error {
+	del := time.After(delay)
+	for {
+		select {
+		case <-stop:
+			return nil
+		case <-del:
+			del = time.After(delay)
+			err := MyRawConnTCPWrite(w, pay, dst)
+			if err != nil {
+				return err
+			}
+		}
 	}
 }

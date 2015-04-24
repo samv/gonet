@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"golang.org/x/net/ipv4"
 	"sync"
+	"time"
 )
 
 type TCB struct {
@@ -21,10 +22,15 @@ type TCB struct {
 	sendBuffer     []byte      // a buffer of bytes that need to be sent
 	urgSendBuffer  []byte      // buffer of urgent data TODO urg data later
 	recvBuffer     []byte      // bytes to pass to the application above
+	resendDelay    time.Duration
 }
 
 func New_TCB(local, remote uint16, dstIP string, read chan *TCP_Packet, write *ipv4.RawConn, kind uint) (*TCB, error) {
 	fmt.Println("New_TCB")
+	delay, err := time.ParseDuration("1s")
+	if err != nil {
+		return nil, err
+	}
 	c := &TCB{
 		lport:        local,
 		rport:        remote,
@@ -39,6 +45,7 @@ func New_TCB(local, remote uint16, dstIP string, read chan *TCP_Packet, write *i
 		kind:         kind,
 		serverParent: nil,
 		curWindow:    43690, // TODO calc using http://ithitman.blogspot.com/2013/02/understanding-tcp-window-window-scaling.html
+		resendDelay:  delay,
 	}
 	fmt.Println("Starting the packet dealer")
 

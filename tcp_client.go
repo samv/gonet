@@ -55,14 +55,10 @@ func (c *TCB) Connect() error {
 	}
 
 	//c.writer.WriteTo(SYN)
-	err = MyRawConnTCPWrite(c.writer, SYN, c.ipAddress)
+	done := make(chan bool)
+	go ResendTimer(c.writer, SYN, c.ipAddress, c.resendDelay, done)
 	fmt.Println("Sent SYN")
-	if err != nil {
-		return err
-	}
 	c.UpdateState(SYN_SENT)
-
-	// TODO set up resend SYN timers
 
 	// wait for the connection to be established
 	c.stateUpdate.L.Lock()
@@ -73,6 +69,7 @@ func (c *TCB) Connect() error {
 	if c.state == CLOSED {
 		return errors.New("Connection closed by reset or timeout")
 	} else {
+		done <- true
 		return nil
 	}
 }
