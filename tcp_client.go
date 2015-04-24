@@ -18,6 +18,9 @@ type TCB struct {
 	state          uint   // from the FSM
 	kind           uint   // type (server or client)
 	curWindow      uint16 // the current window size
+	sendBuffer     []byte // a buffer of bytes that need to be sent
+	urgSendBuffer  []byte // buffer of urgent data TODO urg data later
+	recvBuffer     []byte // bytes to pass to the application above
 }
 
 func New_TCB_From_Client(local, remote uint16, dstIP string) (*TCB, error) {
@@ -64,13 +67,20 @@ func New_TCB(local, remote uint16, dstIP string, read chan *TCP_Packet, write *i
 		curWindow: 43690, // TODO calc using http://ithitman.blogspot.com/2013/02/understanding-tcp-window-window-scaling.html
 	}
 	fmt.Println("Starting the packet dealer")
+
+	go c.PacketSender()
 	go c.PacketDealer()
+
 	return c, nil
 }
 
 func (c *TCB) UpdateState(newstate uint) {
 	c.state = newstate
 	// TODO notify of the update
+}
+
+func (c *TCB) PacketSender() {
+	// TODO: deal with data in send and urgSend buffers
 }
 
 func (c *TCB) PacketDealer() {
@@ -194,11 +204,12 @@ func (c *TCB) Connect() error {
 	return nil
 }
 
-func (c *TCB) Send(data []byte) error {
-	return nil // TODO: implement TCB send
+func (c *TCB) Send(data []byte) error { // a non-blocking send call
+	c.sendBuffer = append(c.sendBuffer, data...)
+	return nil // TODO: read and send from the send buffer
 }
 
-func (c *TCB) Recv() ([]byte, error) {
+func (c *TCB) Recv(num uint64) ([]byte, error) {
 	return nil, nil // TODO: implement TCB receive
 }
 
