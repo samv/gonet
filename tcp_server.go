@@ -1,50 +1,134 @@
 package main
 
-type TCP_Connection struct {
+import (
+	"errors"
+	"fmt"
+	"golang.org/x/net/ipv4"
+	"net"
+	"time"
+)
+
+type Server_TCB struct {
+	listener   chan *TCP_Packet
+	listenPort uint16
+	listenIP   string
+	state      uint
+	kind       uint
+	connQueue  chan *TCB
 }
 
-type TCP_Server_Manager struct {
-	reader  *IP_Reader
-	servers map[uint16](map[string](chan []byte)) // TODO make this global to TCP
-}
-
-func New_TCP_Server_Manager() (*TCP_Server_Manager, error) {
-	nr, err := NewNetwork_Reader()
-	if err != nil {
-		return nil, err
-	}
-
-	ipr, err := nr.NewIP_Reader("*", TCP_PROTO)
-	if err != nil {
-		return nil, err
-	}
-
-	x := &TCP_Server_Manager{
-		reader:  ipr,
-		servers: make(map[uint16](map[string](chan []byte))),
+func New_Server_TCB() (*Server_TCB, error) {
+	x := &Server_TCB{
+		listener:   nil,
+		listenPort: 0,
+		listenIP:   "*",
+		state:      CLOSED,
+		kind:       TCP_SERVER,
+		connQueue:  make(chan *TCB, TCP_LISTEN_QUEUE_SZ),
 	}
 
 	return x, nil
 }
 
-// TODO: bind function
+func (s *Server_TCB) BindListen(port uint16, ip string) error {
+	s.listenPort = port
+	s.listenIP = ip
+	read, err := TCP_Port_Manager.bind(port, 0, ip)
+	if err != nil {
+		return err
+	}
+	s.listener = read
+	s.state = LISTEN
 
-func (*TCP_Server_Manager) Listen(port uint16, ip string) error {
-	// TODO bind
+	go s.LongListener()
+
 	return nil
 }
 
-func (*TCP_Server_Manager) Accept() (*TCP_Connection, error) {
-	// TODO Listen for SYN
-	// TODO Send back SYN + ACK
-	// TODO Wait for ACK
-	return nil, nil
+func (s *Server_TCB) LongListener() {
+	fmt.Println("Listener routine")
+	for {
+		in := <-s.listener
+		if in.header.flags&TCP_RST != 0 {
+			continue // parent TCB drops it
+		} else if in.header.flags&TCP_ACK != 0 {
+			// TODO send reset
+		} else if in.header.flags&TCP_SYN == 0 {
+			// TODO send reset
+		}
+
+		go PrintErr(func(s *Server_TCB, in *TCP_Packet) error {
+			lp := s.listenPort
+			rp := in.header.srcport
+			rIP := in.lip
+
+			read, err := TCP_Port_Manager.bind(lp, rp, rIP)
+			if err != nil {
+				return err
+			}
+
+			p, err := net.ListenPacket(fmt.Sprintf("ip4:%d", TCP_PROTO), rIP) // only for read, not for write
+			if err != nil {
+				return err
+			}
+
+			r, err := ipv4.NewRawConn(p)
+			if err != nil {
+				return err
+			}
+
+			c, err := New_TCB(lp, rp, rIP, read, r, TCP_SERVER)
+			if err != nil {
+				return err
+			}
+			c.serverParent = s
+
+			// send syn-ack
+			c.ackNum = in.header.ack + 1
+			synack, err := (&TCP_Header{
+				srcport: c.lport,
+				dstport: c.rport,
+				seq:     c.seqNum,
+				ack:     c.ackNum,
+				flags:   TCP_SYN | TCP_ACK,
+				window:  c.curWindow,
+				urg:     0,
+				options: []byte{0x02, 0x04, 0xff, 0xd7, 0x04, 0x02, 0x08, 0x0a, 0x02, 0x64, 0x80, 0x8b, 0x0, 0x0, 0x0, 0x0, 0x01, 0x03, 0x03, 0x07}, // TODO compute the options of Syn-Ack instead of hardcoding them
+			}).Marshal_TCP_Header(c.ipAddress, c.srcIP)
+			if err != nil {
+				return err
+			}
+			err = MyRawConnTCPWrite(c.writer, synack, c.ipAddress)
+			if err != nil {
+				return err
+			}
+
+			c.UpdateState(SYN_RCVD)
+
+			select {
+			case s.connQueue <- c:
+			default:
+				// TODO send a reset
+				return errors.New("ERR: listen queue is full")
+			}
+			return nil
+		}(s, in))
+	}
 }
 
-func (*TCP_Connection) Recv() error {
-	return nil
+func (s *Server_TCB) Accept() (c *TCB, rip string, rport uint16, err error) {
+	for {
+		// TODO use a broadcast message to update only when changes occur
+		// TODO add a timeout
+		next := <-s.connQueue
+		if next.state == ESTABLISHED {
+			return next, next.ipAddress, next.rport, nil
+		}
+		s.connQueue <- next
+		time.Sleep(500 * time.Millisecond)
+	}
 }
 
-func (*TCP_Connection) Close() error {
+func (s *Server_TCB) Close() error {
 	return nil
 }

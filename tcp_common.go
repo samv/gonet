@@ -10,17 +10,17 @@ import (
 
 // Finite State Machine
 const (
-	CLOSED = 1
-	LISTEN = 2
-	SYN_SENT = 3
-	SYN_RCVD = 4
+	CLOSED      = 1
+	LISTEN      = 2
+	SYN_SENT    = 3
+	SYN_RCVD    = 4
 	ESTABLISHED = 5
-	FIN_WAIT_1 = 6
-	FIN_WAIT_2 = 7
-	CLOSE_WAIT = 8
-	CLOSING = 9
-	LAST_ACK = 10
-	TIME_WAIT = 11
+	FIN_WAIT_1  = 6
+	FIN_WAIT_2  = 7
+	CLOSE_WAIT  = 8
+	CLOSING     = 9
+	LAST_ACK    = 10
+	TIME_WAIT   = 11
 
 	FSM_NUM_STATES = 11
 )
@@ -34,17 +34,19 @@ const (
 // Other Consts
 const TCP_INCOMING_BUFF_SZ = 10
 const TCP_BASIC_HEADER_SZ = 20
+const TCP_LISTEN_QUEUE_SZ = 10
 
 // Window Sizing
 const MAX_WINDOW_SZ = 65000
 const MIN_WINDOW_SZ = 500
+
 // TODO: set these properly based on the standard values
 
 // Flags
 const (
 	TCP_FIN = 0x01
 	TCP_SYN = 0x02
-	TCP_RSH = 0x04
+	TCP_RST = 0x04
 	TCP_PSH = 0x08
 	TCP_ACK = 0x10
 	TCP_URG = 0x20
@@ -251,4 +253,10 @@ func MyRawConnTCPWrite(w *ipv4.RawConn, tcp []byte, dst string) error {
 		Checksum: 0,                        // checksum (autocomputed)
 		Dst:      net.ParseIP(dst),         // destination address
 	}, tcp, nil)
+}
+
+func PrintErr(err error) {
+	if err != nil {
+		fmt.Println(err)
+	}
 }
