@@ -17,9 +17,19 @@ func main() {
 		return
 	}
 
+	data, err := client.Recv(20)
+	if err != nil {
+		fmt.Println(err)
+		return
+	}
+
+	fmt.Println("got data:", data)
+
 	err = client.Send([]byte{'H', 'e', 'l', 'l', 'o', ' ', 'W', 'o', 'r', 'l', 'd', '!'})
 	if err != nil {
 		fmt.Println(err)
 		return
 	}
+
+	client.Close()
 }

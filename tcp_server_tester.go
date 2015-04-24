@@ -24,6 +24,12 @@ func main() {
 	}
 	fmt.Println("Connection:", ip, port)
 
+	err = conn.Send([]byte{'H', 'e', 'l', 'l', 'o', ' ', 'W', 'o', 'r', 'l', 'd', '!'})
+	if err != nil {
+		fmt.Println(err)
+		return
+	}
+
 	data, err := conn.Recv(20)
 	if err != nil {
 		fmt.Println(err)
@@ -31,4 +37,6 @@ func main() {
 	}
 
 	fmt.Println("received data:", data)
+
+	conn.Close()
 }

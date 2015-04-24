@@ -196,6 +196,6 @@ func (c *TCB) Abort() error {
 	// TODO: kill all timers
 	// TODO: kill all long term processes
 	// TODO: send a reset
-	// TODO: delete the TCB + assoc. data
+	// TODO: delete the TCB + assoc. data, enter closed state
 	return nil
 }
