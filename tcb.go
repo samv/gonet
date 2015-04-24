@@ -3,6 +3,7 @@ package main
 import (
 	"fmt"
 	"golang.org/x/net/ipv4"
+	"sync"
 )
 
 type TCB struct {
@@ -13,6 +14,7 @@ type TCB struct {
 	lport, rport   uint16      // ports
 	seqNum, ackNum uint32      // sequence number
 	state          uint        // from the FSM
+	stateUpdate    *sync.Cond  // signals when the state is changed
 	kind           uint        // type (server or client)
 	serverParent   *Server_TCB // the parent server
 	curWindow      uint16      // the current window size
@@ -33,6 +35,7 @@ func New_TCB(local, remote uint16, dstIP string, read chan *TCP_Packet, write *i
 		seqNum:       genRandSeqNum(), // TODO verify that this works
 		ackNum:       uint32(0),       // Always 0 at start
 		state:        CLOSED,
+		stateUpdate:  sync.NewCond(&sync.Mutex{}),
 		kind:         kind,
 		serverParent: nil,
 		curWindow:    43690, // TODO calc using http://ithitman.blogspot.com/2013/02/understanding-tcp-window-window-scaling.html
@@ -46,8 +49,10 @@ func New_TCB(local, remote uint16, dstIP string, read chan *TCP_Packet, write *i
 }
 
 func (c *TCB) UpdateState(newState uint) {
+	c.stateUpdate.L.Lock()
 	c.state = newState
-	// TODO notify of the update
+	c.stateUpdate.Broadcast()
+	c.stateUpdate.L.Unlock()
 }
 
 func (c *TCB) PacketSender() {

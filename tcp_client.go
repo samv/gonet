@@ -1,11 +1,10 @@
 package main
 
 import (
+	"errors"
 	"fmt"
 	"golang.org/x/net/ipv4"
 	"net"
-	"errors"
-	"time"
 )
 
 func New_TCB_From_Client(local, remote uint16, dstIP string) (*TCB, error) {
@@ -65,17 +64,15 @@ func (c *TCB) Connect() error {
 
 	// TODO set up resend SYN timers
 
-	// wait for the connection state to be ready
-	// TODO use sync.Cond broadcast to avoid the infinite for loop
-	for {
-		st := c.state
-		if st == CLOSED {
-			return errors.New("Connection timed out and closed, or reset.")
-		} else if st == ESTABLISHED {
-			break
-		}
-		time.Sleep(500 * time.Millisecond)
+	// wait for the connection to be established
+	c.stateUpdate.L.Lock()
+	defer c.stateUpdate.L.Unlock()
+	for c.state != ESTABLISHED && c.state != CLOSED {
+		c.stateUpdate.Wait()
 	}
-
-	return nil
+	if c.state == CLOSED {
+		return errors.New("Connection closed by reset or timeout")
+	} else {
+		return nil
+	}
 }
