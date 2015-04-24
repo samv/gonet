@@ -10,17 +10,19 @@ import (
 
 // Finite State Machine
 const (
-	LISTEN = 1
-	SYN_SENT
-	SYN_RCVD
-	ESTABLISHED
-	FIN_WAIT_1
-	FIN_WAIT_2
-	CLOSE_WAIT
-	CLOSING
-	LAST_ACK
-	TIME_WAIT
-	CLOSED
+	CLOSED = 1
+	LISTEN = 2
+	SYN_SENT = 3
+	SYN_RCVD = 4
+	ESTABLISHED = 5
+	FIN_WAIT_1 = 6
+	FIN_WAIT_2 = 7
+	CLOSE_WAIT = 8
+	CLOSING = 9
+	LAST_ACK = 10
+	TIME_WAIT = 11
+
+	FSM_NUM_STATES = 11
 )
 
 // TCB Types
@@ -32,6 +34,11 @@ const (
 // Other Consts
 const TCP_INCOMING_BUFF_SZ = 10
 const TCP_BASIC_HEADER_SZ = 20
+
+// Window Sizing
+const MAX_WINDOW_SZ = 65000
+const MIN_WINDOW_SZ = 500
+// TODO: set these properly based on the standard values
 
 // Flags
 const (
@@ -48,28 +55,29 @@ const (
 // Global src, dst port and ip registry for TCP binding
 type TCP_Port_Manager_Type struct {
 	tcp_reader *IP_Reader
-	incoming   map[uint16](map[uint16](map[string](chan []byte))) // dst, src port, remote ip
+	incoming   map[uint16](map[uint16](map[string](chan *TCP_Packet))) // dst, src port, remote ip
 }
 
 // TODO TCP_Port_Manager_Type should have an unbind function
-func (m *TCP_Port_Manager_Type) bind(srcport, dstport uint16, ip string) (chan []byte, error) {
+func (m *TCP_Port_Manager_Type) bind(srcport, dstport uint16, ip string) (chan *TCP_Packet, error) {
 	// dstport is the local one here, srcport is the remote
 	if _, ok := m.incoming[dstport]; !ok {
-		m.incoming[dstport] = make(map[uint16](map[string](chan []byte)))
+		m.incoming[dstport] = make(map[uint16](map[string](chan *TCP_Packet)))
 	}
 
 	// TODO add an option (for servers) for all srcports
 	if _, ok := m.incoming[dstport][srcport]; !ok {
-		m.incoming[dstport][srcport] = make(map[string](chan []byte))
+		m.incoming[dstport][srcport] = make(map[string](chan *TCP_Packet))
 	}
 
 	if _, ok := m.incoming[dstport][srcport][ip]; ok {
 		return nil, errors.New("Ports and IP already binded to")
 	}
 
-	m.incoming[dstport][srcport][ip] = make(chan []byte, TCP_INCOMING_BUFF_SZ)
+	m.incoming[dstport][srcport][ip] = make(chan *TCP_Packet, TCP_INCOMING_BUFF_SZ)
 	return m.incoming[dstport][srcport][ip], nil
 }
+
 func (m *TCP_Port_Manager_Type) readAll() {
 	for {
 		rip, lip, _, payload, err := m.tcp_reader.ReadFrom()
@@ -78,20 +86,19 @@ func (m *TCP_Port_Manager_Type) readAll() {
 			continue
 		}
 
-		header, _, err := Extract_TCP_Header(payload, rip, lip)
+		p, err := Extract_TCP_Packet(payload, rip, lip)
 		if err != nil {
 			fmt.Println(err)
 			continue
 		}
 
-		rport := header.srcport
-		lport := header.dstport
+		rport := p.header.srcport
+		lport := p.header.dstport
 
-		var output chan []byte = nil
+		var output chan *TCP_Packet = nil
 
 		if _, ok := m.incoming[lport]; ok {
 			if _, ok := m.incoming[lport][rport]; ok {
-				// TODO all option to send others to the server listen
 				if _, ok := m.incoming[lport][rport][rip]; ok {
 					output = m.incoming[lport][rport][rip]
 				} else if _, ok := m.incoming[lport][rport]["*"]; ok {
@@ -106,9 +113,9 @@ func (m *TCP_Port_Manager_Type) readAll() {
 		}
 
 		if output != nil {
-			go func() { output <- payload }()
+			go func() { output <- p }()
 		} else {
-			// TODO send a rst if nothing is binded to the dst port, src port, and remote ip
+			// TODO send a rst to sender if nothing is binded to the dst port, src port, and remote ip
 			//fmt.Println(errors.New("Dst/Src port + ip not binded to"))
 		}
 	}
@@ -129,12 +136,17 @@ var TCP_Port_Manager = func() *TCP_Port_Manager_Type {
 
 	m := &TCP_Port_Manager_Type{
 		tcp_reader: ipr,
-		incoming:   make(map[uint16](map[uint16](map[string](chan []byte)))),
+		incoming:   make(map[uint16](map[uint16](map[string](chan *TCP_Packet)))),
 	}
 	go m.readAll()
 	return m
 }()
 
+type TCP_Packet struct {
+	header   *TCP_Header
+	payload  []byte
+	rip, lip string
+}
 type TCP_Header struct {
 	srcport, dstport uint16
 	seq, ack         uint32
@@ -146,7 +158,7 @@ type TCP_Header struct {
 	options []byte
 }
 
-func Make_TCP_Header(h *TCP_Header, dstIP, srcIP string) ([]byte, error) {
+func (h *TCP_Header) Marshal_TCP_Header(dstIP, srcIP string) ([]byte, error) {
 	// pad options with 0's
 	for len(h.options)%4 != 0 {
 		h.options = append(h.options, 0)
@@ -178,19 +190,22 @@ func Make_TCP_Header(h *TCP_Header, dstIP, srcIP string) ([]byte, error) {
 	return header, nil
 }
 
-func Extract_TCP_Header(d []byte, rip, lip string) (h *TCP_Header, data []byte, err error) { // TODO: test this function
+func Extract_TCP_Packet(d []byte, rip, lip string) (*TCP_Packet, error) {
+	// TODO: test this function fully
+
+	// header length
 	headerLen := (d[12] >> 4) * 4
 	if headerLen < TCP_BASIC_HEADER_SZ {
-		return nil, nil, errors.New("Bad TCP header size: Less than 20.")
+		return nil, errors.New("Bad TCP header size: Less than 20.")
 	}
 
 	// checksum verification
 	if !verifyTCPchecksum(d[:headerLen], rip, lip, headerLen) {
-		return nil, nil, errors.New("Bad TCP header checksum")
+		return nil, errors.New("Bad TCP header checksum")
 	}
 
 	// create the header
-	h = &TCP_Header{
+	h := &TCP_Header{
 		srcport: uint16(d[0])<<8 | uint16(d[1]),
 		dstport: uint16(d[2])<<8 | uint16(d[3]),
 		seq:     uint32(d[4])<<24 | uint32(d[5])<<16 | uint32(d[6])<<8 | uint32(d[7]),
@@ -200,16 +215,18 @@ func Extract_TCP_Header(d []byte, rip, lip string) (h *TCP_Header, data []byte, 
 		urg:     uint16(d[18])<<8 | uint16(d[19]),
 		options: d[TCP_BASIC_HEADER_SZ:headerLen],
 	}
-	return h, d[headerLen:], nil
+	return &TCP_Packet{header: h, payload: d[headerLen:], rip: rip, lip: lip}, nil
 }
 
 func calcTCPchecksum(header []byte, srcIP, dstIP string, headerLen uint8) uint16 {
 	return checksum(append(append(append(header, net.ParseIP(srcIP)...), net.ParseIP(dstIP)...), []byte{byte(TCP_PROTO >> 8), byte(TCP_PROTO), byte(headerLen >> 8), byte(headerLen)}...))
 }
+
 func verifyTCPchecksum(header []byte, srcIP, dstIP string, headerLen uint8) bool {
 	// TODO: do TCP checksum verification
 	return true
 }
+
 func genRandSeqNum() uint32 {
 	x := make([]byte, 4) // four bytes
 	_, err := rand.Read(x)
