@@ -6,7 +6,6 @@ import (
 	"fmt"
 	"golang.org/x/net/ipv4"
 	"net"
-	"time"
 )
 
 // Finite State Machine
@@ -36,6 +35,7 @@ const (
 const TCP_INCOMING_BUFF_SZ = 10
 const TCP_BASIC_HEADER_SZ = 20
 const TCP_LISTEN_QUEUE_SZ = 10
+const TCP_RESEND_LIMIT = 12
 
 // Window Sizing
 const MAX_WINDOW_SZ = 65000
@@ -150,6 +150,20 @@ type TCP_Packet struct {
 	payload  []byte
 	rip, lip string
 }
+
+func (p *TCP_Packet) Marshal_TCP_Packet() ([]byte, error) {
+	head, err := p.header.Marshal_TCP_Header(p.rip, p.lip)
+	packet := append(head, p.payload...)
+	return packet, err
+}
+
+func (p *TCP_Packet) getPayloadSize() uint32 {
+	if len(p.payload) == 0 {
+		return 1
+	}
+	return uint32(len(p.payload))
+}
+
 type TCP_Header struct {
 	srcport, dstport uint16
 	seq, ack         uint32
@@ -254,26 +268,4 @@ func MyRawConnTCPWrite(w *ipv4.RawConn, tcp []byte, dst string) error {
 		Checksum: 0,                        // checksum (autocomputed)
 		Dst:      net.ParseIP(dst),         // destination address
 	}, tcp, nil)
-}
-
-func PrintErr(err error) {
-	if err != nil {
-		fmt.Println(err)
-	}
-}
-
-func ResendTimer(w *ipv4.RawConn, pay []byte, dst string, delay time.Duration, stop <-chan bool) error {
-	del := time.After(delay)
-	for {
-		select {
-		case <-stop:
-			return nil
-		case <-del:
-			del = time.After(delay)
-			err := MyRawConnTCPWrite(w, pay, dst)
-			if err != nil {
-				return err
-			}
-		}
-	}
 }

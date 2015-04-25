@@ -39,24 +39,27 @@ func (c *TCB) Connect() error {
 	if c.kind != TCP_CLIENT || c.state != CLOSED {
 		return errors.New("TCB is not a closed client")
 	}
-	// Send the SYN packet
-	SYN, err := (&TCP_Header{
-		srcport: c.lport,
-		dstport: c.rport,
-		seq:     c.seqNum,
-		ack:     c.ackNum,
-		flags:   TCP_SYN,
-		window:  c.curWindow, // TODO improve the window size calculation
-		urg:     0,
-		options: []byte{0x02, 0x04, 0xff, 0xd7, 0x04, 0x02, 0x08, 0x0a, 0x02, 0x64, 0x80, 0x8b, 0x0, 0x0, 0x0, 0x0, 0x01, 0x03, 0x03, 0x07}, // TODO compute the options of SYN instead of hardcoding them
-	}).Marshal_TCP_Header(c.ipAddress, c.srcIP)
-	if err != nil {
-		return err
+
+	// Build the SYN packet
+	SYN := &TCP_Packet{
+		header: &TCP_Header{
+			srcport: c.lport,
+			dstport: c.rport,
+			seq:     c.seqNum,
+			ack:     c.ackNum,
+			flags:   TCP_SYN,
+			window:  c.curWindow, // TODO improve the window size calculation
+			urg:     0,
+			options: []byte{0x02, 0x04, 0xff, 0xd7, 0x04, 0x02, 0x08, 0x0a, 0x02, 0x64, 0x80, 0x8b, 0x0, 0x0, 0x0, 0x0, 0x01, 0x03, 0x03, 0x07}, // TODO compute the options of SYN instead of hardcoding them
+		},
+		payload: []byte{},
+		rip: c.ipAddress,
+		lip: c.srcIP,
 	}
 
-	//c.writer.WriteTo(SYN)
-	done := make(chan bool)
-	go ResendTimer(c.writer, SYN, c.ipAddress, c.resendDelay, done)
+	// Send the SYN packet
+	fmt.Println("About to send syn")
+	go c.SendWithRetransmit(SYN)
 	fmt.Println("Sent SYN")
 	c.UpdateState(SYN_SENT)
 
@@ -69,7 +72,6 @@ func (c *TCB) Connect() error {
 	if c.state == CLOSED {
 		return errors.New("Connection closed by reset or timeout")
 	} else {
-		done <- true
 		return nil
 	}
 }
