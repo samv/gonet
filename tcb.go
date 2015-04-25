@@ -168,9 +168,21 @@ func (c *TCB) PacketDealer() {
 		case ESTABLISHED:
 			fmt.Println("Dealing established")
 			go c.DealEstablished(segment)
-			// TODO fill other possible states
+		case FIN_WAIT_1:
+			fmt.Println("Dealing Fin-Wait-1")
+			go c.DealFinWaitOne(segment)
+		case FIN_WAIT_2:
+			go c.DealFinWaitTwo(segment)
+		case CLOSE_WAIT:
+			go c.DealCloseWait(segment)
+		case CLOSING:
+			go c.DealClosing(segment)
+		case LAST_ACK:
+			go c.DealLastAck(segment)
+		case TIME_WAIT:
+			go c.DealTimeWait(segment)
 		default:
-			fmt.Println("Dealing a state not implemented yet")
+			fmt.Println("Error: the current state is unknown")
 		}
 	}
 }
@@ -230,6 +242,30 @@ func (c *TCB) DealSynRcvd(d *TCP_Packet) {
 
 func (c *TCB) DealEstablished(d *TCP_Packet) {
 	// TODO deal with data
+}
+
+func (c *TCB) DealFinWaitOne(d *TCP_Packet) {
+	// TODO deal with Fin Wait 1
+}
+
+func (c *TCB) DealFinWaitTwo(d *TCP_Packet) {
+	// TODO this function
+}
+
+func (c *TCB) DealCloseWait(d *TCP_Packet) {
+	// TODO this function
+}
+
+func (c *TCB) DealClosing(d *TCP_Packet) {
+	// TODO this function
+}
+
+func (c *TCB) DealLastAck(d *TCP_Packet) {
+	// TODO this function
+}
+
+func (c *TCB) DealTimeWait(d *TCP_Packet) {
+	// TODO this function
 }
 
 func (c *TCB) Send(data []byte) error { // a non-blocking send call
