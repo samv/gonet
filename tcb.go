@@ -1,51 +1,51 @@
 package main
 
 import (
+	"errors"
 	"fmt"
 	"golang.org/x/net/ipv4"
 	"sync"
 	"time"
-	"errors"
 )
 
 type TCB struct {
-	read           chan *TCP_Packet
-	writer         *ipv4.RawConn
-	ipAddress      string      // destination ip address
-	srcIP          string      // src ip address
-	lport, rport   uint16      // ports
-	seqNum, ackNum uint32      // sequence number
-	state          uint        // from the FSM
-	stateUpdate    *sync.Cond  // signals when the state is changed
-	kind           uint        // type (server or client)
-	serverParent   *Server_TCB // the parent server
-	curWindow      uint16      // the current window size
-	sendBuffer     []byte      // a buffer of bytes that need to be sent
-	urgSendBuffer  []byte      // buffer of urgent data TODO urg data later
-	recvBuffer     []byte      // bytes to pass to the application above
-	resendDelay    time.Duration
-	recentAckNum   uint32 // the last ack received
+	read            chan *TCP_Packet
+	writer          *ipv4.RawConn
+	ipAddress       string      // destination ip address
+	srcIP           string      // src ip address
+	lport, rport    uint16      // ports
+	seqNum, ackNum  uint32      // sequence number
+	state           uint        // from the FSM
+	stateUpdate     *sync.Cond  // signals when the state is changed
+	kind            uint        // type (server or client)
+	serverParent    *Server_TCB // the parent server
+	curWindow       uint16      // the current window size
+	sendBuffer      []byte      // a buffer of bytes that need to be sent
+	urgSendBuffer   []byte      // buffer of urgent data TODO urg data later
+	recvBuffer      []byte      // bytes to pass to the application above
+	resendDelay     time.Duration
+	recentAckNum    uint32     // the last ack received
 	recentAckUpdate *sync.Cond // signals changes in recentAckNum
 }
 
 func New_TCB(local, remote uint16, dstIP string, read chan *TCP_Packet, write *ipv4.RawConn, kind uint) (*TCB, error) {
 	fmt.Println("New_TCB")
 	c := &TCB{
-		lport:        local,
-		rport:        remote,
-		ipAddress:    dstIP,
-		srcIP:        "127.0.0.1", // TODO: don't hardcode the srcIP
-		read:         read,
-		writer:       write,
-		seqNum:       genRandSeqNum(), // TODO verify that this works
-		ackNum:       uint32(0),       // Always 0 at start
-		state:        CLOSED,
-		stateUpdate:  sync.NewCond(&sync.Mutex{}),
-		kind:         kind,
-		serverParent: nil,
-		curWindow:    43690, // TODO calc using http://ithitman.blogspot.com/2013/02/understanding-tcp-window-window-scaling.html
-		resendDelay:  250 * time.Millisecond,
-		recentAckNum: 0,
+		lport:           local,
+		rport:           remote,
+		ipAddress:       dstIP,
+		srcIP:           "127.0.0.1", // TODO: don't hardcode the srcIP
+		read:            read,
+		writer:          write,
+		seqNum:          genRandSeqNum(), // TODO verify that this works
+		ackNum:          uint32(0),       // Always 0 at start
+		state:           CLOSED,
+		stateUpdate:     sync.NewCond(&sync.Mutex{}),
+		kind:            kind,
+		serverParent:    nil,
+		curWindow:       43690, // TODO calc using http://ithitman.blogspot.com/2013/02/understanding-tcp-window-window-scaling.html
+		resendDelay:     250 * time.Millisecond,
+		recentAckNum:    0,
 		recentAckUpdate: sync.NewCond(&sync.Mutex{}),
 	}
 	fmt.Println("Starting the packet dealer")
@@ -92,7 +92,7 @@ func (c *TCB) SendWithRetransmit(data *TCP_Packet) error {
 	// ack listeners
 	ackFound := make(chan bool, 1)
 	killAckListen := make(chan bool, 1)
-	go c.ListenForAck(ackFound, killAckListen, data.header.seq + data.getPayloadSize())
+	go c.ListenForAck(ackFound, killAckListen, data.header.seq+data.getPayloadSize())
 
 	// timers and timeouts
 	resendTimer := make(chan bool, TCP_RESEND_LIMIT)

@@ -9,23 +9,23 @@ import (
 )
 
 type Server_TCB struct {
-	listener   chan *TCP_Packet
-	listenPort uint16
-	listenIP   string
-	state      uint
-	kind       uint
-	connQueue  chan *TCB
+	listener        chan *TCP_Packet
+	listenPort      uint16
+	listenIP        string
+	state           uint
+	kind            uint
+	connQueue       chan *TCB
 	connQueueUpdate *sync.Cond
 }
 
 func New_Server_TCB() (*Server_TCB, error) {
 	x := &Server_TCB{
-		listener:   nil,
-		listenPort: 0,
-		listenIP:   "*",
-		state:      CLOSED,
-		kind:       TCP_SERVER,
-		connQueue:  make(chan *TCB, TCP_LISTEN_QUEUE_SZ),
+		listener:        nil,
+		listenPort:      0,
+		listenIP:        "*",
+		state:           CLOSED,
+		kind:            TCP_SERVER,
+		connQueue:       make(chan *TCB, TCP_LISTEN_QUEUE_SZ),
 		connQueueUpdate: sync.NewCond(&sync.Mutex{}),
 	}
 
@@ -99,7 +99,8 @@ func (s *Server_TCB) LongListener() {
 				flags:   TCP_SYN | TCP_ACK,
 				window:  c.curWindow,
 				urg:     0,
-				options: []byte{0x02, 0x04, 0xff, 0xd7, 0x04, 0x02, 0x08, 0x0a, 0x02, 0x64, 0x80, 0x8b, 0x0, 0x0, 0x0, 0x0, 0x01, 0x03, 0x03, 0x07}, // TODO compute the options of Syn-Ack instead of hardcoding them
+				options: []byte{0x02, 0x04, 0xff, 0xd7, 0x04, 0x02, 0x08, 0x0a, 0x02, 0x64, 0x80, 0x8b, 0x0, 0x0, 0x0, 0x0, 0x01, 0x03, 0x03, 0x07},
+				// TODO compute the options of Syn-Ack instead of hardcoding them
 			}).Marshal_TCP_Header(c.ipAddress, c.srcIP)
 			if err != nil {
 				fmt.Println(err)
@@ -131,7 +132,7 @@ func (s *Server_TCB) Accept() (c *TCB, rip string, rport uint16, err error) {
 	for {
 		// TODO add a timeout
 		for i := 0; i < len(s.connQueue); i++ {
-			next := <- s.connQueue
+			next := <-s.connQueue
 			if next.state == ESTABLISHED {
 				return next, next.ipAddress, next.rport, nil
 			}
