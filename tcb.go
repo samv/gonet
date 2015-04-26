@@ -188,7 +188,42 @@ func (c *TCB) PacketDealer() {
 }
 
 func (c *TCB) DealClosed(d *TCP_Packet) {
-	// TODO: send reset
+	if d.header.flags&TCP_RST != 0 {
+		return
+	}
+	var seqNum uint32
+	var ackNum uint32
+	rstFlags := TCP_RST
+	if d.header.flags&TCP_ACK == 0 {
+		seqNum = 0
+		ackNum = d.header.seq + d.getPayloadSize()
+		rstFlags = rstFlags | TCP_ACK
+	} else {
+		seqNum = d.header.ack
+		ackNum = 0
+	}
+
+	RST, err := (&TCP_Header{
+		srcport: c.lport,
+		dstport: c.rport,
+		seq:     seqNum,
+		ack:     ackNum,
+		flags:   rstFlags,
+		window:  c.curWindow, // TODO improve the window field calculation
+		urg:     0,
+		options: []byte{},
+	}).Marshal_TCP_Header(c.ipAddress, c.srcIP)
+	if err != nil {
+		fmt.Println(err) // TODO log not print
+		return
+	}
+
+	err = MyRawConnTCPWrite(c.writer, RST, c.ipAddress)
+	fmt.Println("Sent ACK data")
+	if err != nil {
+		fmt.Println(err) // TODO log not print
+		return
+	}
 }
 
 func (c *TCB) DealSynSent(d *TCP_Packet) {
