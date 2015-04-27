@@ -176,35 +176,48 @@ func (c *TCB) PacketDealer() {
 			return
 		}
 
-		switch c.state {
-		case CLOSED:
-			Trace.Println("Dealing closed")
-			go c.DealClosed(segment)
-		case SYN_SENT:
-			Trace.Println("Dealing syn-sent")
-			go c.DealSynSent(segment)
-		case SYN_RCVD:
-			Trace.Println("Dealing syn-rcvd")
-			go c.DealSynRcvd(segment)
-		case ESTABLISHED:
-			Trace.Println("Dealing established")
-			go c.DealEstablished(segment)
-		case FIN_WAIT_1:
-			Trace.Println("Dealing Fin-Wait-1")
-			go c.DealFinWaitOne(segment)
-		case FIN_WAIT_2:
-			go c.DealFinWaitTwo(segment)
-		case CLOSE_WAIT:
-			go c.DealCloseWait(segment)
-		case CLOSING:
-			go c.DealClosing(segment)
-		case LAST_ACK:
-			go c.DealLastAck(segment)
-		case TIME_WAIT:
-			go c.DealTimeWait(segment)
-		default:
-			Error.Println("Error: the current state is unknown")
-		}
+		// Otherwise
+		// TODO left off on RFC pg 69
+
+
+
+
+
+
+
+
+
+
+
+		//		switch c.state {
+		//		case CLOSED:
+		//			Trace.Println("Dealing closed")
+		//			go c.DealClosed(segment)
+		//		case SYN_SENT:
+		//			Trace.Println("Dealing syn-sent")
+		//			go c.DealSynSent(segment)
+		//		case SYN_RCVD:
+		//			Trace.Println("Dealing syn-rcvd")
+		//			go c.DealSynRcvd(segment)
+		//		case ESTABLISHED:
+		//			Trace.Println("Dealing established")
+		//			go c.DealEstablished(segment)
+		//		case FIN_WAIT_1:
+		//			Trace.Println("Dealing Fin-Wait-1")
+		//			go c.DealFinWaitOne(segment)
+		//		case FIN_WAIT_2:
+		//			go c.DealFinWaitTwo(segment)
+		//		case CLOSE_WAIT:
+		//			go c.DealCloseWait(segment)
+		//		case CLOSING:
+		//			go c.DealClosing(segment)
+		//		case LAST_ACK:
+		//			go c.DealLastAck(segment)
+		//		case TIME_WAIT:
+		//			go c.DealTimeWait(segment)
+		//		default:
+		//			Error.Println("Error: the current state is unknown")
+		//		}
 	}
 }
 
