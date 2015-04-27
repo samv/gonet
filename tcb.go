@@ -179,16 +179,6 @@ func (c *TCB) PacketDealer() {
 		// Otherwise
 		// TODO left off on RFC pg 69
 
-
-
-
-
-
-
-
-
-
-
 		//		switch c.state {
 		//		case CLOSED:
 		//			Trace.Println("Dealing closed")
