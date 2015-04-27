@@ -36,6 +36,7 @@ const TCP_INCOMING_BUFF_SZ = 10
 const TCP_BASIC_HEADER_SZ = 20
 const TCP_LISTEN_QUEUE_SZ = 10
 const TCP_RESEND_LIMIT = 12
+const ACK_BUF_SZ = 20
 
 // Window Sizing
 const MAX_WINDOW_SZ = 65000

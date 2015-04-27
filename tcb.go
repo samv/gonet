@@ -23,9 +23,9 @@ type TCB struct {
 	sendBuffer      []byte      // a buffer of bytes that need to be sent
 	urgSendBuffer   []byte      // buffer of urgent data TODO urg data later
 	recvBuffer      []byte      // bytes to pass to the application above
-	resendDelay     time.Duration
+	resendDelay     time.Duration // the delay before resending
 	recentAckNum    uint32     // the last ack received
-	recentAckUpdate *sync.Cond // signals changes in recentAckNum
+	recentAckUpdate *Notifier  // signals changes in recentAckNum
 }
 
 func New_TCB(local, remote uint16, dstIP string, read chan *TCP_Packet, write *ipv4.RawConn, kind uint) (*TCB, error) {
@@ -46,7 +46,7 @@ func New_TCB(local, remote uint16, dstIP string, read chan *TCP_Packet, write *i
 		curWindow:       43690, // TODO calc using http://ithitman.blogspot.com/2013/02/understanding-tcp-window-window-scaling.html
 		resendDelay:     250 * time.Millisecond,
 		recentAckNum:    0,
-		recentAckUpdate: sync.NewCond(&sync.Mutex{}),
+		recentAckUpdate: NewNotifier(),
 	}
 	fmt.Println("Starting the packet dealer")
 
@@ -67,7 +67,7 @@ func (c *TCB) UpdateState(newState uint) {
 func (c *TCB) UpdateLastAck(newAck uint32) error {
 	fmt.Println("Got an ack:", newAck)
 	c.recentAckNum = newAck
-	go SendUpdate(c.recentAckUpdate)
+	go SendNotifierBroadcast(c.recentAckUpdate, c.recentAckNum)
 	return nil
 }
 
@@ -75,6 +75,10 @@ func SendUpdate(update *sync.Cond) {
 	update.L.Lock()
 	update.Broadcast()
 	update.L.Unlock()
+}
+
+func SendNotifierBroadcast(update *Notifier, val interface{}) {
+	update.Broadcast(val)
 }
 
 func (c *TCB) PacketSender() {
@@ -118,11 +122,14 @@ func (c *TCB) SendWithRetransmit(data *TCP_Packet) error {
 
 func (c *TCB) ListenForAck(successOut chan<- bool, end <-chan bool, targetAck uint32) {
 	fmt.Println("Listening for ack:", targetAck)
-	c.recentAckUpdate.L.Lock()
-	defer c.recentAckUpdate.L.Unlock()
-	for c.recentAckNum != targetAck {
-		c.recentAckUpdate.Wait()
+	in := c.recentAckUpdate.Register(ACK_BUF_SZ)
+	defer c.recentAckUpdate.Unregister(in)
+	for {
 		select {
+		case v := <-in:
+			if v.(uint32) == targetAck {
+				return
+			}
 		case <-end: // TODO don't wait if end is sent
 			return
 		}
@@ -193,7 +200,7 @@ func (c *TCB) DealClosed(d *TCP_Packet) {
 	}
 	var seqNum uint32
 	var ackNum uint32
-	rstFlags := TCP_RST
+	rstFlags := uint8(TCP_RST)
 	if d.header.flags&TCP_ACK == 0 {
 		seqNum = 0
 		ackNum = d.header.seq + d.getPayloadSize()
@@ -313,7 +320,7 @@ func (c *TCB) DealEstablished(d *TCP_Packet) {
 		return
 	}
 
-	append(c.recvBuffer, d.payload)
+	c.recvBuffer = append(c.recvBuffer, d.payload...)
 }
 
 func (c *TCB) DealFinWaitOne(d *TCP_Packet) {
