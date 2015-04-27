@@ -48,7 +48,7 @@ func (s *Server_TCB) BindListen(port uint16, ip string) error {
 }
 
 func (s *Server_TCB) LongListener() {
-	fmt.Println("Listener routine")
+	Trace.Println("Listener routine")
 	for {
 		in := <-s.listener
 		if in.header.flags&TCP_RST != 0 {
@@ -66,25 +66,25 @@ func (s *Server_TCB) LongListener() {
 
 			read, err := TCP_Port_Manager.bind(lp, rp, rIP)
 			if err != nil {
-				fmt.Println(err)
+				Error.Println(err)
 				return
 			}
 
 			p, err := net.ListenPacket(fmt.Sprintf("ip4:%d", TCP_PROTO), rIP) // only for read, not for write
 			if err != nil {
-				fmt.Println(err)
+				Error.Println(err)
 				return
 			}
 
 			r, err := ipv4.NewRawConn(p)
 			if err != nil {
-				fmt.Println(err)
+				Error.Println(err)
 				return
 			}
 
 			c, err := New_TCB(lp, rp, rIP, read, r, TCP_SERVER)
 			if err != nil {
-				fmt.Println(err)
+				Error.Println(err)
 				return
 			}
 			c.serverParent = s
@@ -103,12 +103,12 @@ func (s *Server_TCB) LongListener() {
 				// TODO compute the options of Syn-Ack instead of hardcoding them
 			}).Marshal_TCP_Header(c.ipAddress, c.srcIP)
 			if err != nil {
-				fmt.Println(err)
+				Error.Println(err)
 				return
 			}
 			err = MyRawConnTCPWrite(c.writer, synack, c.ipAddress)
 			if err != nil {
-				fmt.Println(err)
+				Error.Println(err)
 				return
 			}
 
@@ -118,7 +118,7 @@ func (s *Server_TCB) LongListener() {
 			case s.connQueue <- c:
 			default:
 				// TODO send a reset
-				fmt.Println(errors.New("ERR: listen queue is full"))
+				Error.Println(errors.New("ERR: listen queue is full"))
 				return
 			}
 			return

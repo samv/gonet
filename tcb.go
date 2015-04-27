@@ -2,7 +2,6 @@ package main
 
 import (
 	"errors"
-	"fmt"
 	"golang.org/x/net/ipv4"
 	"sync"
 	"time"
@@ -11,25 +10,25 @@ import (
 type TCB struct {
 	read            chan *TCP_Packet
 	writer          *ipv4.RawConn
-	ipAddress       string      // destination ip address
-	srcIP           string      // src ip address
-	lport, rport    uint16      // ports
-	seqNum, ackNum  uint32      // sequence number
-	state           uint        // from the FSM
-	stateUpdate     *sync.Cond  // signals when the state is changed
-	kind            uint        // type (server or client)
-	serverParent    *Server_TCB // the parent server
-	curWindow       uint16      // the current window size
-	sendBuffer      []byte      // a buffer of bytes that need to be sent
-	urgSendBuffer   []byte      // buffer of urgent data TODO urg data later
-	recvBuffer      []byte      // bytes to pass to the application above
+	ipAddress       string        // destination ip address
+	srcIP           string        // src ip address
+	lport, rport    uint16        // ports
+	seqNum, ackNum  uint32        // sequence number
+	state           uint          // from the FSM
+	stateUpdate     *sync.Cond    // signals when the state is changed
+	kind            uint          // type (server or client)
+	serverParent    *Server_TCB   // the parent server
+	curWindow       uint16        // the current window size
+	sendBuffer      []byte        // a buffer of bytes that need to be sent
+	urgSendBuffer   []byte        // buffer of urgent data TODO urg data later
+	recvBuffer      []byte        // bytes to pass to the application above
 	resendDelay     time.Duration // the delay before resending
-	recentAckNum    uint32     // the last ack received
-	recentAckUpdate *Notifier  // signals changes in recentAckNum
+	recentAckNum    uint32        // the last ack received
+	recentAckUpdate *Notifier     // signals changes in recentAckNum
 }
 
 func New_TCB(local, remote uint16, dstIP string, read chan *TCP_Packet, write *ipv4.RawConn, kind uint) (*TCB, error) {
-	fmt.Println("New_TCB")
+	Trace.Println("New_TCB")
 	c := &TCB{
 		lport:           local,
 		rport:           remote,
@@ -48,7 +47,7 @@ func New_TCB(local, remote uint16, dstIP string, read chan *TCP_Packet, write *i
 		recentAckNum:    0,
 		recentAckUpdate: NewNotifier(),
 	}
-	fmt.Println("Starting the packet dealer")
+	Trace.Println("Starting the packet dealer")
 
 	go c.PacketSender()
 	go c.PacketDealer()
@@ -65,7 +64,7 @@ func (c *TCB) UpdateState(newState uint) {
 }
 
 func (c *TCB) UpdateLastAck(newAck uint32) error {
-	fmt.Println("Got an ack:", newAck)
+	Info.Println("Got an ack:", newAck)
 	c.recentAckNum = newAck
 	go SendNotifierBroadcast(c.recentAckUpdate, c.recentAckNum)
 	return nil
@@ -121,7 +120,7 @@ func (c *TCB) SendWithRetransmit(data *TCP_Packet) error {
 }
 
 func (c *TCB) ListenForAck(successOut chan<- bool, end <-chan bool, targetAck uint32) {
-	fmt.Println("Listening for ack:", targetAck)
+	Trace.Println("Listening for ack:", targetAck)
 	in := c.recentAckUpdate.Register(ACK_BUF_SZ)
 	defer c.recentAckUpdate.Unregister(in)
 	for {
@@ -156,27 +155,27 @@ func ResendTimer(timerOutput, timeout chan<- bool, finished <-chan bool, delay t
 
 func (c *TCB) PacketDealer() {
 	// read each tcp packet and deal with it
-	fmt.Println("Packet Dealing")
+	Trace.Println("Packet Dealing")
 	for {
-		fmt.Println("Waiting for packets")
+		Trace.Println("Waiting for packets")
 		segment := <-c.read
-		fmt.Println("got a packet")
+		Trace.Println("got a packet")
 		// TODO check the reset flag first
 		switch c.state {
 		case CLOSED:
-			fmt.Println("Dealing closed")
+			Trace.Println("Dealing closed")
 			go c.DealClosed(segment)
 		case SYN_SENT:
-			fmt.Println("Dealing syn-sent")
+			Trace.Println("Dealing syn-sent")
 			go c.DealSynSent(segment)
 		case SYN_RCVD:
-			fmt.Println("Dealing syn-rcvd")
+			Trace.Println("Dealing syn-rcvd")
 			go c.DealSynRcvd(segment)
 		case ESTABLISHED:
-			fmt.Println("Dealing established")
+			Trace.Println("Dealing established")
 			go c.DealEstablished(segment)
 		case FIN_WAIT_1:
-			fmt.Println("Dealing Fin-Wait-1")
+			Trace.Println("Dealing Fin-Wait-1")
 			go c.DealFinWaitOne(segment)
 		case FIN_WAIT_2:
 			go c.DealFinWaitTwo(segment)
@@ -189,7 +188,7 @@ func (c *TCB) PacketDealer() {
 		case TIME_WAIT:
 			go c.DealTimeWait(segment)
 		default:
-			fmt.Println("Error: the current state is unknown")
+			Error.Println("Error: the current state is unknown")
 		}
 	}
 }
@@ -221,23 +220,23 @@ func (c *TCB) DealClosed(d *TCP_Packet) {
 		options: []byte{},
 	}).Marshal_TCP_Header(c.ipAddress, c.srcIP)
 	if err != nil {
-		fmt.Println(err) // TODO log not print
+		Error.Println(err)
 		return
 	}
 
 	err = MyRawConnTCPWrite(c.writer, RST, c.ipAddress)
-	fmt.Println("Sent ACK data")
+	Info.Println("Sent ACK data")
 	if err != nil {
-		fmt.Println(err) // TODO log not print
+		Error.Println(err)
 		return
 	}
 }
 
 func (c *TCB) DealSynSent(d *TCP_Packet) {
-	fmt.Println("Dealing state syn-sent")
+	Trace.Println("Dealing state syn-sent")
 	if d.header.flags&TCP_SYN != 0 && d.header.flags&TCP_ACK != 0 {
 		// received SYN-ACK
-		fmt.Println("Recieved syn-ack")
+		Info.Println("Recieved syn-ack")
 
 		// TODO: verify the seq and ack fields
 		c.UpdateLastAck(d.header.ack)
@@ -257,14 +256,14 @@ func (c *TCB) DealSynSent(d *TCP_Packet) {
 			options: []byte{},
 		}).Marshal_TCP_Header(c.ipAddress, c.srcIP)
 		if err != nil {
-			fmt.Println(err) // TODO log not print
+			Error.Println(err)
 			return
 		}
 
 		err = MyRawConnTCPWrite(c.writer, ACK, c.ipAddress)
-		fmt.Println("Sent ACK data")
+		Info.Println("Sent ACK data")
 		if err != nil {
-			fmt.Println(err) // TODO log not print
+			Error.Println(err)
 			return
 		}
 		c.UpdateState(ESTABLISHED)
@@ -309,14 +308,14 @@ func (c *TCB) DealEstablished(d *TCP_Packet) {
 		options: []byte{},
 	}).Marshal_TCP_Header(c.ipAddress, c.srcIP)
 	if err != nil {
-		fmt.Println(err) // TODO log not print
+		Error.Println(err)
 		return
 	}
 
 	err = MyRawConnTCPWrite(c.writer, ACK, c.ipAddress)
-	fmt.Println("Sent ACK data")
+	Info.Println("Sent ACK data")
 	if err != nil {
-		fmt.Println(err) // TODO log not print
+		Error.Println(err)
 		return
 	}
 
