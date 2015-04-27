@@ -11,21 +11,22 @@ import (
 type TCB struct {
 	read            chan *TCP_Packet
 	writer          *ipv4.RawConn
-	ipAddress       string      // destination ip address
-	srcIP           string      // src ip address
-	lport, rport    uint16      // ports
-	seqNum, ackNum  uint32      // sequence number
-	state           uint        // from the FSM
-	stateUpdate     *sync.Cond  // signals when the state is changed
-	kind            uint        // type (server or client)
-	serverParent    *Server_TCB // the parent server
-	curWindow       uint16      // the current window size
-	sendBuffer      []byte      // a buffer of bytes that need to be sent
-	urgSendBuffer   []byte      // buffer of urgent data TODO urg data later
-	recvBuffer      []byte      // bytes to pass to the application above
+	ipAddress       string        // destination ip address
+	srcIP           string        // src ip address
+	lport, rport    uint16        // ports
+	seqNum, ackNum  uint32        // sequence number
+	state           uint          // from the FSM
+	stateUpdate     *sync.Cond    // signals when the state is changed
+	kind            uint          // type (server or client)
+	serverParent    *Server_TCB   // the parent server
+	curWindow       uint16        // the current window size
+	sendBuffer      []byte        // a buffer of bytes that need to be sent
+	urgSendBuffer   []byte        // buffer of urgent data TODO urg data later
+	recvBuffer      []byte        // bytes to pass to the application above
 	resendDelay     time.Duration // the delay before resending
-	recentAckNum    uint32     // the last ack received
-	recentAckUpdate *Notifier  // signals changes in recentAckNum
+	recentAckNum    uint32        // the last ack received
+	recentAckUpdate *Notifier     // signals changes in recentAckNum
+
 }
 
 func New_TCB(local, remote uint16, dstIP string, read chan *TCP_Packet, write *ipv4.RawConn, kind uint) (*TCB, error) {
@@ -161,7 +162,20 @@ func (c *TCB) PacketDealer() {
 		fmt.Println("Waiting for packets")
 		segment := <-c.read
 		fmt.Println("got a packet")
-		// TODO check the reset flag first
+
+		// First check if closed, listen, or syn-sent state
+		switch c.state {
+		case CLOSED:
+			c.DealClosed(segment)
+			return
+		case LISTEN:
+
+			return
+		case SYN_SENT:
+
+			return
+		}
+
 		switch c.state {
 		case CLOSED:
 			fmt.Println("Dealing closed")
@@ -230,6 +244,42 @@ func (c *TCB) DealClosed(d *TCP_Packet) {
 	if err != nil {
 		fmt.Println(err) // TODO log not print
 		return
+	}
+}
+
+func (c *TCP) DealListen(d *TCP_Packet) {
+	if d.header.flags&TCP_RST != 0 {
+		return
+	}
+	if d.header.flags&TCP_ACK != 0 {
+		RST, err := (&TCP_Header{
+			srcport: c.lport,
+			dstport: c.rport,
+			seq:     d.header.ack,
+			ack:     0,
+			flags:   TCP_RST,
+			window:  c.curWindow, // TODO improve the window field calculation
+			urg:     0,
+			options: []byte{},
+		}).Marshal_TCP_Header(c.ipAddress, c.srcIP)
+		if err != nil {
+			fmt.Println(err) // TODO log not print
+			return
+		}
+
+		err = MyRawConnTCPWrite(c.writer, RST, c.ipAddress)
+		fmt.Println("Sent ACK data")
+		if err != nil {
+			fmt.Println(err) // TODO log not print
+			return
+		}
+	}
+
+	if d.header.flags&TCP_SYN != 0 {
+		// TODO check security/comparment, if not match, send <SEQ=SEG.ACK><CTL=RST>
+		// TODO handle SEG.PRC > TCB.PRC stuff
+		// TODO if SEG.PRC < TCP.PRC continue
+
 	}
 }
 
