@@ -272,11 +272,47 @@ func (c *TCB) DealSynRcvd(d *TCP_Packet) {
 	if d.header.flags&TCP_SYN != 0 {
 		// TODO send reset
 	}
-	// TODO finish this
+	if d.header.flags&TCP_ACK != 0 {
+		// TODO Check segment acknowledgement is acceptable
+		c.UpdateState(ESTABLISHED)
+
+		// Send ACK
+		c.seqNum++ // A+1
+		B := d.header.seq
+		c.ackNum = B + 1
+
+		ACK, err := (&TCP_Header{
+			srcport: c.lport,
+			dstport: c.rport,
+			seq:     c.seqNum,
+			ack:     c.ackNum,
+			flags:   TCP_ACK,
+			window:  c.curWindow, // TODO improve the window field calculation
+			urg:     0,
+			options: []byte{},
+		}).Marshal_TCP_Header(c.ipAddress, c.srcIP)
+		if err != nil {
+			fmt.Println(err) // TODO log not print
+			return
+		}
+
+		err = MyRawConnTCPWrite(c.writer, ACK, c.ipAddress)
+		fmt.Println("Sent ACK data")
+		if err != nil {
+			fmt.Println(err) // TODO log not print
+			return
+		}
+	}
 }
 
 func (c *TCB) DealEstablished(d *TCP_Packet) {
-	// TODO deal with data
+	if d.header.flags&TCP_SYN != 0 {
+		// TODO send reset
+	}
+	// TODO finish step 5 checks in rfc... I think we will need to split the packetDealer function into separate steps.
+
+	c.UpdateLastAck(d.header.ack)
+	append(c.recvBuffer, d.payload)
 }
 
 func (c *TCB) DealFinWaitOne(d *TCP_Packet) {
