@@ -3,7 +3,6 @@ package main
 import (
 	"crypto/rand"
 	"errors"
-	"fmt"
 	"golang.org/x/net/ipv4"
 	"net"
 )
@@ -86,13 +85,13 @@ func (m *TCP_Port_Manager_Type) readAll() {
 	for {
 		rip, lip, _, payload, err := m.tcp_reader.ReadFrom()
 		if err != nil {
-			fmt.Println("TCP readAll error", err) // TODO log instead of print
+			Error.Println("TCP readAll error", err)
 			continue
 		}
 
 		p, err := Extract_TCP_Packet(payload, rip, lip)
 		if err != nil {
-			fmt.Println(err)
+			Error.Println(err)
 			continue
 		}
 
@@ -128,13 +127,13 @@ func (m *TCP_Port_Manager_Type) readAll() {
 var TCP_Port_Manager = func() *TCP_Port_Manager_Type {
 	nr, err := NewNetwork_Reader() // TODO: create a global var for the network reader
 	if err != nil {
-		fmt.Println(err)
+		Error.Println(err)
 		return nil
 	}
 
 	ipr, err := nr.NewIP_Reader("*", TCP_PROTO)
 	if err != nil {
-		fmt.Println(err)
+		Error.Println(err)
 		return nil
 	}
 
@@ -249,8 +248,8 @@ func genRandSeqNum() uint32 {
 	x := make([]byte, 4) // four bytes
 	_, err := rand.Read(x)
 	if err != nil {
-		fmt.Println(errors.New("Failed to genRandSeqNum")) // TODO log instead of print
-		return 0                                           // TODO incorporate an error message
+		Error.Println(errors.New("Failed to genRandSeqNum"))
+		return 0 // TODO incorporate an error message
 	}
 	return uint32(x[0])<<24 | uint32(x[1])<<16 | uint32(x[2])<<8 | uint32(x[3])
 }

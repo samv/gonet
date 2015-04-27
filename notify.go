@@ -1,7 +1,6 @@
 package main
 
 import (
-	"fmt"
 	"sync"
 )
 
@@ -23,7 +22,7 @@ func (n *Notifier) Register(bufSize int) chan interface{} {
 
 	out := make(chan interface{}, bufSize)
 	n.outputs = append(n.outputs, out)
-	fmt.Println("reg")
+	Trace.Println("notify reg")
 	return out
 }
 
@@ -40,7 +39,7 @@ func (n *Notifier) Unregister(remove chan interface{}) {
 		}
 	}
 	n.outputs = update
-	fmt.Println("Unreg")
+	Trace.Println("notify unreg")
 }
 
 func (n *Notifier) Broadcast(val interface{}) {
@@ -50,7 +49,7 @@ func (n *Notifier) Broadcast(val interface{}) {
 	for _, out := range n.outputs {
 		go func(out chan interface{}, val interface{}) { out <- val }(out, val)
 	}
-	fmt.Println("broadcasted")
+	Trace.Println("broadcasted")
 }
 
 /*

@@ -15,23 +15,23 @@ func New_TCB_From_Client(local, remote uint16, dstIP string) (*TCB, error) {
 
 	read, err := TCP_Port_Manager.bind(remote, local, dstIP)
 	if err != nil {
-		fmt.Println(err)
+		Error.Println(err)
 		return nil, err
 	}
 
 	p, err := net.ListenPacket(fmt.Sprintf("ip4:%d", TCP_PROTO), dstIP) // only for read, not for write
 	if err != nil {
-		fmt.Println(err)
+		Error.Println(err)
 		return nil, err
 	}
 
 	r, err := ipv4.NewRawConn(p)
 	if err != nil {
-		fmt.Println(err)
+		Error.Println(err)
 		return nil, err
 	}
 
-	fmt.Println("Finished New TCB from Client")
+	Trace.Println("Finished New TCB from Client")
 	return New_TCB(local, remote, dstIP, read, r, TCP_CLIENT)
 }
 
@@ -58,9 +58,9 @@ func (c *TCB) Connect() error {
 	}
 
 	// Send the SYN packet
-	fmt.Println("About to send syn")
+	Trace.Println("About to send syn")
 	go c.SendWithRetransmit(SYN)
-	fmt.Println("Sent SYN")
+	Trace.Println("Sent SYN")
 	c.UpdateState(SYN_SENT)
 
 	// wait for the connection to be established
