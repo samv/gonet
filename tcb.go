@@ -168,10 +168,11 @@ func (c *TCB) PacketDealer() {
 			c.DealClosed(segment)
 			return
 		case LISTEN:
-
+			Trace.Println("Dealing listen")
+			c.DealListen(segment)
 			return
 		case SYN_SENT:
-
+			c.DealSynSent(segment)
 			return
 		}
 
@@ -278,13 +279,52 @@ func (c *TCP) DealListen(d *TCP_Packet) {
 		// TODO check security/comparment, if not match, send <SEQ=SEG.ACK><CTL=RST>
 		// TODO handle SEG.PRC > TCB.PRC stuff
 		// TODO if SEG.PRC < TCP.PRC continue
-
+		// TODO Finish rest: pg 66 rfc
 	}
 }
 
 func (c *TCB) DealSynSent(d *TCP_Packet) {
 	Trace.Println("Dealing state syn-sent")
-	if d.header.flags&TCP_SYN != 0 && d.header.flags&TCP_ACK != 0 {
+	ackAcceptable := true
+	if d.header.flags&TCP_ACK != 0 {
+		if d.header.flags&TCP_RST != 0 {
+			return
+		}
+		// TODO if SEG.ACK =< ISS or SEG.ACK > SND.NXT send <SEQ=SEG.ACK><CTL=RST> and return
+		// TODO if SND.UNA =< SEG.ACK =< SND.NXT then ackAcceptable = true, else false
+	}
+	if d.header.flags&TCP_RST != 0 {
+		if ackAcceptable {
+			Error.Println("error:connection reset")
+			c.UpdateState(CLOSED)
+		}
+		return
+	}
+
+	// TODO check security/precedence
+
+	if d.head.flags&TCP_SYN != 0 {
+		// TODO set RCV.NXT to SEG.SEQ+1
+		// TODO set IRS to SEG.SEQ
+		// TODO set SND.UNA to SEG.ACK (if there is an ack)
+		// TODO segments on retransmission queue should be removed
+
+		// TODO if SND.UNA > ISS:
+		// start if
+		c.UpdateState(ESTABLISHED)
+		// TODO send <SEQ=SND.NXT><ACK=RCV.NXT><CTL=ACK>
+		// TODO if more controls/txt, continue processing at sixth step
+		// end if, else:
+		c.UpdateState(SYN_RCVD)
+		// TODO send <SEQ=ISS><ACK=RCV.NXT><CTL=SYN,ACK>
+		// TODO if more controls/txt, continue processing after established
+		// end else
+	} else {
+		// Neither syn nor rst set
+		return
+	}
+
+	/*if d.header.flags&TCP_SYN != 0 && d.header.flags&TCP_ACK != 0 {
 		// received SYN-ACK
 		Info.Println("Recieved syn-ack")
 
@@ -321,7 +361,7 @@ func (c *TCB) DealSynSent(d *TCP_Packet) {
 		// TODO deal with special case: http://www.tcpipguide.com/free/t_TCPConnectionEstablishmentProcessTheThreeWayHandsh-4.htm (Simultaneous Open Connection Establishment)
 	} else {
 		// drop otherwise
-	}
+	}*/
 }
 
 func (c *TCB) DealSynRcvd(d *TCP_Packet) {
