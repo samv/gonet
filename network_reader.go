@@ -20,8 +20,7 @@ func NewNetwork_Reader_IP(dst string, protocol uint8) (*Network_Reader_IP, error
 var GlobalNetworkReader = func() *Network_Reader {
 	x, err := NewNetwork_Reader()
 	if err != nil {
-		Error.Println(err)
-		return nil
+		Error.Fatal(err)
 	}
 	return x
 }()
@@ -51,7 +50,7 @@ func NewNetwork_Reader() (*Network_Reader, error) {
 
 func (nr *Network_Reader) readAll() {
 	for {
-		// read twice to account for the double receiving
+		// read twice to account for the double receiving TODO fix the double reading somehow
 		buf := make([]byte, MAX_IP_PACKET_LEN)
 		_, err := nr.getNextPacket(buf)
 		ln, err := nr.getNextPacket(buf)
@@ -65,13 +64,14 @@ func (nr *Network_Reader) readAll() {
 		// TODO: verify the ethernet protocol legitimately
 		eth_protocol := uint16(buf[12])<<8 | uint16(buf[13])
 		if eth_protocol != ETHERTYPE_IP { // verify that protocol is 0x0800 for IP
-			//fmt.Println("Dropping Ethernet packet for wrong protocol:", eth_protocol) TODO log this error
+			Info.Println("Dropping Ethernet packet for wrong protocol:", eth_protocol)
 			continue
 		}
 		buf = buf[14:] // remove ethernet header
 		//fmt.Println("After removing ethernet header", buf)
 
-		if len(buf) <= 20 {
+		if len(buf) <= IP_HEADER_LEN {
+			Info.Println("Dropping IP Packet for bogus length <=", IP_HEADER_LEN)
 			continue
 		}
 

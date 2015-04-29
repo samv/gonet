@@ -8,27 +8,36 @@ import (
 )
 
 type TCB struct {
-	read            chan *TCP_Packet
-	writer          *ipv4.RawConn
-	ipAddress       string        // destination ip address
-	srcIP           string        // src ip address
-	lport, rport    uint16        // ports
-	seqNum, ackNum  uint32        // sequence number
-	state           uint          // from the FSM
-	stateUpdate     *sync.Cond    // signals when the state is changed
-	kind            uint          // type (server or client)
-	serverParent    *Server_TCB   // the parent server
-	curWindow       uint16        // the current window size
-	sendBuffer      []byte        // a buffer of bytes that need to be sent
-	urgSendBuffer   []byte        // buffer of urgent data TODO urg data later
-	recvBuffer      []byte        // bytes to pass to the application above
-	resendDelay     time.Duration // the delay before resending
-	recentAckNum    uint32        // the last ack received
-	recentAckUpdate *Notifier     // signals changes in recentAckNum
+	read            chan *TCP_Packet // input
+	writer          *ipv4.RawConn    // output
+	ipAddress       string           // destination ip address
+	srcIP           string           // src ip address
+	lport, rport    uint16           // ports
+	seqNum, ackNum  uint32           // sequence number
+	state           uint             // from the FSM
+	stateUpdate     *sync.Cond       // signals when the state is changed
+	kind            uint             // type (server or client)
+	serverParent    *Server_TCB      // the parent server
+	curWindow       uint16           // the current window size
+	sendBuffer      []byte           // a buffer of bytes that need to be sent
+	urgSendBuffer   []byte           // buffer of urgent data TODO urg data later
+	recvBuffer      []byte           // bytes to pass to the application above
+	resendDelay     time.Duration    // the delay before resending
+	ISS             uint32           // the initial snd seq number
+	IRS             uint32           // the initial rcv seq number
+	recentAckNum    uint32           // the last ack received (also SND.UNA)
+	recentAckUpdate *Notifier        // signals changes in recentAckNum
 }
 
 func New_TCB(local, remote uint16, dstIP string, read chan *TCP_Packet, write *ipv4.RawConn, kind uint) (*TCB, error) {
 	Trace.Println("New_TCB")
+
+	seq, err := genRandSeqNum()
+	if err != nil {
+		Error.Fatal(err)
+		return nil, err
+	}
+
 	c := &TCB{
 		lport:           local,
 		rport:           remote,
@@ -36,14 +45,16 @@ func New_TCB(local, remote uint16, dstIP string, read chan *TCP_Packet, write *i
 		srcIP:           "127.0.0.1", // TODO: don't hardcode the srcIP
 		read:            read,
 		writer:          write,
-		seqNum:          genRandSeqNum(),
-		ackNum:          uint32(0),       // Always 0 at start
+		seqNum:          seq,
+		ackNum:          uint32(0), // Always 0 at start
 		state:           CLOSED,
 		stateUpdate:     sync.NewCond(&sync.Mutex{}),
 		kind:            kind,
 		serverParent:    nil,
 		curWindow:       43690, // TODO calc using http://ithitman.blogspot.com/2013/02/understanding-tcp-window-window-scaling.html
 		resendDelay:     250 * time.Millisecond,
+		ISS:             seq,
+		IRS:             0,
 		recentAckNum:    0,
 		recentAckUpdate: NewNotifier(),
 	}
@@ -289,83 +300,75 @@ func (c *TCB) DealListen(d *TCP_Packet) {
 
 func (c *TCB) DealSynSent(d *TCP_Packet) {
 	Trace.Println("Dealing state syn-sent")
-	ackAcceptable := true
 	if d.header.flags&TCP_ACK != 0 {
+		Trace.Println("verifing the ack")
 		if d.header.flags&TCP_RST != 0 {
 			return
 		}
 		// TODO if SEG.ACK =< ISS or SEG.ACK > SND.NXT send <SEQ=SEG.ACK><CTL=RST> and return
 		// TODO if SND.UNA =< SEG.ACK =< SND.NXT then ackAcceptable = true, else false
+
+		// TODO drop the packet if the ack is unacceptable
+
 	}
 	if d.header.flags&TCP_RST != 0 {
-		if ackAcceptable {
-			Error.Println("error:connection reset")
-			c.UpdateState(CLOSED)
-		}
+		Error.Println("error: connection reset")
+		c.UpdateState(CLOSED)
 		return
 	}
 
-	// TODO check security/precedence
+	// TODO verify security/precedence
 
 	if d.header.flags&TCP_SYN != 0 {
-		// TODO set RCV.NXT to SEG.SEQ+1
-		// TODO set IRS to SEG.SEQ
-		// TODO set SND.UNA to SEG.ACK (if there is an ack)
-		// TODO segments on retransmission queue should be removed
+		Trace.Println("rcvd a SYN")
+		c.ackNum = d.header.seq + 1
+		c.IRS = d.header.seq
 
-		// TODO if SND.UNA > ISS:
-		// start if
-		c.UpdateState(ESTABLISHED)
-		// TODO send <SEQ=SND.NXT><ACK=RCV.NXT><CTL=ACK>
-		// TODO if more controls/txt, continue processing at sixth step
-		// end if, else:
-		c.UpdateState(SYN_RCVD)
-		// TODO send <SEQ=ISS><ACK=RCV.NXT><CTL=SYN,ACK>
-		// TODO if more controls/txt, continue processing after established
-		// end else
-	} else {
-		// Neither syn nor rst set
-		return
+		if d.header.flags&TCP_ACK != 0 {
+			c.UpdateLastAck(d.header.ack)
+			Trace.Println("recentAckNum:", c.recentAckNum)
+			Trace.Println("ISS:", c.ISS)
+		}
+
+		if c.recentAckNum > c.ISS {
+			Trace.Println("rcvd a SYN-ACK")
+			// the syn has been ACKed
+			// reply with an ACK
+			ACK, err := (&TCP_Header{
+				srcport: c.lport,
+				dstport: c.rport,
+				seq:     c.seqNum,
+				ack:     c.ackNum,
+				flags:   TCP_ACK,
+				window:  c.curWindow, // TODO improve the window field calculation
+				urg:     0,
+				options: []byte{},
+			}).Marshal_TCP_Header(c.ipAddress, c.srcIP)
+			if err != nil {
+				Error.Println(err)
+				return
+			}
+			err = c.SendOnce(ACK)
+			if err != nil {
+				Error.Println(err)
+				return
+			}
+
+			go c.UpdateState(ESTABLISHED)
+			Info.Println("Connection established")
+		} else {
+			// special case... TODO deal with this case later
+			// http://www.tcpipguide.com/free/t_TCPConnectionEstablishmentProcessTheThreeWayHandsh-4.htm (Simultaneous Open Connection Establishment)
+
+			//c.UpdateState(SYN_RCVD)
+			// TODO send <SEQ=ISS><ACK=RCV.NXT><CTL=SYN,ACK>
+			// TODO if more controls/txt, continue processing after established
+		}
 	}
 
-	/*if d.header.flags&TCP_SYN != 0 && d.header.flags&TCP_ACK != 0 {
-		// received SYN-ACK
-		Info.Println("Recieved syn-ack")
-
-		// TODO: verify the seq and ack fields
-		c.UpdateLastAck(d.header.ack)
-
-		// Send ACK
-		c.seqNum++ // A+1
-		B := d.header.seq
-		c.ackNum = B + 1
-		ACK, err := (&TCP_Header{
-			srcport: c.lport,
-			dstport: c.rport,
-			seq:     c.seqNum,
-			ack:     c.ackNum,
-			flags:   TCP_ACK,
-			window:  c.curWindow, // TODO improve the window field calculation
-			urg:     0,
-			options: []byte{},
-		}).Marshal_TCP_Header(c.ipAddress, c.srcIP)
-		if err != nil {
-			Error.Println(err)
-			return
-		}
-
-		err = MyRawConnTCPWrite(c.writer, ACK, c.ipAddress)
-		Info.Println("Sent ACK data")
-		if err != nil {
-			Error.Println(err)
-			return
-		}
-		c.UpdateState(ESTABLISHED)
-	} else if d.header.flags&TCP_SYN == 0 {
-		// TODO deal with special case: http://www.tcpipguide.com/free/t_TCPConnectionEstablishmentProcessTheThreeWayHandsh-4.htm (Simultaneous Open Connection Establishment)
-	} else {
-		// drop otherwise
-	}*/
+	// Neither syn nor rst set
+	Trace.Println("Dropping packet")
+	return
 }
 
 func (c *TCB) DealSynRcvd(d *TCP_Packet) {

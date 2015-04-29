@@ -8,9 +8,9 @@ udp: udp_read udp_write
 tcp: tcp_server tcp_client
 
 udp_read:
-	go build udp_read_tester.go udp_reader.go ipv4_reader.go ipv4_common.go network_reader.go myMACAddr.go;
+	go build udp_read_tester.go  udp_reader.go ipv4_reader.go ipv4_common.go network_reader.go myMACAddr.go logging.go;
 udp_write:
-	go build udp_write_tester.go udp_writer.go ipv4_writer.go ipv4_common.go network_writer.go myMACAddr.go;
+	go build udp_write_tester.go udp_writer.go ipv4_writer.go ipv4_common.go network_writer.go myMACAddr.go logging.go;
 tcp_server:
 	go build tcp_server_tester.go               tcp_server.go tcp_common.go tcb.go notify.go ipv4_reader.go ipv4_common.go network_reader.go                                  myMACAddr.go logging.go;
 tcp_client:

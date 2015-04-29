@@ -56,6 +56,7 @@ func (c *TCB) Connect() error {
 		rip:     c.ipAddress,
 		lip:     c.srcIP,
 	}
+	c.seqNum += 1
 
 	// Send the SYN packet
 	Trace.Println("About to send syn")

@@ -238,14 +238,13 @@ func verifyTCPchecksum(header []byte, srcIP, dstIP string, headerLen uint8) bool
 	return true
 }
 
-func genRandSeqNum() uint32 {
+func genRandSeqNum() (uint32, error) {
 	x := make([]byte, 4) // four bytes
 	_, err := rand.Read(x)
 	if err != nil {
-		Error.Println(errors.New("Failed to genRandSeqNum"))
-		return 0 // TODO incorporate an error message
+		return 0, errors.New("genRandSeqNum gave error:" + err.Error())
 	}
-	return uint32(x[0])<<24 | uint32(x[1])<<16 | uint32(x[2])<<8 | uint32(x[3])
+	return uint32(x[0])<<24 | uint32(x[1])<<16 | uint32(x[2])<<8 | uint32(x[3]), nil
 }
 
 func MyRawConnTCPWrite(w *ipv4.RawConn, tcp []byte, dst string) error {
