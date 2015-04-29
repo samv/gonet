@@ -125,13 +125,7 @@ func (m *TCP_Port_Manager_Type) readAll() {
 }
 
 var TCP_Port_Manager = func() *TCP_Port_Manager_Type {
-	nr, err := NewNetwork_Reader() // TODO: create a global var for the network reader
-	if err != nil {
-		Error.Println(err)
-		return nil
-	}
-
-	ipr, err := nr.NewIP_Reader("*", TCP_PROTO)
+	ipr, err := GlobalNetworkReader.NewIP_Reader("*", TCP_PROTO)
 	if err != nil {
 		Error.Println(err)
 		return nil
