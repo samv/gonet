@@ -41,7 +41,7 @@ func New_TCB(local, remote uint16, dstIP string, read chan *TCP_Packet, write *i
 		srcIP:           "127.0.0.1", // TODO: don't hardcode the srcIP
 		read:            read,
 		writer:          write,
-		seqNum:          genRandSeqNum(), // TODO verify that this works
+		seqNum:          genRandSeqNum(),
 		ackNum:          uint32(0),       // Always 0 at start
 		state:           CLOSED,
 		stateUpdate:     sync.NewCond(&sync.Mutex{}),
@@ -119,6 +119,7 @@ func (c *TCB) SendWithRetransmit(data *TCP_Packet) error {
 		case <-timeout:
 			// TODO deal with a resend timeout fully
 			killAckListen <- true
+			Error.Println("Resend of packet seq", data.header.seq, "timed out")
 			return errors.New("Resend timed out")
 		}
 	}
@@ -134,7 +135,7 @@ func (c *TCB) ListenForAck(successOut chan<- bool, end <-chan bool, targetAck ui
 			if v.(uint32) == targetAck {
 				return
 			}
-		case <-end: // TODO don't wait if end is sent
+		case <-end:
 			return
 		}
 	}
@@ -182,18 +183,7 @@ func (c *TCB) PacketDealer() {
 		}
 
 		// Otherwise
-
-		// TODO check sequence number
-
-		switch c.state {
-		case SYN_RCVD:
-			if segment.header.flags&TCP_RST != 0 {
-
-			}
-		case CLOSE_WAIT:
-		case TIME_WAIT:
-
-		}
+		// TODO left off on RFC pg 69
 
 		//		switch c.state {
 		//		case CLOSED:
@@ -282,14 +272,14 @@ func (c *TCB) DealListen(d *TCP_Packet) {
 			options: []byte{},
 		}).Marshal_TCP_Header(c.ipAddress, c.srcIP)
 		if err != nil {
-			fmt.Println(err) // TODO log not print
+			Error.Println(err)
 			return
 		}
 
 		err = MyRawConnTCPWrite(c.writer, RST, c.ipAddress)
 		Trace.Println("Sent ACK data")
 		if err != nil {
-			fmt.Println(err) // TODO log not print
+			Error.Println(err)
 			return
 		}
 	}
@@ -298,73 +288,19 @@ func (c *TCB) DealListen(d *TCP_Packet) {
 		// TODO check security/comparment, if not match, send <SEQ=SEG.ACK><CTL=RST>
 		// TODO handle SEG.PRC > TCB.PRC stuff
 		// TODO if SEG.PRC < TCP.PRC continue
-		c.rcv_nxt = d.header.seq + 1
-		c.irs = d.header.seq
-		// TODO queue other controls
-		c.iss = genRandSeqNum
-
-		SYN_ACK, err := (&TCP_Header{
-			srcport: c.lport,
-			dstport: c.rport,
-			seq:     c.iss,
-			ack:     c.rcv_nxt,
-			flags:   TCP_SYN | TCP_ACK,
-			window:  c.curWindow, // TODO improve the window field calculation
-			urg:     0,
-			options: []byte{},
-		}).Marshal_TCP_Header(c.ipAddress, c.srcIP)
-		if err != nil {
-			fmt.Println(err) // TODO log not print
-			return
-		}
-
-		err = MyRawConnTCPWrite(c.writer, SYN_ACK, c.ipAddress)
-		Trace.Println("Sent ACK data")
-		if err != nil {
-			fmt.Println(err) // TODO log not print
-			return
-		}
-
-		c.snd_nxt = c.iss + 1
-		c.snd_una = c.iss
-		c.UpdateState(SYN_RCVD)
-		return
+		// TODO Finish rest: pg 66 rfc
 	}
 }
 
 func (c *TCB) DealSynSent(d *TCP_Packet) {
 	Trace.Println("Dealing state syn-sent")
-	ackAcceptable := false
+	ackAcceptable := true
 	if d.header.flags&TCP_ACK != 0 {
 		if d.header.flags&TCP_RST != 0 {
 			return
 		}
-		if d.header.ack <= c.iss || d.header.ack > c.snd_nxt {
-			RST, err := (&TCP_Header{
-				srcport: c.lport,
-				dstport: c.rport,
-				seq:     d.header.ack,
-				ack:     0,
-				flags:   TCP_RST,
-				window:  c.curWindow, // TODO improve the window field calculation
-				urg:     0,
-				options: []byte{},
-			}).Marshal_TCP_Header(c.ipAddress, c.srcIP)
-			if err != nil {
-				fmt.Println(err) // TODO log not print
-				return
-			}
-
-			err = MyRawConnTCPWrite(c.writer, RST, c.ipAddress)
-			if err != nil {
-				fmt.Println(err) // TODO log not print
-				return
-			}
-			return
-		}
-		if c.snd_una <= d.header.ack && d.header.ack <= c.snd_nxt {
-			ackAcceptable = true
-		}
+		// TODO if SEG.ACK =< ISS or SEG.ACK > SND.NXT send <SEQ=SEG.ACK><CTL=RST> and return
+		// TODO if SND.UNA =< SEG.ACK =< SND.NXT then ackAcceptable = true, else false
 	}
 	if d.header.flags&TCP_RST != 0 {
 		if ackAcceptable {
@@ -376,7 +312,7 @@ func (c *TCB) DealSynSent(d *TCP_Packet) {
 
 	// TODO check security/precedence
 
-	if d.head.flags&TCP_SYN != 0 {
+	if d.header.flags&TCP_SYN != 0 {
 		c.rcv_nxt = d.header.seq + 1
 		c.irs = d.header.seq
 		if c.head.flags&TCP_ACK != 0 {
@@ -384,58 +320,16 @@ func (c *TCB) DealSynSent(d *TCP_Packet) {
 		}
 		// TODO segments on retransmission queue should be removed
 
-		if c.snd_una > c.iss {
-			c.UpdateState(ESTABLISHED)
-			// TODO send <SEQ=SND.NXT><ACK=RCV.NXT><CTL=ACK>
-			ACK, err := (&TCP_Header{
-				srcport: c.lport,
-				dstport: c.rport,
-				seq:     c.snd_nxt,
-				ack:     c.rcv_nxt,
-				flags:   TCP_ACK,
-				window:  c.curWindow, // TODO improve the window field calculation
-				urg:     0,
-				options: []byte{},
-			}).Marshal_TCP_Header(c.ipAddress, c.srcIP)
-			if err != nil {
-				fmt.Println(err) // TODO log not print
-				return
-			}
-
-			err = MyRawConnTCPWrite(c.writer, ACK, c.ipAddress)
-			Trace.Println("Sent ACK data")
-			if err != nil {
-				fmt.Println(err) // TODO log not print
-				return
-			}
-
-			// TODO if more controls/txt, continue processing at sixth step and don't return
-			return
-		} else {
-			c.UpdateState(SYN_RCVD)
-			SYN_ACK, err := (&TCP_Header{
-				srcport: c.lport,
-				dstport: c.rport,
-				seq:     c.iss,
-				ack:     c.rcv_nxt,
-				flags:   TCP_SYN | TCP_ACK,
-				window:  c.curWindow, // TODO improve the window field calculation
-				urg:     0,
-				options: []byte{},
-			}).Marshal_TCP_Header(c.ipAddress, c.srcIP)
-			if err != nil {
-				fmt.Println(err) // TODO log not print
-				return
-			}
-
-			err = MyRawConnTCPWrite(c.writer, SYN_ACK, c.ipAddress)
-			Trace.Println("Sent SYN-ACK data")
-			if err != nil {
-				fmt.Println(err) // TODO log not print
-				return
-			}
-			// TODO if more controls/txt, continue processing after established
-		}
+		// TODO if SND.UNA > ISS:
+		// start if
+		c.UpdateState(ESTABLISHED)
+		// TODO send <SEQ=SND.NXT><ACK=RCV.NXT><CTL=ACK>
+		// TODO if more controls/txt, continue processing at sixth step
+		// end if, else:
+		c.UpdateState(SYN_RCVD)
+		// TODO send <SEQ=ISS><ACK=RCV.NXT><CTL=SYN,ACK>
+		// TODO if more controls/txt, continue processing after established
+		// end else
 	} else {
 		// Neither syn nor rst set
 		return
