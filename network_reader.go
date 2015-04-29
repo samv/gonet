@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"net"
 	"syscall"
+	//"golang.org/x/net/ipv4"
 )
 
 /*type Network_Reader_IP struct {
@@ -16,15 +17,6 @@ import (
 func NewNetwork_Reader_IP(dst string, protocol uint8) (*Network_Reader_IP, error) {
 
 }*/
-
-var GlobalNetworkReader = func() *Network_Reader {
-	x, err := NewNetwork_Reader()
-	if err != nil {
-		Error.Println(err)
-		return nil
-	}
-	return x
-}()
 
 type Network_Reader struct {
 	fd      int
