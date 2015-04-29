@@ -36,7 +36,7 @@ func New_TCB(local, remote uint16, dstIP string, read chan *TCP_Packet, write *i
 		srcIP:           "127.0.0.1", // TODO: don't hardcode the srcIP
 		read:            read,
 		writer:          write,
-		seqNum:          genRandSeqNum(), // TODO verify that this works
+		seqNum:          genRandSeqNum(),
 		ackNum:          uint32(0),       // Always 0 at start
 		state:           CLOSED,
 		stateUpdate:     sync.NewCond(&sync.Mutex{}),
@@ -114,6 +114,7 @@ func (c *TCB) SendWithRetransmit(data *TCP_Packet) error {
 		case <-timeout:
 			// TODO deal with a resend timeout fully
 			killAckListen <- true
+			Error.Println("Resend of packet seq", data.header.seq, "timed out")
 			return errors.New("Resend timed out")
 		}
 	}
@@ -129,7 +130,7 @@ func (c *TCB) ListenForAck(successOut chan<- bool, end <-chan bool, targetAck ui
 			if v.(uint32) == targetAck {
 				return
 			}
-		case <-end: // TODO don't wait if end is sent
+		case <-end:
 			return
 		}
 	}
@@ -266,14 +267,14 @@ func (c *TCB) DealListen(d *TCP_Packet) {
 			options: []byte{},
 		}).Marshal_TCP_Header(c.ipAddress, c.srcIP)
 		if err != nil {
-			Error.Println(err) // TODO log not print
+			Error.Println(err)
 			return
 		}
 
 		err = MyRawConnTCPWrite(c.writer, RST, c.ipAddress)
 		Trace.Println("Sent ACK data")
 		if err != nil {
-			Error.Println(err) // TODO log not print
+			Error.Println(err)
 			return
 		}
 	}
