@@ -250,7 +250,7 @@ func (c *TCB) DealClosed(d *TCP_Packet) {
 	}
 }
 
-func (c *TCP) DealListen(d *TCP_Packet) {
+func (c *TCB) DealListen(d *TCP_Packet) {
 	if d.header.flags&TCP_RST != 0 {
 		return
 	}
@@ -266,14 +266,14 @@ func (c *TCP) DealListen(d *TCP_Packet) {
 			options: []byte{},
 		}).Marshal_TCP_Header(c.ipAddress, c.srcIP)
 		if err != nil {
-			fmt.Println(err) // TODO log not print
+			Error.Println(err) // TODO log not print
 			return
 		}
 
 		err = MyRawConnTCPWrite(c.writer, RST, c.ipAddress)
 		Trace.Println("Sent ACK data")
 		if err != nil {
-			fmt.Println(err) // TODO log not print
+			Error.Println(err) // TODO log not print
 			return
 		}
 	}
@@ -306,7 +306,7 @@ func (c *TCB) DealSynSent(d *TCP_Packet) {
 
 	// TODO check security/precedence
 
-	if d.head.flags&TCP_SYN != 0 {
+	if d.header.flags&TCP_SYN != 0 {
 		// TODO set RCV.NXT to SEG.SEQ+1
 		// TODO set IRS to SEG.SEQ
 		// TODO set SND.UNA to SEG.ACK (if there is an ack)
