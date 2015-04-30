@@ -199,9 +199,19 @@ func (c *TCB) PacketDealer() {
 			case SYN_RCVD:
 				// not done
 				continue
+			case ESTABLISHED:
+				fallthrough
+			case FIN_WAIT_1:
+				fallthrough
+			case FIN_WAIT_2:
+				fallthrough
 			case CLOSE_WAIT:
 				// not done
 				continue
+			case CLOSING:
+				fallthrough
+			case LAST_ACK:
+				fallthrough
 			case TIME_WAIT:
 				if segment.header.flags&TCP_RST != 0 {
 					c.UpdateState(CLOSED)
@@ -219,39 +229,136 @@ func (c *TCB) PacketDealer() {
 
 		switch c.state {
 		case SYN_RCVD:
-		case ESTABLISHED:
+			if c.recentAckNum <= segment.header.ack && segment.header.ack <= c.seqNum {
+				c.UpdateState(ESTABLISHED)
+			} else {
+				RST, err := (&TCP_Header{
+					srcport: c.lport,
+					dstport: c.rport,
+					seq:     segment.header.ack,
+					ack:     0,
+					flags:   TCP_RST,
+					window:  c.curWindow, // TODO improve the window field calculation
+					urg:     0,
+					options: []byte{},
+				}).Marshal_TCP_Header(c.ipAddress, c.srcIP)
+				if err != nil {
+					Error.Println(err)
+					return
+				}
 
+				err = MyRawConnTCPWrite(c.writer, RST, c.ipAddress)
+				Info.Println("Sent ACK data")
+				if err != nil {
+					Error.Println(err)
+					return
+				}
+			}
+		case ESTABLISHED:
+			if c.recentAckNum < segment.header.ack && segment.header.ack <= c.seqNum {
+				c.recentAckNum = segment.header.ack
+				// TODO handle retrans queue
+				// TODO update send window
+			} else if c.recentAckNum > segment.header.ack {
+				// ignore
+				continue
+			} else if segment.header.ack > c.seqNum {
+				// TODO send ack, drop segment, return
+			}
+		case FIN_WAIT_1:
+			// TODO if acking fin
+			c.UpdateState(FIN_WAIT_2)
+		case FIN_WAIT_2:
+			// TODO if retrans queue empty, acknowledge user's close with ok
+		case CLOSE_WAIT:
+			if c.recentAckNum < segment.header.ack && segment.header.ack <= c.seqNum {
+				c.recentAckNum = segment.header.ack
+				// TODO handle retrans queue
+				// TODO update send window
+			} else if c.recentAckNum > segment.header.ack {
+				// ignore
+				continue
+			} else if segment.header.ack > c.seqNum {
+				// TODO send ack, drop segment, return
+			}
+		case CLOSING:
+			// TODO if ack is acknowledging our fin
+			c.UpdateState(TIME_WAIT)
+			// TODO else drop segment
+		case LAST_ACK:
+			// TODO if fin acknowledged
+			c.UpdateState(CLOSED)
+			continue
+		case TIME_WAIT:
+			// TODO handle remote fin
 		}
 
-		//		switch c.state {
-		//		case CLOSED:
-		//			Trace.Println("Dealing closed")
-		//			go c.DealClosed(segment)
-		//		case SYN_SENT:
-		//			Trace.Println("Dealing syn-sent")
-		//			go c.DealSynSent(segment)
-		//		case SYN_RCVD:
-		//			Trace.Println("Dealing syn-rcvd")
-		//			go c.DealSynRcvd(segment)
-		//		case ESTABLISHED:
-		//			Trace.Println("Dealing established")
-		//			go c.DealEstablished(segment)
-		//		case FIN_WAIT_1:
-		//			Trace.Println("Dealing Fin-Wait-1")
-		//			go c.DealFinWaitOne(segment)
-		//		case FIN_WAIT_2:
-		//			go c.DealFinWaitTwo(segment)
-		//		case CLOSE_WAIT:
-		//			go c.DealCloseWait(segment)
-		//		case CLOSING:
-		//			go c.DealClosing(segment)
-		//		case LAST_ACK:
-		//			go c.DealLastAck(segment)
-		//		case TIME_WAIT:
-		//			go c.DealTimeWait(segment)
-		//		default:
-		//			Error.Println("Error: the current state is unknown")
-		//		}
+		if segment.header.flags&TCP_URG != 0 {
+			switch c.state {
+			case ESTABLISHED:
+				fallthrough
+			case FIN_WAIT_1:
+				fallthrough
+			case FIN_WAIT_2:
+				// TODO handle urg
+			}
+		}
+
+		switch c.state {
+		case ESTABLISHED:
+			fallthrough
+		case FIN_WAIT_1:
+			fallthrough
+		case FIN_WAIT_2:
+			append(c.recvBuffer, segment.payload)
+			// TODO handle push flag
+			// TODO adjust rcv.wnd, for now just multiplying by 2
+			c.curWindow *= 2
+			c.ackNum += segment.getPayloadSize()
+			// TODO piggyback this:
+			ACK, err := (&TCP_Header{
+				srcport: c.lport,
+				dstport: c.rport,
+				seq:     c.seqNum,
+				ack:     c.ackNum,
+				flags:   TCP_ACK,
+				window:  c.curWindow, // TODO improve the window field calculation
+				urg:     0,
+				options: []byte{},
+			}).Marshal_TCP_Header(c.ipAddress, c.srcIP)
+			if err != nil {
+				Error.Println(err)
+				return
+			}
+
+			err = MyRawConnTCPWrite(c.writer, ACK, c.ipAddress)
+			Info.Println("Sent ACK data")
+			if err != nil {
+				Error.Println(err)
+				return
+			}
+		case CLOSE_WAIT:
+			fallthrough
+		case CLOSING:
+			fallthrough
+		case LAST_ACK:
+			fallthrough
+		case TIME_WAIT:
+			// should not occur
+			continue
+		}
+
+		if segment.header.flags&TCP_FIN != 0 {
+			switch c.state {
+			case CLOSED:
+				fallthrough
+			case LISTEN:
+				fallthrough
+			case SYN_SENT:
+				continue
+				// TODO handle rest of fin
+			}
+		}
 	}
 }
 
