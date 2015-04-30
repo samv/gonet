@@ -91,22 +91,18 @@ func (s *Server_TCB) LongListener() {
 
 			// send syn-ack
 			c.ackNum = in.header.ack + 1
-			synack, err := (&TCP_Header{
-				srcport: c.lport,
-				dstport: c.rport,
-				seq:     c.seqNum,
-				ack:     c.ackNum,
-				flags:   TCP_SYN | TCP_ACK,
-				window:  c.curWindow,
-				urg:     0,
-				options: []byte{0x02, 0x04, 0xff, 0xd7, 0x04, 0x02, 0x08, 0x0a, 0x02, 0x64, 0x80, 0x8b, 0x0, 0x0, 0x0, 0x0, 0x01, 0x03, 0x03, 0x07},
-				// TODO compute the options of Syn-Ack instead of hardcoding them
-			}).Marshal_TCP_Header(c.ipAddress, c.srcIP)
-			if err != nil {
-				Error.Println(err)
-				return
+			synack := &TCP_Packet{
+				header: &TCP_Header{
+					seq:     c.seqNum,
+					ack:     c.ackNum,
+					flags:   TCP_SYN | TCP_ACK,
+					urg:     0,
+					options: []byte{0x02, 0x04, 0xff, 0xd7, 0x04, 0x02, 0x08, 0x0a, 0x02, 0x64, 0x80, 0x8b, 0x0, 0x0, 0x0, 0x0, 0x01, 0x03, 0x03, 0x07},
+					// TODO compute the options of Syn-Ack instead of hardcoding them
+				},
+				payload: []byte{},
 			}
-			err = MyRawConnTCPWrite(c.writer, synack, c.ipAddress)
+			err = c.SendPacket(synack)
 			if err != nil {
 				Error.Println(err)
 				return

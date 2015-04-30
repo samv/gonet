@@ -3,6 +3,7 @@ package main
 import (
 	"errors"
 	"golang.org/x/net/ipv4"
+	"net"
 	"sync"
 	"time"
 )
@@ -88,21 +89,13 @@ func SendUpdate(update *sync.Cond) {
 	update.L.Unlock()
 }
 
-func SendNotifierBroadcast(update *Notifier, val interface{}) {
-	update.Broadcast(val)
-}
-
 func (c *TCB) PacketSender() {
 	// TODO: deal with data in send and urgSend buffers
 }
 
 func (c *TCB) SendWithRetransmit(data *TCP_Packet) error {
 	// send the first packet
-	packet, err := data.Marshal_TCP_Packet()
-	if err != nil {
-		return err
-	}
-	c.SendOnce(packet)
+	c.SendPacket(data)
 
 	// ack listeners
 	ackFound := make(chan bool, 1)
@@ -122,7 +115,7 @@ func (c *TCB) SendWithRetransmit(data *TCP_Packet) error {
 			killTimer <- true
 			return nil
 		case <-resendTimer:
-			c.SendOnce(packet)
+			c.SendPacket(data)
 		case <-timeout:
 			// TODO deal with a resend timeout fully
 			killAckListen <- true
@@ -149,10 +142,6 @@ func (c *TCB) ListenForAck(successOut chan<- bool, end <-chan bool, targetAck ui
 	successOut <- true
 }
 
-func (c *TCB) SendOnce(pay []byte) error {
-	return MyRawConnTCPWrite(c.writer, pay, c.ipAddress)
-}
-
 func ResendTimer(timerOutput, timeout chan<- bool, finished <-chan bool, delay time.Duration) {
 	for i := 0; i < TCP_RESEND_LIMIT; i++ {
 		select {
@@ -164,6 +153,59 @@ func ResendTimer(timerOutput, timeout chan<- bool, finished <-chan bool, delay t
 		}
 	}
 	timeout <- true
+}
+
+func (c *TCB) SendPacket(d *TCP_Packet) error {
+	// Requires that seq, ack, flags, urg, and options are set
+	// Will set everything else
+
+	d.header.srcport = c.lport
+	d.header.dstport = c.rport
+	d.header.window  = c.curWindow // TODO improve the window field calculation
+	d.rip = c.ipAddress
+	d.lip = c.srcIP
+
+	pay, err := d.Marshal_TCP_Packet()
+	if err != nil {
+		Error.Println(err)
+		return err
+	}
+
+	err = c.writer.WriteTo(&ipv4.Header{
+		Version:  ipv4.Version,             // protocol version
+		Len:      IP_HEADER_LEN,            // header length
+		TOS:      0,                        // type-of-service (0 is everything normal)
+		TotalLen: len(pay) + IP_HEADER_LEN, // packet total length (octets)
+		ID:       0,                        // identification
+		Flags:    ipv4.DontFragment,        // flags
+		FragOff:  0,                        // fragment offset
+		TTL:      DEFAULT_TTL,              // time-to-live (maximum lifespan in seconds)
+		Protocol: TCP_PROTO,                // next protocol
+		Checksum: 0,                        // checksum (autocomputed)
+		Dst:      net.ParseIP(d.rip),       // destination address
+	}, pay, nil)
+
+	if err != nil {
+		Error.Println(err)
+		return err
+	}
+
+	return nil
+}
+
+func (c *TCB) SendReset(seq uint32, ack uint32) error {
+	rst := &TCP_Packet{
+		header: &TCP_Header{
+			seq: seq,
+			ack: ack,
+			flags: TCP_RST,
+			urg: 0,
+			options: []byte{},
+		},
+		payload: []byte{},
+	}
+
+	return c.SendPacket(rst)
 }
 
 func (c *TCB) PacketDealer() {
@@ -271,22 +313,18 @@ func (c *TCB) DealClosed(d *TCP_Packet) {
 		ackNum = 0
 	}
 
-	RST, err := (&TCP_Header{
-		srcport: c.lport,
-		dstport: c.rport,
-		seq:     seqNum,
-		ack:     ackNum,
-		flags:   rstFlags,
-		window:  c.curWindow, // TODO improve the window field calculation
-		urg:     0,
-		options: []byte{},
-	}).Marshal_TCP_Header(c.ipAddress, c.srcIP)
-	if err != nil {
-		Error.Println(err)
-		return
+	rst_packet := &TCP_Packet{
+		header: &TCP_Header{
+			seq:     seqNum,
+			ack:     ackNum,
+			flags:   rstFlags,
+			urg:     0,
+			options: []byte{},
+		},
+		payload: []byte{},
 	}
 
-	err = MyRawConnTCPWrite(c.writer, RST, c.ipAddress)
+	err := c.SendPacket(rst_packet)
 	Info.Println("Sent ACK data")
 	if err != nil {
 		Error.Println(err)
@@ -299,13 +337,13 @@ func (c *TCB) DealListen(d *TCP_Packet) {
 		return
 	}
 	if d.header.flags&TCP_ACK != 0 {
-		RST, err := (&TCP_Header{
+		/*RST, err := (&TCP_Header{
 			srcport: c.lport,
 			dstport: c.rport,
 			seq:     d.header.ack,
 			ack:     0,
 			flags:   TCP_RST,
-			window:  c.curWindow, // TODO improve the window field calculation
+			window:  c.curWindow, // TODOold improve the window field calculation
 			urg:     0,
 			options: []byte{},
 		}).Marshal_TCP_Header(c.ipAddress, c.srcIP)
@@ -314,7 +352,9 @@ func (c *TCB) DealListen(d *TCP_Packet) {
 			return
 		}
 
-		err = MyRawConnTCPWrite(c.writer, RST, c.ipAddress)
+		err = MyRawConnTCPWrite(c.writer, RST, c.ipAddress)*/
+
+		err := c.SendReset(d.header.ack, 0)
 		Trace.Println("Sent ACK data")
 		if err != nil {
 			Error.Println(err)
@@ -323,34 +363,30 @@ func (c *TCB) DealListen(d *TCP_Packet) {
 	}
 
 	if d.header.flags&TCP_SYN != 0 {
-		// TODO check security/comparment, if not match, send <SEQ=SEG.ACK><CTL=RST>
+		// TODO check security/compartment, if not match, send <SEQ=SEG.ACK><CTL=RST>
 		// TODO handle SEG.PRC > TCB.PRC stuff
 		// TODO if SEG.PRC < TCP.PRC continue
 		c.ackNum = d.header.seq + 1
 		c.IRS = d.header.seq
 		// TODO queue other controls
 
-		SYN_ACK, err := (&TCP_Header{
-			srcport: c.lport,
-			dstport: c.rport,
-			seq:     c.seqNum,
-			ack:     c.ackNum,
-			flags:   TCP_SYN | TCP_ACK,
-			window:  c.curWindow, // TODO improve the window field calculation
-			urg:     0,
-			options: []byte{},
-		}).Marshal_TCP_Header(c.ipAddress, c.srcIP)
-		if err != nil {
-			Error.Println(err)
-			return
+		syn_ack_packet := &TCP_Packet{
+			header: &TCP_Header{
+				seq:     c.seqNum,
+				ack:     c.ackNum,
+				flags:   TCP_SYN | TCP_ACK,
+				urg:     0,
+				options: []byte{},
+			},
+			payload: []byte{},
 		}
 
-		err = MyRawConnTCPWrite(c.writer, SYN_ACK, c.ipAddress)
-		Trace.Println("Sent ACK data")
+		err := c.SendPacket(syn_ack_packet)
 		if err != nil {
 			Error.Println(err)
 			return
 		}
+		Trace.Println("Sent ACK data")
 
 		c.seqNum += 1
 		c.recentAckNum = c.ISS
@@ -367,7 +403,7 @@ func (c *TCB) DealSynSent(d *TCP_Packet) {
 			return
 		}
 		if d.header.ack <= c.ISS || d.header.ack > c.seqNum {
-			RST, err := (&TCP_Header{
+			/*(RST, err := (&TCP_Header{
 				srcport: c.lport,
 				dstport: c.rport,
 				seq:     d.header.ack,
@@ -382,7 +418,9 @@ func (c *TCB) DealSynSent(d *TCP_Packet) {
 				return
 			}
 
-			err = MyRawConnTCPWrite(c.writer, RST, c.ipAddress)
+			err = MyRawConnTCPWrite(c.writer, RST, c.ipAddress)*/
+
+			err := c.SendReset(d.header.ack, 0)
 			if err != nil {
 				Error.Println(err)
 				return
@@ -417,25 +455,17 @@ func (c *TCB) DealSynSent(d *TCP_Packet) {
 			Trace.Println("rcvd a SYN-ACK")
 			// the syn has been ACKed
 			// reply with an ACK
-			ACK, err := (&TCP_Header{
-				srcport: c.lport,
-				dstport: c.rport,
-				seq:     c.seqNum,
-				ack:     c.ackNum,
-				flags:   TCP_ACK,
-				window:  c.curWindow, // TODO improve the window field calculation
-				urg:     0,
-				options: []byte{},
-			}).Marshal_TCP_Header(c.ipAddress, c.srcIP)
-			if err != nil {
-				Error.Println(err)
-				return
+			ack_packet := &TCP_Packet{
+				header: &TCP_Header{
+					seq:     c.seqNum,
+					ack:     c.ackNum,
+					flags:   TCP_ACK,
+					urg:     0,
+					options: []byte{},
+				},
+				payload: []byte{},
 			}
-			err = c.SendOnce(ACK)
-			if err != nil {
-				Error.Println(err)
-				return
-			}
+			c.SendPacket(ack_packet)
 
 			go c.UpdateState(ESTABLISHED)
 			Info.Println("Connection established")
@@ -477,27 +507,23 @@ func (c *TCB) DealEstablished(d *TCP_Packet) {
 	B := d.header.seq
 	c.ackNum = B + 1
 
-	ACK, err := (&TCP_Header{
-		srcport: c.lport,
-		dstport: c.rport,
-		seq:     c.seqNum,
-		ack:     c.ackNum,
-		flags:   TCP_ACK,
-		window:  c.curWindow, // TODO improve the window field calculation
-		urg:     0,
-		options: []byte{},
-	}).Marshal_TCP_Header(c.ipAddress, c.srcIP)
-	if err != nil {
-		Error.Println(err)
-		return
+	ack_packet := &TCP_Packet{
+		header: &TCP_Header{
+			seq:     c.seqNum,
+			ack:     c.ackNum,
+			flags:   TCP_ACK,
+			urg:     0,
+			options: []byte{},
+		},
+		payload: []byte{},
 	}
 
-	err = MyRawConnTCPWrite(c.writer, ACK, c.ipAddress)
-	Info.Println("Sent ACK data")
+	err := c.SendPacket(ack_packet)
 	if err != nil {
 		Error.Println(err)
 		return
 	}
+	Info.Println("Sent ACK data")
 
 	c.recvBuffer = append(c.recvBuffer, d.payload...)
 }

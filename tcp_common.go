@@ -3,7 +3,6 @@ package main
 import (
 	"crypto/rand"
 	"errors"
-	"golang.org/x/net/ipv4"
 	"net"
 )
 
@@ -251,20 +250,4 @@ func genRandSeqNum() (uint32, error) {
 		return 0, errors.New("genRandSeqNum gave error:" + err.Error())
 	}
 	return uint32(x[0])<<24 | uint32(x[1])<<16 | uint32(x[2])<<8 | uint32(x[3]), nil
-}
-
-func MyRawConnTCPWrite(w *ipv4.RawConn, tcp []byte, dst string) error {
-	return w.WriteTo(&ipv4.Header{
-		Version:  ipv4.Version,             // protocol version
-		Len:      IP_HEADER_LEN,            // header length
-		TOS:      0,                        // type-of-service (0 is everything normal)
-		TotalLen: len(tcp) + IP_HEADER_LEN, // packet total length (octets)
-		ID:       0,                        // identification
-		Flags:    ipv4.DontFragment,        // flags
-		FragOff:  0,                        // fragment offset
-		TTL:      DEFAULT_TTL,              // time-to-live (maximum lifespan in seconds)
-		Protocol: TCP_PROTO,                // next protocol
-		Checksum: 0,                        // checksum (autocomputed)
-		Dst:      net.ParseIP(dst),         // destination address
-	}, tcp, nil)
 }
