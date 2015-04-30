@@ -1,9 +1,7 @@
 package main
 
 import (
-	"errors"
 	"golang.org/x/net/ipv4"
-	"net"
 	"sync"
 	"time"
 )
