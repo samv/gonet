@@ -151,10 +151,10 @@ func (c *TCB) SendReset(seq uint32, ack uint32) error {
 func (c *TCB) SendAck(seq, ack uint32) error {
 	ack_packet := &TCP_Packet{
 		header: &TCP_Header{
-			seq: seq,
-			ack: ack,
-			flags: TCP_ACK,
-			urg: 0,
+			seq:     seq,
+			ack:     ack,
+			flags:   TCP_ACK,
+			urg:     0,
 			options: []byte{},
 		},
 		payload: []byte{},
