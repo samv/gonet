@@ -132,23 +132,8 @@ func (c *TCB) PacketDealer() {
 			if c.recentAckNum <= segment.header.ack && segment.header.ack <= c.seqNum {
 				c.UpdateState(ESTABLISHED)
 			} else {
-				RST, err := (&TCP_Header{
-					srcport: c.lport,
-					dstport: c.rport,
-					seq:     segment.header.ack,
-					ack:     0,
-					flags:   TCP_RST,
-					window:  c.curWindow, // TODO improve the window field calculation
-					urg:     0,
-					options: []byte{},
-				}).Marshal_TCP_Header(c.ipAddress, c.srcIP)
-				if err != nil {
-					Error.Println(err)
-					return
-				}
-
-				err = MyRawConnTCPWrite(c.writer, RST, c.ipAddress)
-				Info.Println("Sent ACK data")
+				err := c.SendReset(segment.header.ack, 0)
+				Info.Println("Sent RST data")
 				if err != nil {
 					Error.Println(err)
 					return
@@ -210,28 +195,14 @@ func (c *TCB) PacketDealer() {
 		case FIN_WAIT_1:
 			fallthrough
 		case FIN_WAIT_2:
-			append(c.recvBuffer, segment.payload)
+			c.recvBuffer = append(c.recvBuffer, segment.payload...)
 			// TODO handle push flag
 			// TODO adjust rcv.wnd, for now just multiplying by 2
 			c.curWindow *= 2
 			c.ackNum += segment.getPayloadSize()
 			// TODO piggyback this:
-			ACK, err := (&TCP_Header{
-				srcport: c.lport,
-				dstport: c.rport,
-				seq:     c.seqNum,
-				ack:     c.ackNum,
-				flags:   TCP_ACK,
-				window:  c.curWindow, // TODO improve the window field calculation
-				urg:     0,
-				options: []byte{},
-			}).Marshal_TCP_Header(c.ipAddress, c.srcIP)
-			if err != nil {
-				Error.Println(err)
-				return
-			}
 
-			err = MyRawConnTCPWrite(c.writer, ACK, c.ipAddress)
+			err := c.SendAck(c.seqNum, c.ackNum)
 			Info.Println("Sent ACK data")
 			if err != nil {
 				Error.Println(err)
@@ -259,22 +230,8 @@ func (c *TCB) PacketDealer() {
 			}
 			// TODO signal user connection closing
 			c.ackNum += segment.getPayloadSize()
-			ACK, err := (&TCP_Header{
-				srcport: c.lport,
-				dstport: c.rport,
-				seq:     c.seqNum,
-				ack:     c.ackNum,
-				flags:   TCP_ACK,
-				window:  c.curWindow, // TODO improve the window field calculation
-				urg:     0,
-				options: []byte{},
-			}).Marshal_TCP_Header(c.ipAddress, c.srcIP)
-			if err != nil {
-				Error.Println(err)
-				return
-			}
 
-			err = MyRawConnTCPWrite(c.writer, ACK, c.ipAddress)
+			err := c.SendAck(c.seqNum, c.ackNum)
 			Info.Println("Sent ACK data")
 			if err != nil {
 				Error.Println(err)
@@ -545,8 +502,9 @@ func (c *TCB) Send(data []byte) error { // a non-blocking send call
 }
 
 func (c *TCB) Recv(num uint64) ([]byte, error) {
-	data := c.recvBuffer[0:num]
-	c.recvBuffer = c.recvBuffer[num:]
+	amt := min(num, uint64(len(c.recvBuffer)))
+	data := c.recvBuffer[0:amt]
+	c.recvBuffer = c.recvBuffer[amt:]
 	return data, nil // TODO: error handling
 }
 

@@ -251,3 +251,10 @@ func genRandSeqNum() (uint32, error) {
 	}
 	return uint32(x[0])<<24 | uint32(x[1])<<16 | uint32(x[2])<<8 | uint32(x[3]), nil
 }
+
+func min(a, b uint64) uint64 {
+	if a > b {
+		return b
+	}
+	return a
+}
