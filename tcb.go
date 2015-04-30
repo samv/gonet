@@ -1,7 +1,6 @@
 package main
 
 import (
-	"errors"
 	"golang.org/x/net/ipv4"
 	"sync"
 	"time"
@@ -65,105 +64,6 @@ func New_TCB(local, remote uint16, dstIP string, read chan *TCP_Packet, write *i
 	go c.PacketDealer()
 
 	return c, nil
-}
-
-func (c *TCB) UpdateState(newState uint) {
-	c.state = newState
-	go SendUpdate(c.stateUpdate)
-	if c.serverParent != nil {
-		go SendUpdate(c.serverParent.connQueueUpdate)
-	}
-}
-
-func (c *TCB) UpdateLastAck(newAck uint32) error {
-	Info.Println("Got an ack:", newAck)
-	c.recentAckNum = newAck
-	go SendNotifierBroadcast(c.recentAckUpdate, c.recentAckNum)
-	return nil
-}
-
-func SendUpdate(update *sync.Cond) {
-	update.L.Lock()
-	update.Broadcast()
-	update.L.Unlock()
-}
-
-func SendNotifierBroadcast(update *Notifier, val interface{}) {
-	update.Broadcast(val)
-}
-
-func (c *TCB) PacketSender() {
-	// TODO: deal with data in send and urgSend buffers
-}
-
-func (c *TCB) SendWithRetransmit(data *TCP_Packet) error {
-	// send the first packet
-	packet, err := data.Marshal_TCP_Packet()
-	if err != nil {
-		return err
-	}
-	c.SendOnce(packet)
-
-	// ack listeners
-	ackFound := make(chan bool, 1)
-	killAckListen := make(chan bool, 1)
-	go c.ListenForAck(ackFound, killAckListen, data.header.seq+data.getPayloadSize())
-
-	// timers and timeouts
-	resendTimer := make(chan bool, TCP_RESEND_LIMIT)
-	timeout := make(chan bool, 1)
-	killTimer := make(chan bool, 1)
-	go ResendTimer(resendTimer, timeout, killTimer, c.resendDelay)
-
-	// resend if needed
-	for {
-		select {
-		case <-ackFound:
-			killTimer <- true
-			return nil
-		case <-resendTimer:
-			c.SendOnce(packet)
-		case <-timeout:
-			// TODO deal with a resend timeout fully
-			killAckListen <- true
-			Error.Println("Resend of packet seq", data.header.seq, "timed out")
-			return errors.New("Resend timed out")
-		}
-	}
-}
-
-func (c *TCB) ListenForAck(successOut chan<- bool, end <-chan bool, targetAck uint32) {
-	Trace.Println("Listening for ack:", targetAck)
-	in := c.recentAckUpdate.Register(ACK_BUF_SZ)
-	defer c.recentAckUpdate.Unregister(in)
-	for {
-		select {
-		case v := <-in:
-			if v.(uint32) == targetAck {
-				return
-			}
-		case <-end:
-			return
-		}
-	}
-	successOut <- true
-}
-
-func (c *TCB) SendOnce(pay []byte) error {
-	return MyRawConnTCPWrite(c.writer, pay, c.ipAddress)
-}
-
-func ResendTimer(timerOutput, timeout chan<- bool, finished <-chan bool, delay time.Duration) {
-	for i := 0; i < TCP_RESEND_LIMIT; i++ {
-		select {
-		case <-time.After(delay):
-			timerOutput <- true
-			delay *= 2 // increase the delay after each resend
-		case <-finished:
-			return
-		}
-	}
-	timeout <- true
 }
 
 func (c *TCB) PacketDealer() {
@@ -378,22 +278,18 @@ func (c *TCB) DealClosed(d *TCP_Packet) {
 		ackNum = 0
 	}
 
-	RST, err := (&TCP_Header{
-		srcport: c.lport,
-		dstport: c.rport,
-		seq:     seqNum,
-		ack:     ackNum,
-		flags:   rstFlags,
-		window:  c.curWindow, // TODO improve the window field calculation
-		urg:     0,
-		options: []byte{},
-	}).Marshal_TCP_Header(c.ipAddress, c.srcIP)
-	if err != nil {
-		Error.Println(err)
-		return
+	rst_packet := &TCP_Packet{
+		header: &TCP_Header{
+			seq:     seqNum,
+			ack:     ackNum,
+			flags:   rstFlags,
+			urg:     0,
+			options: []byte{},
+		},
+		payload: []byte{},
 	}
 
-	err = MyRawConnTCPWrite(c.writer, RST, c.ipAddress)
+	err := c.SendPacket(rst_packet)
 	Info.Println("Sent ACK data")
 	if err != nil {
 		Error.Println(err)
@@ -406,13 +302,13 @@ func (c *TCB) DealListen(d *TCP_Packet) {
 		return
 	}
 	if d.header.flags&TCP_ACK != 0 {
-		RST, err := (&TCP_Header{
+		/*RST, err := (&TCP_Header{
 			srcport: c.lport,
 			dstport: c.rport,
 			seq:     d.header.ack,
 			ack:     0,
 			flags:   TCP_RST,
-			window:  c.curWindow, // TODO improve the window field calculation
+			window:  c.curWindow, // TODOold improve the window field calculation
 			urg:     0,
 			options: []byte{},
 		}).Marshal_TCP_Header(c.ipAddress, c.srcIP)
@@ -421,7 +317,9 @@ func (c *TCB) DealListen(d *TCP_Packet) {
 			return
 		}
 
-		err = MyRawConnTCPWrite(c.writer, RST, c.ipAddress)
+		err = MyRawConnTCPWrite(c.writer, RST, c.ipAddress)*/
+
+		err := c.SendReset(d.header.ack, 0)
 		Trace.Println("Sent ACK data")
 		if err != nil {
 			Error.Println(err)
@@ -430,34 +328,30 @@ func (c *TCB) DealListen(d *TCP_Packet) {
 	}
 
 	if d.header.flags&TCP_SYN != 0 {
-		// TODO check security/comparment, if not match, send <SEQ=SEG.ACK><CTL=RST>
+		// TODO check security/compartment, if not match, send <SEQ=SEG.ACK><CTL=RST>
 		// TODO handle SEG.PRC > TCB.PRC stuff
 		// TODO if SEG.PRC < TCP.PRC continue
 		c.ackNum = d.header.seq + 1
 		c.IRS = d.header.seq
 		// TODO queue other controls
 
-		SYN_ACK, err := (&TCP_Header{
-			srcport: c.lport,
-			dstport: c.rport,
-			seq:     c.seqNum,
-			ack:     c.ackNum,
-			flags:   TCP_SYN | TCP_ACK,
-			window:  c.curWindow, // TODO improve the window field calculation
-			urg:     0,
-			options: []byte{},
-		}).Marshal_TCP_Header(c.ipAddress, c.srcIP)
-		if err != nil {
-			Error.Println(err)
-			return
+		syn_ack_packet := &TCP_Packet{
+			header: &TCP_Header{
+				seq:     c.seqNum,
+				ack:     c.ackNum,
+				flags:   TCP_SYN | TCP_ACK,
+				urg:     0,
+				options: []byte{},
+			},
+			payload: []byte{},
 		}
 
-		err = MyRawConnTCPWrite(c.writer, SYN_ACK, c.ipAddress)
-		Trace.Println("Sent ACK data")
+		err := c.SendPacket(syn_ack_packet)
 		if err != nil {
 			Error.Println(err)
 			return
 		}
+		Trace.Println("Sent ACK data")
 
 		c.seqNum += 1
 		c.recentAckNum = c.ISS
@@ -474,7 +368,7 @@ func (c *TCB) DealSynSent(d *TCP_Packet) {
 			return
 		}
 		if d.header.ack <= c.ISS || d.header.ack > c.seqNum {
-			RST, err := (&TCP_Header{
+			/*(RST, err := (&TCP_Header{
 				srcport: c.lport,
 				dstport: c.rport,
 				seq:     d.header.ack,
@@ -489,7 +383,9 @@ func (c *TCB) DealSynSent(d *TCP_Packet) {
 				return
 			}
 
-			err = MyRawConnTCPWrite(c.writer, RST, c.ipAddress)
+			err = MyRawConnTCPWrite(c.writer, RST, c.ipAddress)*/
+
+			err := c.SendReset(d.header.ack, 0)
 			if err != nil {
 				Error.Println(err)
 				return
@@ -524,25 +420,17 @@ func (c *TCB) DealSynSent(d *TCP_Packet) {
 			Trace.Println("rcvd a SYN-ACK")
 			// the syn has been ACKed
 			// reply with an ACK
-			ACK, err := (&TCP_Header{
-				srcport: c.lport,
-				dstport: c.rport,
-				seq:     c.seqNum,
-				ack:     c.ackNum,
-				flags:   TCP_ACK,
-				window:  c.curWindow, // TODO improve the window field calculation
-				urg:     0,
-				options: []byte{},
-			}).Marshal_TCP_Header(c.ipAddress, c.srcIP)
-			if err != nil {
-				Error.Println(err)
-				return
+			ack_packet := &TCP_Packet{
+				header: &TCP_Header{
+					seq:     c.seqNum,
+					ack:     c.ackNum,
+					flags:   TCP_ACK,
+					urg:     0,
+					options: []byte{},
+				},
+				payload: []byte{},
 			}
-			err = c.SendOnce(ACK)
-			if err != nil {
-				Error.Println(err)
-				return
-			}
+			c.SendPacket(ack_packet)
 
 			go c.UpdateState(ESTABLISHED)
 			Info.Println("Connection established")
@@ -584,27 +472,23 @@ func (c *TCB) DealEstablished(d *TCP_Packet) {
 	B := d.header.seq
 	c.ackNum = B + 1
 
-	ACK, err := (&TCP_Header{
-		srcport: c.lport,
-		dstport: c.rport,
-		seq:     c.seqNum,
-		ack:     c.ackNum,
-		flags:   TCP_ACK,
-		window:  c.curWindow, // TODO improve the window field calculation
-		urg:     0,
-		options: []byte{},
-	}).Marshal_TCP_Header(c.ipAddress, c.srcIP)
-	if err != nil {
-		Error.Println(err)
-		return
+	ack_packet := &TCP_Packet{
+		header: &TCP_Header{
+			seq:     c.seqNum,
+			ack:     c.ackNum,
+			flags:   TCP_ACK,
+			urg:     0,
+			options: []byte{},
+		},
+		payload: []byte{},
 	}
 
-	err = MyRawConnTCPWrite(c.writer, ACK, c.ipAddress)
-	Info.Println("Sent ACK data")
+	err := c.SendPacket(ack_packet)
 	if err != nil {
 		Error.Println(err)
 		return
 	}
+	Info.Println("Sent ACK data")
 
 	c.recvBuffer = append(c.recvBuffer, d.payload...)
 }

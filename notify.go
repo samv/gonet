@@ -52,6 +52,11 @@ func (n *Notifier) Broadcast(val interface{}) {
 	Trace.Println("broadcasted")
 }
 
+// A helper function for the clients
+func SendNotifierBroadcast(update *Notifier, val interface{}) {
+	update.Broadcast(val)
+}
+
 /*
 // Example Testing Code - note the time.Sleep() for correct alignment
 
