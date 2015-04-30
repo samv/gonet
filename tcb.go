@@ -179,27 +179,47 @@ func (c *TCB) PacketDealer() {
 		case CLOSED:
 			Trace.Println("Dealing closed")
 			c.DealClosed(segment)
-			return
+			continue
 		case LISTEN:
 			Trace.Println("Dealing listen")
 			c.DealListen(segment)
-			return
+			continue
 		case SYN_SENT:
 			c.DealSynSent(segment)
-			return
+			continue
 		}
 
 		// Otherwise
 
 		// TODO check sequence number
 
+		if segment.header.flags&TCP_RST != 0 {
+			// TODO finish: page 70
+			switch c.state {
+			case SYN_RCVD:
+				// not done
+				continue
+			case CLOSE_WAIT:
+				// not done
+				continue
+			case TIME_WAIT:
+				if segment.header.flags&TCP_RST != 0 {
+					c.UpdateState(CLOSED)
+				}
+				continue
+			}
+		}
+
+		// TODO check security/precedence
+		// TODO check SYN (SYN bit shouldn't be there)
+
+		if segment.header.flags&TCP_ACK == 0 {
+			continue
+		}
+
 		switch c.state {
 		case SYN_RCVD:
-			if segment.header.flags&TCP_RST != 0 {
-
-			}
-		case CLOSE_WAIT:
-		case TIME_WAIT:
+		case ESTABLISHED:
 
 		}
 
