@@ -256,7 +256,29 @@ func (c *TCB) PacketDealer() {
 				fallthrough
 			case SYN_SENT:
 				continue
-				// TODO handle rest of fin
+			}
+			// TODO signal user connection closing
+			c.ackNum += segment.getPayloadSize()
+			ACK, err := (&TCP_Header{
+				srcport: c.lport,
+				dstport: c.rport,
+				seq:     c.seqNum,
+				ack:     c.ackNum,
+				flags:   TCP_ACK,
+				window:  c.curWindow, // TODO improve the window field calculation
+				urg:     0,
+				options: []byte{},
+			}).Marshal_TCP_Header(c.ipAddress, c.srcIP)
+			if err != nil {
+				Error.Println(err)
+				return
+			}
+
+			err = MyRawConnTCPWrite(c.writer, ACK, c.ipAddress)
+			Info.Println("Sent ACK data")
+			if err != nil {
+				Error.Println(err)
+				return
 			}
 		}
 	}
@@ -523,7 +545,9 @@ func (c *TCB) Send(data []byte) error { // a non-blocking send call
 }
 
 func (c *TCB) Recv(num uint64) ([]byte, error) {
-	return nil, nil // TODO: implement TCB receive
+	data := c.recvBuffer[0:num]
+	c.recvBuffer = c.recvBuffer[num:]
+	return data, nil // TODO: error handling
 }
 
 func (c *TCB) Close() error {
