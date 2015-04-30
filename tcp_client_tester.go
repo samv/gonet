@@ -1,4 +1,5 @@
 package main
+import "time"
 
 func main() {
 	client, err := New_TCB_From_Client(20101, 20102, "127.0.0.1")
@@ -13,6 +14,8 @@ func main() {
 		return
 	}
 
+	time.Sleep(5*time.Second)
+	Trace.Println("Beginning the read")
 	data, err := client.Recv(20)
 	if err != nil {
 		Error.Println(err)
