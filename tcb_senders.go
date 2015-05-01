@@ -72,14 +72,16 @@ func (c *TCB) ListenForAck(successOut chan<- bool, end <-chan bool, targetAck ui
 	for {
 		select {
 		case v := <-in:
+			Trace.Println("Ack listener got ack: ", v.(uint32))
 			if v.(uint32) == targetAck {
+				Trace.Println("Killing the resender for ack:", v.(uint32))
+				successOut <- true
 				return
 			}
 		case <-end:
 			return
 		}
 	}
-	successOut <- true
 }
 
 func ResendTimer(timerOutput, timeout chan<- bool, finished <-chan bool, delay time.Duration) {
