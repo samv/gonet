@@ -347,23 +347,6 @@ func (c *TCB) DealSynSent(d *TCP_Packet) {
 			return
 		}
 		if d.header.ack <= c.ISS || d.header.ack > c.seqNum {
-			/*(RST, err := (&TCP_Header{
-				srcport: c.lport,
-				dstport: c.rport,
-				seq:     d.header.ack,
-				ack:     0,
-				flags:   TCP_RST,
-				window:  c.curWindow, // TODO improve the window field calculation
-				urg:     0,
-				options: []byte{},
-			}).Marshal_TCP_Header(c.ipAddress, c.srcIP)
-			if err != nil {
-				Error.Println(err)
-				return
-			}
-
-			err = MyRawConnTCPWrite(c.writer, RST, c.ipAddress)*/
-
 			Info.Println("Sending reset")
 			err := c.SendReset(d.header.ack, 0)
 			if err != nil {
@@ -376,7 +359,15 @@ func (c *TCB) DealSynSent(d *TCP_Packet) {
 			Error.Println("Incoming packet's ack is bad")
 			return
 		}
+
+		// kill the retransmission
+		err := c.UpdateLastAck(d.header.ack)
+		if err != nil {
+			Error.Println(err)
+			return
+		}
 	}
+
 	if d.header.flags&TCP_RST != 0 {
 		Error.Println("error: connection reset")
 		c.UpdateState(CLOSED)
