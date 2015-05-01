@@ -364,6 +364,7 @@ func (c *TCB) DealSynSent(d *TCP_Packet) {
 
 			err = MyRawConnTCPWrite(c.writer, RST, c.ipAddress)*/
 
+			Info.Println("Sending reset")
 			err := c.SendReset(d.header.ack, 0)
 			if err != nil {
 				Error.Println(err)
