@@ -391,20 +391,14 @@ func (c *TCB) DealSynSent(d *TCP_Packet) {
 			Trace.Println("rcvd a SYN-ACK")
 			// the syn has been ACKed
 			// reply with an ACK
-			ack_packet := &TCP_Packet{
-				header: &TCP_Header{
-					seq:     c.seqNum,
-					ack:     c.ackNum,
-					flags:   TCP_ACK,
-					urg:     0,
-					options: []byte{},
-				},
-				payload: []byte{},
+			err := c.SendAck(c.seqNum, c.ackNum)
+			if err != nil {
+				Error.Println(err)
 			}
-			c.SendPacket(ack_packet)
 
-			go c.UpdateState(ESTABLISHED)
+			c.UpdateState(ESTABLISHED)
 			Info.Println("Connection established")
+			return
 		} else {
 			// special case... TODO deal with this case later
 			// http://www.tcpipguide.com/free/t_TCPConnectionEstablishmentProcessTheThreeWayHandsh-4.htm
@@ -414,12 +408,10 @@ func (c *TCB) DealSynSent(d *TCP_Packet) {
 			// TODO send <SEQ=ISS><ACK=RCV.NXT><CTL=SYN,ACK>
 			// TODO if more controls/txt, continue processing after established
 		}
-		return
 	}
 
 	// Neither syn nor rst set
 	Info.Println("Dropping packet with seq: ", d.header.seq, "ack: ", d.header.ack)
-	return
 }
 
 func (c *TCB) DealSynRcvd(d *TCP_Packet) {
@@ -445,18 +437,7 @@ func (c *TCB) DealEstablished(d *TCP_Packet) {
 	B := d.header.seq
 	c.ackNum = B + 1
 
-	ack_packet := &TCP_Packet{
-		header: &TCP_Header{
-			seq:     c.seqNum,
-			ack:     c.ackNum,
-			flags:   TCP_ACK,
-			urg:     0,
-			options: []byte{},
-		},
-		payload: []byte{},
-	}
-
-	err := c.SendPacket(ack_packet)
+	err := c.SendAck(c.seqNum, c.ackNum)
 	if err != nil {
 		Error.Println(err)
 		return

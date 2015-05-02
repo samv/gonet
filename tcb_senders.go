@@ -9,6 +9,7 @@ import (
 )
 
 func (c *TCB) UpdateState(newState uint) {
+	Info.Println("The New State is ", newState)
 	c.state = newState
 	go SendUpdate(c.stateUpdate)
 	if c.serverParent != nil {
