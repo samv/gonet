@@ -8,7 +8,7 @@ import (
 // From http://www.goinggo.net/2013/11/using-log-package-in-go.html
 
 func InitLogger(prefix string) *log.Logger {
-	return log.New(os.Stdout, prefix, log.Ltime|log.Lshortfile)
+	return log.New(os.Stdout, prefix, log.Ltime|log.Lmicroseconds|log.Lshortfile)
 }
 
 var (

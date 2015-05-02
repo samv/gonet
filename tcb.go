@@ -407,7 +407,8 @@ func (c *TCB) DealSynSent(d *TCP_Packet) {
 			Info.Println("Connection established")
 		} else {
 			// special case... TODO deal with this case later
-			// http://www.tcpipguide.com/free/t_TCPConnectionEstablishmentProcessTheThreeWayHandsh-4.htm (Simultaneous Open Connection Establishment)
+			// http://www.tcpipguide.com/free/t_TCPConnectionEstablishmentProcessTheThreeWayHandsh-4.htm
+			// (Simultaneous Open Connection Establishment)
 
 			//c.UpdateState(SYN_RCVD)
 			// TODO send <SEQ=ISS><ACK=RCV.NXT><CTL=SYN,ACK>
@@ -416,7 +417,7 @@ func (c *TCB) DealSynSent(d *TCP_Packet) {
 	}
 
 	// Neither syn nor rst set
-	Trace.Println("Dropping packet")
+	Info.Println("Dropping packet with seq: ", d.header.seq, "ack: ", d.header.ack)
 	return
 }
 
