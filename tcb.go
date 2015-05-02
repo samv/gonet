@@ -414,6 +414,7 @@ func (c *TCB) DealSynSent(d *TCP_Packet) {
 			// TODO send <SEQ=ISS><ACK=RCV.NXT><CTL=SYN,ACK>
 			// TODO if more controls/txt, continue processing after established
 		}
+		return
 	}
 
 	// Neither syn nor rst set
