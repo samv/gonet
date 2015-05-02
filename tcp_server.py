@@ -1,6 +1,7 @@
 #!/usr/bin/env python
 
 import socket
+import time
 
 
 TCP_IP = '127.0.0.1'
@@ -29,6 +30,8 @@ conn.send(MESSAGE)
 #    if not data: break
 #    print "received data:", data
 #    conn.send(data)  # echo
+
+time.sleep(1)
 
 print "Closing"
 conn.close()
