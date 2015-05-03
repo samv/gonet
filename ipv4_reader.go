@@ -1,11 +1,11 @@
 package main
 
 import (
-	"errors"
-	"fmt"
 	"net"
 	"time"
-	//    "syscall"
+	//"errors"
+	//"fmt"
+	//"syscall"
 	//"golang.org/x/net/ipv4"
 )
 
@@ -48,11 +48,11 @@ func fragmentAssembler(in <-chan []byte, quit <-chan bool, didQuit chan<- bool, 
 	for {
 		select {
 		case <-quit:
-			fmt.Println("quitting upon quit signal")
+			//Trace.Println("quitting upon quit signal")
 			didQuit <- true
 			return
 		case frag := <-in:
-			fmt.Println("got a fragment packet. len:", len(frag))
+			//Trace.Println("got a fragment packet. len:", len(frag))
 			hdr, p := slicePacket(frag)
 			//offset := 8 * (uint64(hdr[6]&0x1f)<<8 + uint64(hdr[7]))
 			//fmt.Println("RECEIVED FRAG")
@@ -61,7 +61,7 @@ func fragmentAssembler(in <-chan []byte, quit <-chan bool, didQuit chan<- bool, 
 
 			// add to map
 			offset := 8 * (uint64(hdr[6]&0x1F)<<8 + uint64(hdr[7]))
-			fmt.Println("Offset:", offset)
+			//Trace.Println("Offset:", offset)
 			extraFrags[offset] = p
 
 			// check more fragments flag
@@ -70,21 +70,21 @@ func fragmentAssembler(in <-chan []byte, quit <-chan bool, didQuit chan<- bool, 
 			}
 
 			// add to payload
-			fmt.Println("Begin to add to the payload")
+			//Trace.Println("Begin to add to the payload")
 			for {
 				if storedFrag, found := extraFrags[uint64(len(payload))]; found {
-					fmt.Println("New Payload Len: ", len(payload))
+					//Trace.Println("New Payload Len: ", len(payload))
 					delete(extraFrags, uint64(len(payload)))
 					payload = append(payload, storedFrag...)
 				} else {
 					break
 				}
 			}
-			fmt.Println("Finished add to the payload")
+			//Trace.Println("Finished add to the payload")
 
 			// deal with the payload
 			if recvLast && len(extraFrags) == 0 {
-				fmt.Println("Done")
+				//Trace.Println("Done")
 				// correct the header
 				fullPacketHdr := hdr
 				totalLen := uint16(fullPacketHdr[0]&0x0F)*4 + uint16(len(payload))
@@ -103,18 +103,18 @@ func fragmentAssembler(in <-chan []byte, quit <-chan bool, didQuit chan<- bool, 
 					finished <- append(fullPacketHdr, payload...)
 					//fmt.Println("FINISHED")
 				}()
-				fmt.Println("Just wrote back in")
+				//Trace.Println("Just wrote back in")
 				done <- true
 				return // from goroutine
 			}
-			fmt.Println("Looping")
+			//Trace.Println("Looping")
 		default:
 			// make the timeout actually have a chance of being hit
 		}
 	}
 
 	// drop the packet upon timeout
-	fmt.Println(errors.New("Fragments took too long, packet dropped"))
+	//Trace.Println(errors.New("Fragments took too long, packet dropped"))
 	return
 }
 
@@ -122,14 +122,14 @@ func killFragmentAssembler(quit chan<- bool, didQuit <-chan bool, done <-chan bo
 	// sends quit to the assembler if it doesn't send done
 	select {
 	case <-time.After(time.Second * FRAGMENT_TIMEOUT):
-		fmt.Println("Force quitting packet assembler")
+		//Trace.Println("Force quitting packet assembler")
 		quit <- true
 		<-didQuit // will block until it has been received
 	case <-done:
-		fmt.Println("Recieved done msg.")
+		//Trace.Println("Recieved done msg.")
 	}
 
-	fmt.Println("Frag Assemble Ended, finished")
+	//Trace.Println("Frag Assemble Ended, finished")
 	// TODO: clean the buffer for bufID
 }
 
@@ -148,13 +148,13 @@ func (ipr *IP_Reader) ReadFrom() (rip, lip string, b, payload []byte, e error) {
 	lip = net.IPv4(hdr[16], hdr[17], hdr[18], hdr[19]).String()
 	proto := uint8(hdr[9])
 	if !((ipr.ip == rip || ipr.ip == "*") && ipr.protocol == proto) {
-		fmt.Println("Not interested in packet: dropping.")
+		//Info.Println("Not interested in packet: dropping.")
 		return ipr.ReadFrom()
 	}
 
 	// verify checksum
 	if verifyChecksum(hdr) != 0 {
-		fmt.Println("Header checksum incorrect, packet dropped")
+		//Info.Println("Header checksum incorrect, packet dropped")
 		return ipr.ReadFrom() // return another packet instead
 	}
 
@@ -173,15 +173,15 @@ func (ipr *IP_Reader) ReadFrom() (rip, lip string, b, payload []byte, e error) {
 			hdr[9],         // protocol
 			hdr[4], hdr[5], // identification
 		})
-		fmt.Printf("rcv a fragment-bufId: %x, len: %d\n", bufID, len(b))
+		//Trace.Printf("rcv a fragment-bufId: %x, len: %d\n", bufID, len(b))
 
 		if c, ok := ipr.fragBuf[bufID]; ok {
 			// the fragment has already started
-			fmt.Printf("sending to already existing assembler %x\n", bufID)
+			//Trace.Printf("sending to already existing assembler %x\n", bufID)
 			go func() { c <- b }()
 		} else {
 			// create the fragment buffer and quit
-			fmt.Printf("creating a new buffer for %x\n", bufID)
+			//Trace.Printf("creating a new buffer for %x\n", bufID)
 			ipr.fragBuf[bufID] = make(chan []byte)
 			quit := make(chan bool)
 			done := make(chan bool)
