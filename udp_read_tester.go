@@ -16,14 +16,15 @@ func main() {
 		return
 	}
 
-	const layout = "2006-01-02 15:04:05.000000000"
+	const layout = "2006-01-02 15:04:05.000000"
 	for {
 		p, err := r.read(MAX_UDP_PACKET_LEN)
+		t := time.Now().Format(layout)
 		if err != nil {
 			fmt.Println(err)
 			return
 		}
 
-		fmt.Println("Payload:", p, " at ", time.Now().Format(layout))
+		fmt.Println("received message:", string(p), " at ", t)
 	}
 }
