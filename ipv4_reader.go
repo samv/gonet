@@ -108,8 +108,6 @@ func fragmentAssembler(in <-chan []byte, quit <-chan bool, didQuit chan<- bool, 
 				return // from goroutine
 			}
 			//Trace.Println("Looping")
-		default:
-			// make the timeout actually have a chance of being hit
 		}
 	}
 
