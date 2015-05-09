@@ -40,7 +40,7 @@ func slicePacket(b []byte) (hrd, payload []byte) {
 	return b[:hdrLen], b[hdrLen:]
 }
 
-func fragmentAssembler(in <-chan []byte, quit <-chan bool, didQuit chan<- bool, finished chan<- []byte, done chan bool) {
+func (ipr *IP_Reader) fragmentAssembler(in <-chan []byte, quit <-chan bool, didQuit chan<- bool, done chan bool) {
 	payload := make([]byte, 0)
 	extraFrags := make(map[uint64]([]byte))
 	recvLast := false
@@ -100,7 +100,7 @@ func fragmentAssembler(in <-chan []byte, quit <-chan bool, didQuit chan<- bool, 
 
 				// send the packet back into processing
 				go func() {
-					finished <- append(fullPacketHdr, payload...)
+					ipr.incomingPackets <- append(fullPacketHdr, payload...)
 					//fmt.Println("FINISHED")
 				}()
 				//Trace.Println("Just wrote back in")
@@ -116,7 +116,7 @@ func fragmentAssembler(in <-chan []byte, quit <-chan bool, didQuit chan<- bool, 
 	return
 }
 
-func killFragmentAssembler(quit chan<- bool, didQuit <-chan bool, done <-chan bool, bufID string) {
+func (ipr * IP_Reader) killFragmentAssembler(quit chan<- bool, didQuit <-chan bool, done <-chan bool, bufID string) {
 	// sends quit to the assembler if it doesn't send done
 	select {
 	case <-time.After(time.Second * FRAGMENT_TIMEOUT):
@@ -128,7 +128,7 @@ func killFragmentAssembler(quit chan<- bool, didQuit <-chan bool, done <-chan bo
 	}
 
 	//Trace.Println("Frag Assemble Ended, finished")
-	// TODO: clean the buffer for bufID
+	delete(ipr.fragBuf, bufID)
 }
 
 func (ipr *IP_Reader) ReadFrom() (rip, lip string, b, payload []byte, e error) {
@@ -179,8 +179,8 @@ func (ipr *IP_Reader) ReadFrom() (rip, lip string, b, payload []byte, e error) {
 			didQuit := make(chan bool)
 
 			// create the packet assembler in a goroutine to allow the program to continue
-			go fragmentAssembler(ipr.fragBuf[bufID], quit, didQuit, ipr.incomingPackets, done)
-			go killFragmentAssembler(quit, didQuit, done, bufID)
+			go ipr.fragmentAssembler(ipr.fragBuf[bufID], quit, didQuit, done)
+			go ipr.killFragmentAssembler(quit, didQuit, done, bufID)
 		}
 
 		// send the packet to the assembler
