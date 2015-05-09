@@ -160,9 +160,6 @@ func (ipr *IP_Reader) ReadFrom() (rip, lip string, b, payload []byte, e error) {
 	//fmt.Println("PACK OFF", packetOffset, "HEADER FLAGS", (hdr[6] >> 5))
 	if ((hdr[6]>>5)&0x01 == 0) && (packetOffset == 0) {
 		// not a fragment
-		//fmt.Println("Payload Length: ", len(p))
-		//fmt.Println("Full payload: ", p)
-		//fmt.Println("PACKET COMPLETELY READ")
 		return rip, lip, b, p, nil
 	} else {
 		// is a fragment
@@ -171,13 +168,9 @@ func (ipr *IP_Reader) ReadFrom() (rip, lip string, b, payload []byte, e error) {
 			hdr[9],         // protocol
 			hdr[4], hdr[5], // identification
 		})
-		//Trace.Printf("rcv a fragment-bufId: %x, len: %d\n", bufID, len(b))
+		//Trace.Printf("rcvd a fragment-bufId: %x, len: %d\n", bufID, len(b))
 
-		if c, ok := ipr.fragBuf[bufID]; ok {
-			// the fragment has already started
-			//Trace.Printf("sending to already existing assembler %x\n", bufID)
-			go func() { c <- b }()
-		} else {
+		if _, ok := ipr.fragBuf[bufID]; !ok {
 			// create the fragment buffer and quit
 			//Trace.Printf("creating a new buffer for %x\n", bufID)
 			ipr.fragBuf[bufID] = make(chan []byte)
@@ -188,13 +181,12 @@ func (ipr *IP_Reader) ReadFrom() (rip, lip string, b, payload []byte, e error) {
 			// create the packet assembler in a goroutine to allow the program to continue
 			go fragmentAssembler(ipr.fragBuf[bufID], quit, didQuit, ipr.incomingPackets, done)
 			go killFragmentAssembler(quit, didQuit, done, bufID)
-
-			// send in the first fragment
-			ipr.fragBuf[bufID] <- b
 		}
 
+		// send the packet to the assembler
+		go func() { ipr.fragBuf[bufID] <- b}()
+
 		// after dealing with the fragment, try reading again
-		//fmt.Println("RECURSE")
 		return ipr.ReadFrom()
 	}
 }
