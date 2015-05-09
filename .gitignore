@@ -4,6 +4,8 @@ RawConnTest
 main
 udp_read_tester
 udp_write_tester
+tcp_server_tester
+tcp_client_tester
 auto-push.sh
 auto-full.sh
 myMACAddr.go

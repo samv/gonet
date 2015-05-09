@@ -2,10 +2,9 @@ package main
 
 import (
 	"errors"
-	"fmt"
 	"net"
 	"syscall"
-	//"golang.org/x/net/ipv4"
+	//"fmt"
 )
 
 /*type Network_Reader_IP struct {
@@ -18,6 +17,14 @@ func NewNetwork_Reader_IP(dst string, protocol uint8) (*Network_Reader_IP, error
 
 }*/
 
+var GlobalNetworkReader = func() *Network_Reader {
+	x, err := NewNetwork_Reader()
+	if err != nil {
+		Error.Fatal(err)
+	}
+	return x
+}()
+
 type Network_Reader struct {
 	fd      int
 	buffers map[uint8](map[string](chan []byte))
@@ -28,7 +35,7 @@ func NewNetwork_Reader() (*Network_Reader, error) {
 	fd, err := syscall.Socket(AF_PACKET, SOCK_RAW, HTONS_ETH_P_ALL)
 
 	if err != nil {
-		fmt.Println("AF_PACKET socket connection")
+		Error.Println("AF_PACKET socket connection")
 		return nil, err
 	}
 
@@ -43,27 +50,28 @@ func NewNetwork_Reader() (*Network_Reader, error) {
 
 func (nr *Network_Reader) readAll() {
 	for {
-        // read twice to account for the double receiving
+		// read twice to account for the double receiving TODO fix the double reading somehow
 		buf := make([]byte, MAX_IP_PACKET_LEN)
-		_, err  := nr.getNextPacket(buf)
-        ln, err := nr.getNextPacket(buf)
+		_, err := nr.getNextPacket(buf)
+		ln, err := nr.getNextPacket(buf)
 
 		if err != nil {
-			fmt.Println(err)
+			Error.Println(err)
 		}
 		buf = buf[:ln] // remove extra bytes off the end
 
-        //fmt.Println("Ethernet header:", buf[:14])
-        // TODO: verify the ethernet protocol legitimately
-        eth_protocol := uint16(buf[12]) << 8 | uint16(buf[13])
-        if eth_protocol != ETHERTYPE_IP {
-            fmt.Println("Dropping Ethernet packet for wrong protocol:", eth_protocol)
-            continue;
-        }
+		//fmt.Println("Ethernet header:", buf[:14])
+		// TODO: verify the ethernet protocol legitimately
+		eth_protocol := uint16(buf[12])<<8 | uint16(buf[13])
+		if eth_protocol != ETHERTYPE_IP { // verify that protocol is 0x0800 for IP
+			//Info.Println("Dropping Ethernet packet for wrong protocol:", eth_protocol)
+			continue
+		}
 		buf = buf[14:] // remove ethernet header
 		//fmt.Println("After removing ethernet header", buf)
 
-		if len(buf) <= 20 {
+		if len(buf) <= IP_HEADER_LEN {
+			Info.Println("Dropping IP Packet for bogus length <=", IP_HEADER_LEN)
 			continue
 		}
 
@@ -94,7 +102,7 @@ func (nr *Network_Reader) bind(ip string, protocol uint8) (chan []byte, error) {
 	_, protoOk := nr.buffers[protocol]
 	if !protoOk {
 		nr.buffers[protocol] = make(map[string](chan []byte))
-		fmt.Println("Bound to", protocol)
+		//Trace.Println("Bound to", protocol)
 	}
 
 	// add the IP binding, if possible

@@ -2,7 +2,7 @@ package main
 
 import (
 	"errors"
-	"fmt"
+	//"fmt"
 )
 
 const MAX_UDP_PACKET_LEN = 65507
@@ -25,7 +25,7 @@ func NewUDP_Read_Manager() (*UDP_Read_Manager, error) {
 		return nil, err
 	}
 
-	ipr, err := nr.NewIP_Reader("*", 17) // 17 for UDP
+	ipr, err := nr.NewIP_Reader("*", UDP_PROTO)
 	if err != nil {
 		return nil, err
 	}
@@ -42,10 +42,9 @@ func NewUDP_Read_Manager() (*UDP_Read_Manager, error) {
 
 func (x *UDP_Read_Manager) readAll() {
 	for {
-		ip, _, payload, err := x.reader.ReadFrom()
+		ip, _, _, payload, err := x.reader.ReadFrom()
 		if err != nil {
-
-			fmt.Println(err)
+			Error.Println(err)
 			continue
 		}
 		//fmt.Println(b)
@@ -61,7 +60,7 @@ func (x *UDP_Read_Manager) readAll() {
 		//fmt.Println(ok)
 		if ok {
 			if c, ok := portBuf[ip]; ok {
-				fmt.Println("Found exact IP match for port", dst)
+				//fmt.Println("Found exact IP match for port", dst)
 				go func() { c <- payload }()
 			} else if c, ok := portBuf["*"]; ok {
 				//fmt.Println("Found default IP match for port", dst)
@@ -93,7 +92,7 @@ func (c *UDP_Reader) read(size int) ([]byte, error) {
 	if len(data) > size {
 		data = data[:size]
 	}
-    // TODO: verify the checksum
+	// TODO: verify the checksum
 	return data, nil
 }
 

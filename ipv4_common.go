@@ -22,13 +22,24 @@ const (
 	MAX_IP_PACKET_LEN = 65535
 	MTU               = 1500
 	FRAGMENT_TIMEOUT  = 5
-	SOCK_DGRAM        = 2
-	SOCK_RAW          = 3
-	AF_PACKET         = 17
-	HTONS_ETH_P_ALL   = 768
-	ETHERTYPE_IP      = 0x0800
-	ETHERTYPE_APR     = 0x0806
-	ETH_ALEN          = 6
+
+	SOCK_DGRAM      = 2
+	SOCK_RAW        = 3
+	AF_PACKET       = 17
+	HTONS_ETH_P_ALL = 768
+	ETHERTYPE_IP    = 0x0800
+	ETHERTYPE_APR   = 0x0806
+	ETH_ALEN        = 6
+)
+
+const (
+	UDP_PROTO = 17
+	TCP_PROTO = 6
+)
+
+const (
+	DEFAULT_TTL   = 64
+	IP_HEADER_LEN = 20
 )
 
 func checksum(head []byte) uint16 {
