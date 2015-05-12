@@ -180,7 +180,7 @@ func (h *TCP_Header) Marshal_TCP_Header(dstIP, srcIP string) ([]byte, error) {
 		h.options = append(h.options, 0)
 	}
 
-	headerLen := uint8(TCP_BASIC_HEADER_SZ + len(h.options)) // size of header in 32 bit (4 byte) chunks
+	headerLen := uint16(TCP_BASIC_HEADER_SZ + len(h.options)) // size of header in 32 bit (4 byte) chunks
 
 	header := append([]byte{
 		(byte)(h.srcport >> 8), (byte)(h.srcport), // Source port in byte slice
@@ -234,7 +234,7 @@ func Extract_TCP_Packet(d []byte, rip, lip string) (*TCP_Packet, error) {
 	return &TCP_Packet{header: h, payload: d[headerLen:], rip: rip, lip: lip}, nil
 }
 
-func calcTCPchecksum(header []byte, srcIP, dstIP string, headerLen uint8) uint16 {
+func calcTCPchecksum(header []byte, srcIP, dstIP string, headerLen uint16) uint16 {
 	return checksum(append(append(append(header, net.ParseIP(srcIP)...), net.ParseIP(dstIP)...), []byte{byte(TCP_PROTO >> 8), byte(TCP_PROTO), byte(headerLen >> 8), byte(headerLen)}...))
 }
 

@@ -2,7 +2,7 @@ package main
 
 import (
 	"errors"
-	//"fmt"
+	"fmt"
 )
 
 const MAX_UDP_PACKET_LEN = 65507
@@ -83,7 +83,7 @@ func (x *UDP_Read_Manager) NewUDP(port uint16, ip string) (*UDP_Reader, error) {
 		x.buff[port][ip] = make(chan []byte)
 		return &UDP_Reader{port: port, bytes: x.buff[port][ip], manager: x, ipAddress: ip}, nil
 	} else {
-		return nil, errors.New("Another application is already listening to that port.")
+		return nil, errors.New("Another application is already listening to port " + fmt.Sprintf("%v", port) +" with IP " + ip)
 	}
 }
 

@@ -113,13 +113,13 @@ func (ipr *IP_Reader) fragmentAssembler(in <-chan []byte, quit <-chan bool, didQ
 
 	// drop the packet upon timeout
 	//Trace.Println(errors.New("Fragments took too long, packet dropped"))
-	return
+	//return
 }
 
 func (ipr * IP_Reader) killFragmentAssembler(quit chan<- bool, didQuit <-chan bool, done <-chan bool, bufID string) {
 	// sends quit to the assembler if it doesn't send done
 	select {
-	case <-time.After(time.Second * FRAGMENT_TIMEOUT):
+	case <-time.After(FRAGMENT_TIMEOUT):
 		//Trace.Println("Force quitting packet assembler")
 		quit <- true
 		<-didQuit // will block until it has been received
