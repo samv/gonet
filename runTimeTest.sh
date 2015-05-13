@@ -7,6 +7,7 @@ for i in `seq 1 10`; do
 	echo $i;
 done;
 
+sleep 5;
 python timeTest.py Ours;
 
 kill %%; # kill the udp_read_tester
