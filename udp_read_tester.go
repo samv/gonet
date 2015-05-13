@@ -42,12 +42,13 @@ func main() {
 					fmt.Println(err)
 					return
 				}
-				time.Sleep(time.Second)
+				time.Sleep(3 * time.Second)
 				_, err = r.read(MAX_UDP_PACKET_LEN)
 				if err != nil {
 					fmt.Println(err)
 					return
 				}
+				time.Sleep(time.Second * 8)
 			}(20000 + i)
 		}
 
@@ -58,7 +59,7 @@ func main() {
 			//fmt.Println("Ran Command")
 		}()
 
-		time.Sleep(5 * time.Second)
+		time.Sleep(8 * time.Second)
 		fmt.Println(numConns, ":", maxNumRoutines)
 	} else {
 		r, err := rm.NewUDP(20102, "127.0.0.1")
