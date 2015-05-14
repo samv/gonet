@@ -17,7 +17,7 @@ func max(x, y int) int {
 }
 
 func main() {
-	fmt.Println("Num Procs: ", runtime.GOMAXPROCS(runtime.NumCPU()))
+	runtime.GOMAXPROCS(runtime.NumCPU())
 
 	rm, err := NewUDP_Read_Manager()
 	if err != nil {
