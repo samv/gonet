@@ -9,3 +9,5 @@ tcp_client_tester
 auto-push.sh
 auto-full.sh
 myMACAddr.go
+inputOurs.txt
+outputOurs.txt
