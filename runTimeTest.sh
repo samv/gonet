@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 rm inputOurs.txt
-for i in `seq 1 50000`; do
+for i in `seq 1 5000`; do
 	python udpWrite.py 20102 $i >> inputOurs.txt;
 	echo $i;
 done;
