@@ -1,7 +1,6 @@
 package ipv4p
 
 import (
-	"fmt"
 	"golang.org/x/net/ipv4"
 	"net"
 	"etherp"
@@ -123,7 +122,7 @@ func (ipw *IP_Writer) WriteTo(p []byte) error {
 			header[11] = byte(checksum)
 
 			newPacket = append(header, p[maxPaySize*i:]...)
-			fmt.Println("Full Packet to Send in IPv4 Writer:", newPacket, "(len ", len(newPacket), ")")
+			//logs.Trace.Println("Full Packet to Send in IPv4 Writer:", newPacket, "(len ", len(newPacket), ")")
 			//fmt.Println("CALCULATED LEN:", i*maxFragSize+len(p[maxPaySize*i:]))
 		} else {
 			totalLen = uint16(ipw.headerLen) + uint16(len(p[maxPaySize*i:maxPaySize*(i+1)]))
@@ -143,7 +142,7 @@ func (ipw *IP_Writer) WriteTo(p []byte) error {
 			header[11] = byte(checksum)
 
 			newPacket = append(header, p[maxPaySize*i:maxPaySize*(i+1)]...)
-			fmt.Println("Full Packet Frag to Send in IPv4 Writer:", newPacket, "(len ", len(newPacket), ")")
+			//logs.Trace.Println("Full Packet Frag to Send in IPv4 Writer:", newPacket, "(len ", len(newPacket), ")")
 		}
 
 		// write the bytes

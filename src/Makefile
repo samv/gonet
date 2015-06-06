@@ -2,7 +2,7 @@
 # iptables command: sudo iptables -I INPUT -p tcp --sport 20102 -j DROP
 
 install:
-	go install logs notifies etherp ipv4p udpp tcpp
+	go install logs notifiers etherp ipv4p udpp tcpp
 
 #all: udp tcp
 #udp: udp_read udp_write

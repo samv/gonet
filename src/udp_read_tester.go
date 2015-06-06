@@ -1,8 +1,8 @@
 package main
 
-import "fmt"
-import "os"
 import (
+	"fmt"
+	"os"
 	"time"
 	"runtime"
 	"strconv"
