@@ -1,4 +1,4 @@
-package main
+package tcpp
 
 import (
 	"errors"
@@ -6,6 +6,8 @@ import (
 	"golang.org/x/net/ipv4"
 	"net"
 	"sync"
+	"logs"
+	"ipv4p"
 )
 
 type Server_TCB struct {
@@ -48,7 +50,7 @@ func (s *Server_TCB) BindListen(port uint16, ip string) error {
 }
 
 func (s *Server_TCB) LongListener() {
-	Trace.Println("Listener routine")
+	logs.Trace.Println("Listener routine")
 	for {
 		in := <-s.listener
 		if in.header.flags&TCP_RST != 0 {
@@ -66,25 +68,25 @@ func (s *Server_TCB) LongListener() {
 
 			read, err := TCP_Port_Manager.bind(lp, rp, rIP)
 			if err != nil {
-				Error.Println(err)
+				logs.Error.Println(err)
 				return
 			}
 
-			p, err := net.ListenPacket(fmt.Sprintf("ip4:%d", TCP_PROTO), rIP) // only for read, not for write
+			p, err := net.ListenPacket(fmt.Sprintf("ip4:%d", ipv4p.TCP_PROTO), rIP) // only for read, not for write
 			if err != nil {
-				Error.Println(err)
+				logs.Error.Println(err)
 				return
 			}
 
 			r, err := ipv4.NewRawConn(p)
 			if err != nil {
-				Error.Println(err)
+				logs.Error.Println(err)
 				return
 			}
 
 			c, err := New_TCB(lp, rp, rIP, read, r, TCP_SERVER)
 			if err != nil {
-				Error.Println(err)
+				logs.Error.Println(err)
 				return
 			}
 			c.serverParent = s
@@ -104,7 +106,7 @@ func (s *Server_TCB) LongListener() {
 			}
 			err = c.SendPacket(synack)
 			if err != nil {
-				Error.Println(err)
+				logs.Error.Println(err)
 				return
 			}
 
@@ -114,7 +116,7 @@ func (s *Server_TCB) LongListener() {
 			case s.connQueue <- c:
 			default:
 				// TODO send a reset
-				Error.Println(errors.New("ERR: listen queue is full"))
+				logs.Error.Println(errors.New("ERR: listen queue is full"))
 				return
 			}
 			return

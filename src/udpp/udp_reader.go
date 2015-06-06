@@ -1,14 +1,17 @@
-package main
+package udpp
 
 import (
 	"errors"
 	"fmt"
+	"etherp"
+	"ipv4p"
+	"logs"
 )
 
 const MAX_UDP_PACKET_LEN = 65507
 
 type UDP_Read_Manager struct {
-	reader *IP_Reader
+	reader *ipv4p.IP_Reader
 	buff   map[uint16](map[string](chan []byte))
 }
 
@@ -20,12 +23,9 @@ type UDP_Reader struct {
 }
 
 func NewUDP_Read_Manager() (*UDP_Read_Manager, error) {
-	nr, err := NewNetwork_Reader()
-	if err != nil {
-		return nil, err
-	}
+	nr := etherp.GlobalNetworkReader
 
-	ipr, err := nr.NewIP_Reader("*", UDP_PROTO)
+	ipr, err := ipv4p.NewIP_Reader(nr, "*", ipv4p.UDP_PROTO)
 	if err != nil {
 		return nil, err
 	}
@@ -44,7 +44,7 @@ func (x *UDP_Read_Manager) readAll() {
 	for {
 		ip, _, _, payload, err := x.reader.ReadFrom()
 		if err != nil {
-			Error.Println(err)
+			logs.Error.Println(err)
 			continue
 		}
 		//fmt.Println(b)

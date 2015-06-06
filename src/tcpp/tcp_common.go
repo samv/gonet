@@ -1,9 +1,12 @@
-package main
+package tcpp
 
 import (
 	"crypto/rand"
 	"errors"
 	"net"
+	"etherp"
+	"ipv4p"
+	"logs"
 )
 
 // Finite State Machine
@@ -56,7 +59,7 @@ const (
 
 // Global src, dst port and ip registry for TCP binding
 type TCP_Port_Manager_Type struct {
-	tcp_reader *IP_Reader
+	tcp_reader *ipv4p.IP_Reader
 	incoming   map[uint16](map[uint16](map[string](chan *TCP_Packet))) // dst, src port, remote ip
 }
 
@@ -84,13 +87,13 @@ func (m *TCP_Port_Manager_Type) readAll() {
 	for {
 		rip, lip, _, payload, err := m.tcp_reader.ReadFrom()
 		if err != nil {
-			Error.Println("TCP readAll error", err)
+			logs.Error.Println("TCP readAll error", err)
 			continue
 		}
 
 		p, err := Extract_TCP_Packet(payload, rip, lip)
 		if err != nil {
-			Error.Println(err)
+			logs.Error.Println(err)
 			continue
 		}
 
@@ -124,15 +127,11 @@ func (m *TCP_Port_Manager_Type) readAll() {
 }
 
 var TCP_Port_Manager = func() *TCP_Port_Manager_Type {
-	nr, err := NewNetwork_Reader() // TODO: create a global var for the network reader
-	if err != nil {
-		Error.Println(err)
-		return nil
-	}
+	nr := etherp.GlobalNetworkReader
 
-	ipr, err := nr.NewIP_Reader("*", TCP_PROTO)
+	ipr, err := ipv4p.NewIP_Reader(nr, "*", ipv4p.TCP_PROTO)
 	if err != nil {
-		Error.Println(err)
+		logs.Error.Println(err)
 		return nil
 	}
 
@@ -235,7 +234,7 @@ func Extract_TCP_Packet(d []byte, rip, lip string) (*TCP_Packet, error) {
 }
 
 func calcTCPchecksum(header []byte, srcIP, dstIP string, headerLen uint16) uint16 {
-	return checksum(append(append(append(header, net.ParseIP(srcIP)...), net.ParseIP(dstIP)...), []byte{byte(TCP_PROTO >> 8), byte(TCP_PROTO), byte(headerLen >> 8), byte(headerLen)}...))
+	return ipv4p.Checksum(append(append(append(header, net.ParseIP(srcIP)...), net.ParseIP(dstIP)...), []byte{byte(ipv4p.TCP_PROTO >> 8), byte(ipv4p.TCP_PROTO), byte(headerLen >> 8), byte(headerLen)}...))
 }
 
 func verifyTCPchecksum(header []byte, srcIP, dstIP string, headerLen uint8) bool {

@@ -1,15 +1,16 @@
-package main
+package ipv4p
 
 import (
 	"fmt"
 	"golang.org/x/net/ipv4"
 	"net"
+	"etherp"
 	//"errors"
 	//"syscall"
 )
 
 type IP_Writer struct {
-	nw          *Network_Writer
+	nw          *etherp.Network_Writer
 	version     uint8
 	dst, src    string
 	headerLen   uint16
@@ -21,7 +22,7 @@ type IP_Writer struct {
 
 func NewIP_Writer(dst string, protocol uint8) (*IP_Writer, error) {
 	// create its own network_writer
-	nw, err := NewNetwork_Writer()
+	nw, err := etherp.NewNetwork_Writer()
 	if err != nil {
 		return nil, err
 	}
@@ -43,7 +44,7 @@ func NewIP_Writer(dst string, protocol uint8) (*IP_Writer, error) {
 		//sockAddr:    addr,
 		nw:          nw,
 		version:     ipv4.Version,
-		headerLen:   IP_HEADER_LEN,
+		headerLen:   etherp.IP_HEADER_LEN,
 		dst:         dst,
 		src:         "127.0.0.1", // TODO fix this based on dst
 		ttl:         DEFAULT_TTL,
@@ -146,7 +147,7 @@ func (ipw *IP_Writer) WriteTo(p []byte) error {
 		}
 
 		// write the bytes
-		err := ipw.nw.write(newPacket)
+		err := ipw.nw.Write(newPacket)
 		if err != nil {
 			return err
 		}
@@ -157,7 +158,7 @@ func (ipw *IP_Writer) WriteTo(p []byte) error {
 }
 
 func (ipw *IP_Writer) Close() error {
-	return ipw.nw.close()
+	return ipw.nw.Close()
 }
 
 /* h := &ipv4.Header{

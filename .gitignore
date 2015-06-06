@@ -11,3 +11,5 @@ auto-full.sh
 myMACAddr.go
 inputOurs.txt
 outputOurs.txt
+bin/*
+pkg/*

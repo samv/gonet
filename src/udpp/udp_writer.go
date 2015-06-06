@@ -1,17 +1,18 @@
-package main
+package udpp
 
-//import (
-//    "fmt"
-//)
+import (
+	"ipv4p"
+	//"logs"
+)
 
 type UDP_Writer struct {
 	ipAddress string // destination ip address
-	writer    *IP_Writer
+	writer    *ipv4p.IP_Writer
 	src, dst  uint16 // ports
 }
 
 func NewUDP_Writer(src, dest uint16, dstIP string) (*UDP_Writer, error) {
-	write, err := NewIP_Writer(dstIP, UDP_PROTO)
+	write, err := ipv4p.NewIP_Writer(dstIP, ipv4p.UDP_PROTO)
 	if err != nil {
 		return nil, err
 	}

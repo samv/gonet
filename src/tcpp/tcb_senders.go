@@ -1,4 +1,4 @@
-package main
+package tcpp
 
 import (
 	"errors"
@@ -6,10 +6,14 @@ import (
 	"net"
 	"sync"
 	"time"
+	"etherp"
+	"ipv4p"
+	"logs"
+	"notifiers"
 )
 
 func (c *TCB) UpdateState(newState uint) {
-	Info.Println("The New State is ", newState)
+	logs.Info.Println("The New State is ", newState)
 	c.state = newState
 	go SendUpdate(c.stateUpdate)
 	if c.serverParent != nil {
@@ -18,9 +22,9 @@ func (c *TCB) UpdateState(newState uint) {
 }
 
 func (c *TCB) UpdateLastAck(newAck uint32) error {
-	Info.Println("Got an ack:", newAck)
+	logs.Info.Println("Got an ack:", newAck)
 	c.recentAckNum = newAck
-	go SendNotifierBroadcast(c.recentAckUpdate, c.recentAckNum)
+	go notifiers.SendNotifierBroadcast(c.recentAckUpdate, c.recentAckNum)
 	return nil
 }
 
@@ -60,22 +64,22 @@ func (c *TCB) SendWithRetransmit(data *TCP_Packet) error {
 		case <-timeout:
 			// TODO deal with a resend timeout fully
 			killAckListen <- true
-			Error.Println("Resend of packet seq", data.header.seq, "timed out")
+			logs.Error.Println("Resend of packet seq", data.header.seq, "timed out")
 			return errors.New("Resend timed out")
 		}
 	}
 }
 
 func (c *TCB) ListenForAck(successOut chan<- bool, end <-chan bool, targetAck uint32) {
-	Trace.Println("Listening for ack:", targetAck)
+	logs.Trace.Println("Listening for ack:", targetAck)
 	in := c.recentAckUpdate.Register(ACK_BUF_SZ)
 	defer c.recentAckUpdate.Unregister(in)
 	for {
 		select {
 		case v := <-in:
-			Trace.Println("Ack listener got ack: ", v.(uint32))
+			logs.Trace.Println("Ack listener got ack: ", v.(uint32))
 			if v.(uint32) == targetAck {
-				Trace.Println("Killing the resender for ack:", v.(uint32))
+				logs.Trace.Println("Killing the resender for ack:", v.(uint32))
 				successOut <- true
 				return
 			}
@@ -110,26 +114,26 @@ func (c *TCB) SendPacket(d *TCP_Packet) error {
 
 	pay, err := d.Marshal_TCP_Packet()
 	if err != nil {
-		Error.Println(err)
+		logs.Error.Println(err)
 		return err
 	}
 
 	err = c.writer.WriteTo(&ipv4.Header{
 		Version:  ipv4.Version,             // protocol version
-		Len:      IP_HEADER_LEN,            // header length
+		Len:      etherp.IP_HEADER_LEN,            // header length
 		TOS:      0,                        // type-of-service (0 is everything normal)
-		TotalLen: len(pay) + IP_HEADER_LEN, // packet total length (octets)
+		TotalLen: len(pay) + etherp.IP_HEADER_LEN, // packet total length (octets)
 		ID:       0,                        // identification
 		Flags:    ipv4.DontFragment,        // flags
 		FragOff:  0,                        // fragment offset
-		TTL:      DEFAULT_TTL,              // time-to-live (maximum lifespan in seconds)
-		Protocol: TCP_PROTO,                // next protocol
+		TTL:      ipv4p.DEFAULT_TTL,              // time-to-live (maximum lifespan in seconds)
+		Protocol: ipv4p.TCP_PROTO,                // next protocol
 		Checksum: 0,                        // checksum (autocomputed)
 		Dst:      net.ParseIP(d.rip),       // destination address
 	}, pay, nil)
 
 	if err != nil {
-		Error.Println(err)
+		logs.Error.Println(err)
 		return err
 	}
 
@@ -137,7 +141,7 @@ func (c *TCB) SendPacket(d *TCP_Packet) error {
 }
 
 func (c *TCB) SendReset(seq uint32, ack uint32) error {
-	Trace.Println("Sending RST with seq: ", seq, " and ack: ", ack)
+	logs.Trace.Println("Sending RST with seq: ", seq, " and ack: ", ack)
 	rst := &TCP_Packet{
 		header: &TCP_Header{
 			seq:     seq,
@@ -153,7 +157,7 @@ func (c *TCB) SendReset(seq uint32, ack uint32) error {
 }
 
 func (c *TCB) SendAck(seq, ack uint32) error {
-	Trace.Println("Sending ACK with seq: ", seq, " and ack: ", ack)
+	logs.Trace.Println("Sending ACK with seq: ", seq, " and ack: ", ack)
 	ack_packet := &TCP_Packet{
 		header: &TCP_Header{
 			seq:     seq,

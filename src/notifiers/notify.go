@@ -1,7 +1,8 @@
-package main
+package notifiers
 
 import (
 	"sync"
+	"logs"
 )
 
 type Notifier struct {
@@ -22,7 +23,7 @@ func (n *Notifier) Register(bufSize int) chan interface{} {
 
 	out := make(chan interface{}, bufSize)
 	n.outputs = append(n.outputs, out)
-	Trace.Println("notify reg")
+	logs.Trace.Println("notify reg")
 	return out
 }
 
@@ -39,7 +40,7 @@ func (n *Notifier) Unregister(remove chan interface{}) {
 		}
 	}
 	n.outputs = update
-	Trace.Println("notify unreg")
+	logs.Trace.Println("notify unreg")
 }
 
 func (n *Notifier) Broadcast(val interface{}) {
@@ -49,7 +50,7 @@ func (n *Notifier) Broadcast(val interface{}) {
 	for _, out := range n.outputs {
 		go func(out chan interface{}, val interface{}) { out <- val }(out, val)
 	}
-	Trace.Println("broadcasted")
+	logs.Trace.Println("broadcasted")
 }
 
 // A helper function for the clients

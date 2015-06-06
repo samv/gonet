@@ -1,9 +1,8 @@
-package main
+package etherp
 
 import (
 	"errors"
 	"syscall"
-	//"fmt"
 )
 
 type Network_Writer struct {
@@ -38,7 +37,7 @@ func NewNetwork_Writer() (*Network_Writer, error) {
 	}, nil
 }
 
-func (nw *Network_Writer) write(data []byte) error {
+func (nw *Network_Writer) Write(data []byte) error {
 	// build the ethernet header
 	/*etherHead :=  append(append(
 	    myMACSlice, // dst MAC
@@ -58,6 +57,6 @@ func (nw *Network_Writer) write(data []byte) error {
 	return syscall.Sendto(nw.fd, newPacket, 0, nw.sockAddr)
 }
 
-func (nw *Network_Writer) close() error {
+func (nw *Network_Writer) Close() error {
 	return syscall.Close(nw.fd)
 }

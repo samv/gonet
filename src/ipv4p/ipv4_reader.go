@@ -1,8 +1,9 @@
-package main
+package ipv4p
 
 import (
 	"net"
 	"time"
+	"etherp"
 	//"errors"
 	//"fmt"
 	//"syscall"
@@ -11,15 +12,15 @@ import (
 
 type IP_Reader struct {
 	incomingPackets chan []byte
-	nr              *Network_Reader
+	nr              *etherp.Network_Reader
 	protocol        uint8
 	ip              string
 	fragBuf         map[string](chan []byte)
 	//fragQuit        map[string](chan bool)
 }
 
-func (nr *Network_Reader) NewIP_Reader(ip string, protocol uint8) (*IP_Reader, error) {
-	c, err := nr.bind(ip, protocol)
+func NewIP_Reader(nr *etherp.Network_Reader, ip string, protocol uint8) (*IP_Reader, error) {
+	c, err := nr.Bind(ip, protocol)
 	if err != nil {
 		return nil, err
 	}
@@ -192,7 +193,7 @@ func (ipr *IP_Reader) ReadFrom() (rip, lip string, b, payload []byte, e error) {
 }
 
 func (ipr *IP_Reader) Close() error {
-	return ipr.nr.unbind(ipr.ip, ipr.protocol)
+	return ipr.nr.Unbind(ipr.ip, ipr.protocol)
 }
 
 /* h := &ipv4.Header{

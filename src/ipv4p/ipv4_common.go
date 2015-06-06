@@ -1,36 +1,7 @@
-package main
+package ipv4p
 
 import (
 	"time"
-//    "fmt"
-)
-
-var myMACAddr = func(mac []byte) [8]byte {
-	mac = append(mac, 0, 0)
-	var data [8]byte
-	for i := 0; i < 8; i++ {
-		data[i] = mac[i]
-	}
-	return data
-}(myMACSlice)
-
-const (
-	// 768 = htons(ETH_P_ALL) = htons(3)
-	// see http://ideone.com/2eunQu
-
-	// 17 = AF_PACKET
-	// see http://ideone.com/TGYlGc
-	MAX_IP_PACKET_LEN = 65535
-	MTU               = 1500
-	FRAGMENT_TIMEOUT  = time.Second * 5
-
-	SOCK_DGRAM      = 2
-	SOCK_RAW        = 3
-	AF_PACKET       = 17
-	HTONS_ETH_P_ALL = 768
-	ETHERTYPE_IP    = 0x0800
-	ETHERTYPE_APR   = 0x0806
-	ETH_ALEN        = 6
 )
 
 const (
@@ -40,10 +11,14 @@ const (
 
 const (
 	DEFAULT_TTL   = 64
-	IP_HEADER_LEN = 20
 )
 
-func checksum(head []byte) uint16 {
+const (
+	MTU               = 1500
+	FRAGMENT_TIMEOUT  = time.Second * 5
+)
+
+func Checksum(head []byte) uint16 {
 	totalSum := uint64(0)
 	for ind, elem := range head {
 		if ind%2 == 0 {
@@ -73,8 +48,8 @@ func checksum(head []byte) uint16 {
 func calculateChecksum(header []byte) uint16 {
 	header[10] = 0
 	header[11] = 0
-	return checksum(header)
+	return Checksum(header)
 }
 func verifyChecksum(header []byte) uint16 {
-	return checksum(header)
+	return Checksum(header)
 }

@@ -1,10 +1,12 @@
-package main
+package tcpp
 
 import (
 	"errors"
 	"fmt"
 	"golang.org/x/net/ipv4"
 	"net"
+	"logs"
+	"ipv4p"
 )
 
 func New_TCB_From_Client(local, remote uint16, dstIP string) (*TCB, error) {
@@ -15,23 +17,23 @@ func New_TCB_From_Client(local, remote uint16, dstIP string) (*TCB, error) {
 
 	read, err := TCP_Port_Manager.bind(remote, local, dstIP)
 	if err != nil {
-		Error.Println(err)
+		logs.Error.Println(err)
 		return nil, err
 	}
 
-	p, err := net.ListenPacket(fmt.Sprintf("ip4:%d", TCP_PROTO), dstIP) // only for read, not for write
+	p, err := net.ListenPacket(fmt.Sprintf("ip4:%d", ipv4p.TCP_PROTO), dstIP) // only for read, not for write
 	if err != nil {
-		Error.Println(err)
+		logs.Error.Println(err)
 		return nil, err
 	}
 
 	r, err := ipv4.NewRawConn(p)
 	if err != nil {
-		Error.Println(err)
+		logs.Error.Println(err)
 		return nil, err
 	}
 
-	Trace.Println("Finished New TCB from Client")
+	logs.Trace.Println("Finished New TCB from Client")
 	return New_TCB(local, remote, dstIP, read, r, TCP_CLIENT)
 }
 
@@ -59,9 +61,9 @@ func (c *TCB) Connect() error {
 	c.seqNum += 1
 
 	// Send the SYN packet
-	Trace.Println("About to send syn")
+	logs.Trace.Println("About to send syn")
 	go c.SendWithRetransmit(SYN)
-	Trace.Println("Sent SYN")
+	logs.Trace.Println("Sent SYN")
 	c.UpdateState(SYN_SENT)
 
 	// wait for the connection to be established

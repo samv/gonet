@@ -1,10 +1,10 @@
-package main
+package etherp
 
 import (
 	"errors"
 	"net"
 	"syscall"
-	//"fmt"
+	"logs"
 )
 
 /*type Network_Reader_IP struct {
@@ -20,7 +20,7 @@ func NewNetwork_Reader_IP(dst string, protocol uint8) (*Network_Reader_IP, error
 var GlobalNetworkReader = func() *Network_Reader {
 	x, err := NewNetwork_Reader()
 	if err != nil {
-		Error.Fatal(err)
+		logs.Error.Fatal(err)
 	}
 	return x
 }()
@@ -35,7 +35,7 @@ func NewNetwork_Reader() (*Network_Reader, error) {
 	fd, err := syscall.Socket(AF_PACKET, SOCK_RAW, HTONS_ETH_P_ALL)
 
 	if err != nil {
-		Error.Println("AF_PACKET socket connection")
+		logs.Error.Println("AF_PACKET socket connection")
 		return nil, err
 	}
 
@@ -56,7 +56,7 @@ func (nr *Network_Reader) readAll() {
 		ln, err := nr.getNextPacket(buf)
 
 		if err != nil {
-			Error.Println(err)
+			logs.Error.Println(err)
 		}
 		buf = buf[:ln] // remove extra bytes off the end
 
@@ -71,7 +71,7 @@ func (nr *Network_Reader) readAll() {
 		//fmt.Println("After removing ethernet header", buf)
 
 		if len(buf) <= IP_HEADER_LEN {
-			Info.Println("Dropping IP Packet for bogus length <=", IP_HEADER_LEN)
+			logs.Info.Println("Dropping IP Packet for bogus length <=", IP_HEADER_LEN)
 			continue
 		}
 
@@ -97,7 +97,7 @@ func (nr *Network_Reader) readAll() {
 	}
 }
 
-func (nr *Network_Reader) bind(ip string, protocol uint8) (chan []byte, error) {
+func (nr *Network_Reader) Bind(ip string, protocol uint8) (chan []byte, error) {
 	// create the protocol buffer if it doesn't exist already
 	_, protoOk := nr.buffers[protocol]
 	if !protoOk {
@@ -116,7 +116,7 @@ func (nr *Network_Reader) bind(ip string, protocol uint8) (chan []byte, error) {
 	return nil, errors.New("IP already bound to.")
 }
 
-func (nr *Network_Reader) unbind(ip string, protocol uint8) error {
+func (nr *Network_Reader) Unbind(ip string, protocol uint8) error {
 	ipBuf, protoOk := nr.buffers[protocol]
 	if !protoOk {
 		return errors.New("IP not bound, cannot unbind")
