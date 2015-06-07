@@ -17,39 +17,13 @@ func TestBasic(t *testing.T) {
 		outpt := make(chan []byte, 1)
 		go func() {
 			cmd := exec.Command("python", "./udp_write_test_helper.py", fmt.Sprint(port))
-			out, err := cmd.CombinedOutput()
+			out, err := cmd.Output()
 			fmt.Println("Cmd finished")
 			if err != nil {
 				fmt.Println(out)
 				t.Fatal(err)
 			}
 			outpt <- out
-			/*// run command
-			fmt.Println("Begin Command Execution")
-			cmd := exec.Command("python", "./udp_write_test_helper.py")
-			out, err := cmd.StdoutPipe()
-			eout, _ := cmd.StderrPipe()
-			if err != nil {
-				t.Fatal(err)
-			}
-			err = cmd.Start()
-			if err != nil {
-				t.Fatal(err)
-			}
-
-			fmt.Println("Waiting for python to terminate")
-			err = cmd.Wait()
-			if err != nil {
-				e := make([]byte, 500)
-				eout.Read(e)
-				fmt.Println(e)
-				t.Fatal(err)
-			}
-			fmt.Println("Terminated")
-
-			output := make([]byte, 50000)
-			out.Read(output)
-			outpt <- output*/
 		}()
 
 		fmt.Println("Creating UDP Writer")
