@@ -23,7 +23,7 @@ func TestReadWrite(t *testing.T) {
 
 	data := []byte{'h', 'e', 'l', 'l', 'o'}
 
-	go func(){
+	go func() {
 		w, err := NewUDP_Writer(20000, rwport, rwIP)
 		if err != nil {
 			t.Fatal(err)
@@ -53,7 +53,7 @@ func TestReadWrite(t *testing.T) {
 	}()
 
 	select {
-	case <- success:
+	case <-success:
 		t.Log("Success")
 	case <-time.After(5 * time.Second):
 		t.Error("Timed out")

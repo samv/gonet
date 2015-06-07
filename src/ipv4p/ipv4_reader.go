@@ -1,9 +1,9 @@
 package ipv4p
 
 import (
+	"etherp"
 	"net"
 	"time"
-	"etherp"
 	//"errors"
 	//"fmt"
 	//"syscall"
@@ -117,7 +117,7 @@ func (ipr *IP_Reader) fragmentAssembler(in <-chan []byte, quit <-chan bool, didQ
 	//return
 }
 
-func (ipr * IP_Reader) killFragmentAssembler(quit chan<- bool, didQuit <-chan bool, done <-chan bool, bufID string) {
+func (ipr *IP_Reader) killFragmentAssembler(quit chan<- bool, didQuit <-chan bool, done <-chan bool, bufID string) {
 	// sends quit to the assembler if it doesn't send done
 	select {
 	case <-time.After(FRAGMENT_TIMEOUT):
@@ -185,7 +185,7 @@ func (ipr *IP_Reader) ReadFrom() (rip, lip string, b, payload []byte, e error) {
 		}
 
 		// send the packet to the assembler
-		go func() { ipr.fragBuf[bufID] <- b}()
+		go func() { ipr.fragBuf[bufID] <- b }()
 
 		// after dealing with the fragment, try reading again
 		return ipr.ReadFrom()

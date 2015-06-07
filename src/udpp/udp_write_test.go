@@ -1,10 +1,10 @@
 package udpp
 
 import (
+	"fmt"
 	"os/exec"
 	"testing"
 	"time"
-	"fmt"
 )
 
 const port = 20412
@@ -35,9 +35,9 @@ func TestBasic(t *testing.T) {
 
 		// assemble data
 		data := []byte{'h', 'e', 'l', 'l', 'o'}
-//		for i := 0; i <= 10; i++ {
-//			data = append(data, data...)
-//		}
+		//		for i := 0; i <= 10; i++ {
+		//			data = append(data, data...)
+		//		}
 
 		time.Sleep(500 * time.Millisecond)
 
@@ -49,7 +49,7 @@ func TestBasic(t *testing.T) {
 		}
 
 		fmt.Println("Waiting")
-		result := <- outpt
+		result := <-outpt
 		fmt.Println("Got output")
 		if len(result) != len(data) {
 			t.Fatal(len(result), "not equal to", len(data))

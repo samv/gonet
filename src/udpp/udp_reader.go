@@ -2,8 +2,8 @@ package udpp
 
 import (
 	"errors"
-	"fmt"
 	"etherp"
+	"fmt"
 	"ipv4p"
 	"logs"
 )
@@ -83,7 +83,7 @@ func (x *UDP_Read_Manager) NewUDP(port uint16, ip string) (*UDP_Reader, error) {
 		x.buff[port][ip] = make(chan []byte)
 		return &UDP_Reader{port: port, bytes: x.buff[port][ip], manager: x, ipAddress: ip}, nil
 	} else {
-		return nil, errors.New("Another application is already listening to port " + fmt.Sprintf("%v", port) +" with IP " + ip)
+		return nil, errors.New("Another application is already listening to port " + fmt.Sprintf("%v", port) + " with IP " + ip)
 	}
 }
 

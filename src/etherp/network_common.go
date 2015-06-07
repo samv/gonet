@@ -13,12 +13,11 @@ var myMACAddr = func(mac []byte) [8]byte {
 }(myMACSlice)
 
 const (
-// 768 = htons(ETH_P_ALL) = htons(3)
-// see http://ideone.com/2eunQu
+	// 768 = htons(ETH_P_ALL) = htons(3)
+	// see http://ideone.com/2eunQu
 
-// 17 = AF_PACKET
-// see http://ideone.com/TGYlGc
-
+	// 17 = AF_PACKET
+	// see http://ideone.com/TGYlGc
 
 	SOCK_DGRAM      = 2
 	SOCK_RAW        = 3

@@ -1,8 +1,8 @@
 package notifiers
 
 import (
-	"sync"
 	"logs"
+	"sync"
 )
 
 type Notifier struct {

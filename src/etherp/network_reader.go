@@ -2,9 +2,9 @@ package etherp
 
 import (
 	"errors"
+	"logs"
 	"net"
 	"syscall"
-	"logs"
 )
 
 /*type Network_Reader_IP struct {

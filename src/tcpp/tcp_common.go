@@ -3,10 +3,10 @@ package tcpp
 import (
 	"crypto/rand"
 	"errors"
-	"net"
 	"etherp"
 	"ipv4p"
 	"logs"
+	"net"
 )
 
 // Finite State Machine

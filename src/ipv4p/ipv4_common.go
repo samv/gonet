@@ -10,12 +10,12 @@ const (
 )
 
 const (
-	DEFAULT_TTL   = 64
+	DEFAULT_TTL = 64
 )
 
 const (
-	MTU               = 1500
-	FRAGMENT_TIMEOUT  = time.Second * 5
+	MTU              = 1500
+	FRAGMENT_TIMEOUT = time.Second * 5
 )
 
 func Checksum(head []byte) uint16 {

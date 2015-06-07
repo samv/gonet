@@ -3,10 +3,10 @@ package main
 import (
 	"fmt"
 	"os"
-	"time"
+	"os/exec"
 	"runtime"
 	"strconv"
-	"os/exec"
+	"time"
 )
 
 func max(x, y int) int {

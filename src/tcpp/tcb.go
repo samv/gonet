@@ -2,33 +2,33 @@ package tcpp
 
 import (
 	"golang.org/x/net/ipv4"
+	"logs"
+	"notifiers"
 	"sync"
 	"time"
-	"notifiers"
-	"logs"
 )
 
 type TCB struct {
-	read            chan *TCP_Packet // input
-	writer          *ipv4.RawConn    // output
-	ipAddress       string           // destination ip address
-	srcIP           string           // src ip address
-	lport, rport    uint16           // ports
-	seqNum          uint32           // seq number (SND.NXT)
-	ackNum          uint32           // ack number (RCV.NXT)
-	state           uint             // from the FSM
-	stateUpdate     *sync.Cond       // signals when the state is changed
-	kind            uint             // type (server or client)
-	serverParent    *Server_TCB      // the parent server
-	curWindow       uint16           // the current window size
-	sendBuffer      []byte           // a buffer of bytes that need to be sent
-	urgSendBuffer   []byte           // buffer of urgent data TODO urg data later
-	recvBuffer      []byte           // bytes to pass to the application above
-	resendDelay     time.Duration    // the delay before resending
-	ISS             uint32           // the initial snd seq number
-	IRS             uint32           // the initial rcv seq number
-	recentAckNum    uint32           // the last ack received (also SND.UNA)
-	recentAckUpdate *notifiers.Notifier        // signals changes in recentAckNum
+	read            chan *TCP_Packet    // input
+	writer          *ipv4.RawConn       // output
+	ipAddress       string              // destination ip address
+	srcIP           string              // src ip address
+	lport, rport    uint16              // ports
+	seqNum          uint32              // seq number (SND.NXT)
+	ackNum          uint32              // ack number (RCV.NXT)
+	state           uint                // from the FSM
+	stateUpdate     *sync.Cond          // signals when the state is changed
+	kind            uint                // type (server or client)
+	serverParent    *Server_TCB         // the parent server
+	curWindow       uint16              // the current window size
+	sendBuffer      []byte              // a buffer of bytes that need to be sent
+	urgSendBuffer   []byte              // buffer of urgent data TODO urg data later
+	recvBuffer      []byte              // bytes to pass to the application above
+	resendDelay     time.Duration       // the delay before resending
+	ISS             uint32              // the initial snd seq number
+	IRS             uint32              // the initial rcv seq number
+	recentAckNum    uint32              // the last ack received (also SND.UNA)
+	recentAckUpdate *notifiers.Notifier // signals changes in recentAckNum
 }
 
 func New_TCB(local, remote uint16, dstIP string, read chan *TCP_Packet, write *ipv4.RawConn, kind uint) (*TCB, error) {

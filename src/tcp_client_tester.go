@@ -15,7 +15,7 @@ func main() {
 		return
 	}
 
-	time.Sleep(5*time.Second)
+	time.Sleep(5 * time.Second)
 	Trace.Println("Beginning the read")
 	data, err := client.Recv(20)
 	if err != nil {
