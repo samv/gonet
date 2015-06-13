@@ -9,3 +9,5 @@ vet:
 	go vet ${pkgs}
 fmt:
 	go fmt ${pkgs}
+test:
+	go test network/udpp
