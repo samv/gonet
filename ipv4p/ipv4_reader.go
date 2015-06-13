@@ -1,7 +1,7 @@
 package ipv4p
 
 import (
-	"etherp"
+	"network/etherp"
 	"net"
 	"time"
 	//"errors"

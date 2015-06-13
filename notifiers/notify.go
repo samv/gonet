@@ -1,7 +1,7 @@
 package notifiers
 
 import (
-	"logs"
+	"network/logs"
 	"sync"
 )
 

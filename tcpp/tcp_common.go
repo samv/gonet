@@ -3,9 +3,9 @@ package tcpp
 import (
 	"crypto/rand"
 	"errors"
-	"etherp"
-	"ipv4p"
-	"logs"
+	"network/etherp"
+	"network/ipv4p"
+	"network/logs"
 	"net"
 )
 

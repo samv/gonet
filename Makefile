@@ -1,7 +1,7 @@
 # Makefile for go program
 # iptables command: sudo iptables -I INPUT -p tcp --sport 20102 -j DROP
 
-pkgs = logs notifiers etherp ipv4p udpp tcpp
+pkgs = network/logs network/notifiers network/etherp network/ipv4p network/udpp network/tcpp
 
 install:
 	go install ${pkgs}

@@ -2,8 +2,8 @@ package tcpp
 
 import (
 	"golang.org/x/net/ipv4"
-	"logs"
-	"notifiers"
+	"network/logs"
+	"network/notifiers"
 	"sync"
 	"time"
 )
