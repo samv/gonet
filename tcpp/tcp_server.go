@@ -4,9 +4,9 @@ import (
 	"errors"
 	"fmt"
 	"golang.org/x/net/ipv4"
+	"net"
 	"network/ipv4p"
 	"network/logs"
-	"net"
 	"sync"
 )
 

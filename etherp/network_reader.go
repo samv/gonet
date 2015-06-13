@@ -2,8 +2,8 @@ package etherp
 
 import (
 	"errors"
-	"network/logs"
 	"net"
+	"network/logs"
 	"syscall"
 )
 

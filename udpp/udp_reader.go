@@ -2,10 +2,10 @@ package udpp
 
 import (
 	"errors"
-	"etherp"
 	"fmt"
-	"ipv4p"
-	"logs"
+	"network/etherp"
+	"network/ipv4p"
+	"network/logs"
 )
 
 const MAX_UDP_PACKET_LEN = 65507

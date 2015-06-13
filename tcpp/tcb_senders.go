@@ -2,11 +2,11 @@ package tcpp
 
 import (
 	"errors"
-	"network/etherp"
 	"golang.org/x/net/ipv4"
+	"net"
+	"network/etherp"
 	"network/ipv4p"
 	"network/logs"
-	"net"
 	"network/notifiers"
 	"sync"
 	"time"
