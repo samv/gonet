@@ -2,8 +2,8 @@ package etherp
 
 import (
 	"errors"
+	"github.com/hsheth2/logs"
 	"net"
-	"network/logs"
 	"syscall"
 )
 

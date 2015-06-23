@@ -3,9 +3,9 @@ package udpp
 import (
 	"errors"
 	"fmt"
+	"github.com/hsheth2/logs"
 	"network/etherp"
 	"network/ipv4p"
-	"network/logs"
 )
 
 const MAX_UDP_PACKET_LEN = 65507

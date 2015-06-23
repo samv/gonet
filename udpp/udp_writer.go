@@ -2,7 +2,6 @@ package udpp
 
 import (
 	"network/ipv4p"
-	//"logs"
 )
 
 type UDP_Writer struct {

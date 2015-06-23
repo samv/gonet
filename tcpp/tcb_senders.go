@@ -2,12 +2,12 @@ package tcpp
 
 import (
 	"errors"
+	"github.com/hsheth2/logs"
+	"github.com/hsheth2/notifiers"
 	"golang.org/x/net/ipv4"
 	"net"
 	"network/etherp"
 	"network/ipv4p"
-	"network/logs"
-	"network/notifiers"
 	"sync"
 	"time"
 )
