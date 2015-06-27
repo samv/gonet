@@ -22,7 +22,7 @@ func TestReadWrite(t *testing.T) {
 	}
 	defer r.Close()
 
-	data := []byte{'h', 'e', 'l', 'l', 'o', '!'}
+	data := []byte{'h', 'e', 'l', 'l', 'o'}
 
 	go func() {
 		w, err := NewUDP_Writer(20000, rwport, rwIP)

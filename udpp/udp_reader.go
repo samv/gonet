@@ -42,7 +42,7 @@ func NewUDP_Read_Manager() (*UDP_Read_Manager, error) {
 
 func (x *UDP_Read_Manager) readAll() {
 	for {
-		ip, _, _, payload, err := x.reader.ReadFrom()
+		rip, lip, _, payload, err := x.reader.ReadFrom()
 		if err != nil {
 			logs.Error.Println(err)
 			continue
@@ -53,17 +53,24 @@ func (x *UDP_Read_Manager) readAll() {
 		dst := (((uint16)(payload[2])) * 256) + ((uint16)(payload[3]))
 		//fmt.Println(dst)
 
-		if len(payload) < 8 {
-			logs.Info.Println("Dropping UDP packet:", payload)
+		if len(payload) < UDP_HEADER_SZ {
+			logs.Info.Println("Dropping Small UDP packet:", payload)
 			continue
 		}
-		payload = payload[8:]
+
+		headerLen := uint16(payload[4]) << 8 | uint16(payload[5])
+		if !ipv4p.VerifyTransportChecksum(payload[:UDP_HEADER_SZ], rip, lip, headerLen, ipv4p.UDP_PROTO) {
+			logs.Info.Println("Dropping UDP Packet for bad checksum:", payload)
+			continue
+		}
+
+		payload = payload[UDP_HEADER_SZ:]
 		//fmt.Println(payload)
 
 		portBuf, ok := x.buff[dst]
 		//fmt.Println(ok)
 		if ok {
-			if c, ok := portBuf[ip]; ok {
+			if c, ok := portBuf[rip]; ok {
 				//fmt.Println("Found exact IP match for port", dst)
 				go func() { c <- payload }()
 			} else if c, ok := portBuf["*"]; ok {
@@ -96,7 +103,6 @@ func (c *UDP_Reader) Read(size int) ([]byte, error) {
 	if len(data) > size {
 		data = data[:size]
 	}
-	// TODO: verify the checksum
 	return data, nil
 }
 

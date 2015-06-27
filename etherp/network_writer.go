@@ -3,7 +3,7 @@ package etherp
 import (
 	"errors"
 	"syscall"
-	"github.com/hsheth2/logs"
+	//"github.com/hsheth2/logs"
 )
 
 type Network_Writer struct {
@@ -55,7 +55,7 @@ func (nw *Network_Writer) Write(data []byte) error {
 	newPacket := append(etherHead, data...)
 	//fmt.Println("Full Packet with ethernet header:", newPacket)
 
-	logs.Trace.Println("Ethernet Writing:", newPacket)
+	//logs.Trace.Println("Ethernet Writing:", newPacket)
 	return syscall.Sendto(nw.fd, newPacket, 0, nw.sockAddr)
 }
 

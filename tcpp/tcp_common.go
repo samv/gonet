@@ -6,7 +6,6 @@ import (
 	"github.com/hsheth2/logs"
 	"network/etherp"
 	"network/ipv4p"
-	//"net"
 )
 
 // Finite State Machine
@@ -209,13 +208,13 @@ func Extract_TCP_Packet(d []byte, rip, lip string) (*TCP_Packet, error) {
 	// TODO: test this function fully
 
 	// header length
-	headerLen := (d[12] >> 4) * 4
+	headerLen := uint16((d[12] >> 4) * 4)
 	if headerLen < TCP_BASIC_HEADER_SZ {
 		return nil, errors.New("Bad TCP header size: Less than 20.")
 	}
 
 	// checksum verification
-	if !ipv4p.VerifyTransportChecksum(d[:headerLen], rip, lip, headerLen) {
+	if !ipv4p.VerifyTransportChecksum(d[:headerLen], rip, lip, headerLen, ipv4p.TCP_PROTO) {
 		return nil, errors.New("Bad TCP header checksum")
 	}
 
