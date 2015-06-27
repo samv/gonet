@@ -2,7 +2,7 @@ package udpp
 
 import (
 	"network/ipv4p"
-	"github.com/hsheth2/logs"
+	//"github.com/hsheth2/logs"
 )
 
 const UDP_HEADER_SZ = 8
@@ -43,7 +43,7 @@ func (c *UDP_Writer) Write(x []byte) error {
 	data[6] = uint8(cksum >> 8)
 	data[7] = uint8(cksum)
 
-	logs.Trace.Println("UDP Writing:", data)
+	//logs.Trace.Println("UDP Writing:", data)
 	return c.writer.WriteTo(data)
 }
 

@@ -34,7 +34,7 @@ func TestReadWrite(t *testing.T) {
 		if err != nil {
 			t.Fatal(err)
 		} else {
-			t.Log("Wrote out")
+			t.Log("Wrote the data:", data)
 		}
 
 		w.Close()
@@ -44,15 +44,15 @@ func TestReadWrite(t *testing.T) {
 		//time.Sleep(10*time.Second)
 		p, err := r.Read(MAX_UDP_PACKET_LEN)
 		if err != nil {
-			t.Error(err)
+			t.Fatal(err)
 		}
 		t.Log("Output:", string(p))
 
 		if string(p) == string(data) {
-			t.Log("Got correct output")
+			t.Log("Got correct output:", p)
 			success <- true
 		} else {
-			t.Error("Got Wrong Output")
+			t.Error("Got Wrong Output:", p)
 		}
 	}()
 
