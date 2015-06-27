@@ -2,36 +2,28 @@ package ipv4p
 
 import (
 	"net"
-	"network/etherp"
 	"time"
-	//"errors"
-	//"fmt"
-	//"syscall"
-	//"golang.org/x/net/ipv4"
 )
 
 type IP_Reader struct {
 	incomingPackets chan []byte
-	nr              *etherp.Network_Reader
+	irm             *IP_Read_Manager
 	protocol        uint8
 	ip              string
 	fragBuf         map[string](chan []byte)
-	//fragQuit        map[string](chan bool)
 }
 
-func NewIP_Reader(nr *etherp.Network_Reader, ip string, protocol uint8) (*IP_Reader, error) {
-	c, err := nr.Bind(ip, protocol)
+func NewIP_Reader(irm *IP_Read_Manager, ip string, protocol uint8) (*IP_Reader, error) {
+	c, err := irm.Bind(ip, protocol)
 	if err != nil {
 		return nil, err
 	}
 
 	return &IP_Reader{
 		incomingPackets: c,
-		nr:              nr,
 		protocol:        protocol,
 		ip:              ip,
 		fragBuf:         make(map[string](chan []byte)),
-		//fragQuit:        make(map[string](chan bool)),
 	}, nil
 }
 
@@ -193,7 +185,7 @@ func (ipr *IP_Reader) ReadFrom() (rip, lip string, b, payload []byte, e error) {
 }
 
 func (ipr *IP_Reader) Close() error {
-	return ipr.nr.Unbind(ipr.ip, ipr.protocol)
+	return ipr.irm.Unbind(ipr.ip, ipr.protocol)
 }
 
 /* h := &ipv4.Header{

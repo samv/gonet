@@ -4,7 +4,6 @@ import (
 	"errors"
 	"fmt"
 	"github.com/hsheth2/logs"
-	"network/etherp"
 	"network/ipv4p"
 )
 
@@ -23,9 +22,9 @@ type UDP_Reader struct {
 }
 
 func NewUDP_Read_Manager() (*UDP_Read_Manager, error) {
-	nr := etherp.GlobalNetworkReader
+	irm := ipv4p.GlobalIPReadManager
 
-	ipr, err := ipv4p.NewIP_Reader(nr, "*", ipv4p.UDP_PROTO)
+	ipr, err := ipv4p.NewIP_Reader(irm, "*", ipv4p.UDP_PROTO)
 	if err != nil {
 		return nil, err
 	}
@@ -58,7 +57,7 @@ func (x *UDP_Read_Manager) readAll() {
 			continue
 		}
 
-		headerLen := uint16(payload[4]) << 8 | uint16(payload[5])
+		headerLen := uint16(payload[4])<<8 | uint16(payload[5])
 		if !ipv4p.VerifyTransportChecksum(payload[:UDP_HEADER_SZ], rip, lip, headerLen, ipv4p.UDP_PROTO) {
 			logs.Info.Println("Dropping UDP Packet for bad checksum:", payload)
 			continue

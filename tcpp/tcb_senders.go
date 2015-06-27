@@ -6,7 +6,6 @@ import (
 	"github.com/hsheth2/notifiers"
 	"golang.org/x/net/ipv4"
 	"net"
-	"network/etherp"
 	"network/ipv4p"
 	"sync"
 	"time"
@@ -119,17 +118,17 @@ func (c *TCB) SendPacket(d *TCP_Packet) error {
 	}
 
 	err = c.writer.WriteTo(&ipv4.Header{
-		Version:  ipv4.Version,                    // protocol version
-		Len:      etherp.IP_HEADER_LEN,            // header length
-		TOS:      0,                               // type-of-service (0 is everything normal)
-		TotalLen: len(pay) + etherp.IP_HEADER_LEN, // packet total length (octets)
-		ID:       0,                               // identification
-		Flags:    ipv4.DontFragment,               // flags
-		FragOff:  0,                               // fragment offset
-		TTL:      ipv4p.DEFAULT_TTL,               // time-to-live (maximum lifespan in seconds)
-		Protocol: ipv4p.TCP_PROTO,                 // next protocol
-		Checksum: 0,                               // checksum (autocomputed)
-		Dst:      net.ParseIP(d.rip),              // destination address
+		Version:  ipv4.Version,                   // protocol version
+		Len:      ipv4p.IP_HEADER_LEN,            // header length
+		TOS:      0,                              // type-of-service (0 is everything normal)
+		TotalLen: len(pay) + ipv4p.IP_HEADER_LEN, // packet total length (octets)
+		ID:       0,                              // identification
+		Flags:    ipv4.DontFragment,              // flags
+		FragOff:  0,                              // fragment offset
+		TTL:      ipv4p.DEFAULT_TTL,              // time-to-live (maximum lifespan in seconds)
+		Protocol: ipv4p.TCP_PROTO,                // next protocol
+		Checksum: 0,                              // checksum (autocomputed)
+		Dst:      net.ParseIP(d.rip),             // destination address
 	}, pay, nil)
 
 	if err != nil {

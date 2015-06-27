@@ -4,9 +4,9 @@ import (
 	"github.com/hsheth2/logs"
 	"github.com/hsheth2/notifiers"
 	"golang.org/x/net/ipv4"
+	"network/ipv4p"
 	"sync"
 	"time"
-	"network/ipv4p"
 )
 
 type TCB struct {

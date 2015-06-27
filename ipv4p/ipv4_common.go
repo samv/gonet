@@ -1,14 +1,19 @@
 package ipv4p
 
 import (
-	"time"
 	"net"
+	"time"
 	//"github.com/hsheth2/logs"
 )
 
 const (
 	UDP_PROTO = 17
 	TCP_PROTO = 6
+)
+
+const (
+	IP_HEADER_LEN     = 20
+	MAX_IP_PACKET_LEN = 65535
 )
 
 const (

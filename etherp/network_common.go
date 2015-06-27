@@ -1,8 +1,5 @@
 package etherp
 
-const IP_HEADER_LEN = 20
-const MAX_IP_PACKET_LEN = 65535
-
 var myMACAddr = func(mac []byte) [8]byte {
 	mac = append(mac, 0, 0)
 	var data [8]byte
@@ -26,4 +23,10 @@ const (
 	ETHERTYPE_IP    = 0x0800
 	ETHERTYPE_APR   = 0x0806
 	ETH_ALEN        = 6
+)
+
+const (
+	ETH_HEADER_SZ         = 14
+	MAX_ETHERNET_FRAME_SZ = 1522
+	ETH_PROTOCOL_BUF_SZ   = 50
 )

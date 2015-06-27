@@ -8,10 +8,10 @@ import (
 const UDP_HEADER_SZ = 8
 
 type UDP_Writer struct {
-	rip string // destination ip address
-	lip string // source ip address
-	writer    *ipv4p.IP_Writer
-	src, dst  uint16 // ports
+	rip      string // destination ip address
+	lip      string // source ip address
+	writer   *ipv4p.IP_Writer
+	src, dst uint16 // ports
 }
 
 func NewUDP_Writer(src, dest uint16, dstIP string) (*UDP_Writer, error) {
@@ -21,10 +21,10 @@ func NewUDP_Writer(src, dest uint16, dstIP string) (*UDP_Writer, error) {
 	}
 
 	return &UDP_Writer{
-		src: src,
-		dst: dest,
-		rip: dstIP,
-		lip: ipv4p.GetSrcIP(dstIP),
+		src:    src,
+		dst:    dest,
+		rip:    dstIP,
+		lip:    ipv4p.GetSrcIP(dstIP),
 		writer: write,
 	}, nil
 }

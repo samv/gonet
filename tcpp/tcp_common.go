@@ -4,7 +4,6 @@ import (
 	"crypto/rand"
 	"errors"
 	"github.com/hsheth2/logs"
-	"network/etherp"
 	"network/ipv4p"
 )
 
@@ -126,9 +125,9 @@ func (m *TCP_Port_Manager_Type) readAll() {
 }
 
 var TCP_Port_Manager = func() *TCP_Port_Manager_Type {
-	nr := etherp.GlobalNetworkReader
+	irm := ipv4p.GlobalIPReadManager
 
-	ipr, err := ipv4p.NewIP_Reader(nr, "*", ipv4p.TCP_PROTO)
+	ipr, err := ipv4p.NewIP_Reader(irm, "*", ipv4p.TCP_PROTO)
 	if err != nil {
 		logs.Error.Println(err)
 		return nil

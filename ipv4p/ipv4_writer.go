@@ -44,7 +44,7 @@ func NewIP_Writer(dst string, protocol uint8) (*IP_Writer, error) {
 		//sockAddr:    addr,
 		nw:          nw,
 		version:     ipv4.Version,
-		headerLen:   etherp.IP_HEADER_LEN,
+		headerLen:   IP_HEADER_LEN,
 		dst:         dst,
 		src:         GetSrcIP(dst),
 		ttl:         DEFAULT_TTL,
