@@ -2,6 +2,8 @@ package ipv4p
 
 import (
 	"time"
+	"net"
+	"github.com/hsheth2/logs"
 )
 
 const (
@@ -18,9 +20,10 @@ const (
 	FRAGMENT_TIMEOUT = time.Second * 5
 )
 
-func Checksum(head []byte) uint16 {
+func Checksum(data []byte) uint16 {
+	logs.Trace.Println(data)
 	totalSum := uint64(0)
-	for ind, elem := range head {
+	for ind, elem := range data {
 		if ind%2 == 0 {
 			totalSum += (uint64(elem) << 8)
 		} else {
@@ -45,11 +48,28 @@ func Checksum(head []byte) uint16 {
 	return flip
 }
 
-func calculateChecksum(header []byte) uint16 {
+func calculateIPChecksum(header []byte) uint16 {
 	header[10] = 0
 	header[11] = 0
+	logs.Trace.Println("Compute IP Checksum")
 	return Checksum(header)
 }
-func verifyChecksum(header []byte) uint16 {
-	return Checksum(header)
+func verifyIPChecksum(header []byte) bool {
+	logs.Trace.Println("Verify Checksum")
+	return Checksum(header) == 0
+}
+
+func CalcTransportChecksum(header []byte, srcIP, dstIP string, headerLen uint16, proto uint8) uint16 {
+	logs.Trace.Println("Transport Checksum")
+	ips := append(net.ParseIP(srcIP)[12:], net.ParseIP(dstIP)[12:]...)
+	return Checksum(append(append(ips, []byte{0, byte(proto), byte(headerLen >> 8), byte(headerLen)}...), header...))
+}
+
+func VerifyTransportChecksum(header []byte, srcIP, dstIP string, headerLen uint8) bool {
+	// TODO: do TCP/UDP checksum verification
+	return true
+}
+
+func GetSrcIP(dst string) string {
+	return "127.0.0.1" // TODO: fix this function to be dynamic
 }

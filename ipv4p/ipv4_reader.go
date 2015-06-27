@@ -95,7 +95,7 @@ func (ipr *IP_Reader) fragmentAssembler(in <-chan []byte, quit <-chan bool, didQ
 				fullPacketHdr[7] = 0
 
 				// update the checksum
-				check := calculateChecksum(fullPacketHdr[:20])
+				check := calculateIPChecksum(fullPacketHdr[:20])
 				fullPacketHdr[10] = byte(check >> 8)
 				fullPacketHdr[11] = byte(check)
 
@@ -152,7 +152,7 @@ func (ipr *IP_Reader) ReadFrom() (rip, lip string, b, payload []byte, e error) {
 	}
 
 	// verify checksum
-	if verifyChecksum(hdr) != 0 {
+	if !verifyIPChecksum(hdr) {
 		//Info.Println("Header checksum incorrect, packet dropped")
 		return ipr.ReadFrom() // return another packet instead
 	}

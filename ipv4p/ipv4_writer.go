@@ -6,6 +6,7 @@ import (
 	"network/etherp"
 	//"errors"
 	//"syscall"
+	//"github.com/hsheth2/logs"
 )
 
 type IP_Writer struct {
@@ -45,7 +46,7 @@ func NewIP_Writer(dst string, protocol uint8) (*IP_Writer, error) {
 		version:     ipv4.Version,
 		headerLen:   etherp.IP_HEADER_LEN,
 		dst:         dst,
-		src:         "127.0.0.1", // TODO fix this based on dst
+		src:         GetSrcIP(dst),
 		ttl:         DEFAULT_TTL,
 		protocol:    protocol,
 		identifier:  20000, // TODO generate this properly
@@ -54,6 +55,8 @@ func NewIP_Writer(dst string, protocol uint8) (*IP_Writer, error) {
 }
 
 func (ipw *IP_Writer) WriteTo(p []byte) error {
+	//logs.Trace.Println("IP Preparing to Write:", p)
+
 	header := make([]byte, ipw.headerLen)
 	header[0] = (byte)((ipw.version << 4) + (uint8)(ipw.headerLen/4)) // Version, IHL
 	header[1] = 0
@@ -105,6 +108,7 @@ func (ipw *IP_Writer) WriteTo(p []byte) error {
 		// Payload
 		newPacket := make([]byte, 1)
 		if len(p) <= maxFragSize*(i+1) {
+			//logs.Trace.Println("IP Writing Entire Packet:", p[maxPaySize*i:], "i:", i)
 			totalLen = uint16(ipw.headerLen) + uint16(len(p[maxPaySize*i:]))
 			//fmt.Println("Full Pack")
 			//fmt.Println("len", len(p[maxPaySize*i:]))
@@ -117,7 +121,7 @@ func (ipw *IP_Writer) WriteTo(p []byte) error {
 			// IPv4 header test (before checksum)
 			//fmt.Println("Packet before checksum: ", header)
 			// Checksum
-			checksum := calculateChecksum(header[:20])
+			checksum := calculateIPChecksum(header[:20])
 			header[10] = byte(checksum >> 8)
 			header[11] = byte(checksum)
 
@@ -125,6 +129,7 @@ func (ipw *IP_Writer) WriteTo(p []byte) error {
 			//logs.Trace.Println("Full Packet to Send in IPv4 Writer:", newPacket, "(len ", len(newPacket), ")")
 			//fmt.Println("CALCULATED LEN:", i*maxFragSize+len(p[maxPaySize*i:]))
 		} else {
+			//logs.Trace.Println("IP Writer Fragmenting Packet")
 			totalLen = uint16(ipw.headerLen) + uint16(len(p[maxPaySize*i:maxPaySize*(i+1)]))
 			//fmt.Println("Partial packet")
 			//fmt.Println("len", len(p[maxPaySize*i:maxPaySize*(i+1)]))
@@ -137,7 +142,7 @@ func (ipw *IP_Writer) WriteTo(p []byte) error {
 			//fmt.Println("Packet before checksum: ", header)
 
 			// Checksum
-			checksum := calculateChecksum(header[:20])
+			checksum := calculateIPChecksum(header[:20])
 			header[10] = byte(checksum >> 8)
 			header[11] = byte(checksum)
 
@@ -146,6 +151,7 @@ func (ipw *IP_Writer) WriteTo(p []byte) error {
 		}
 
 		// write the bytes
+		//logs.Trace.Println("IP Writing:", newPacket)
 		err := ipw.nw.Write(newPacket)
 		if err != nil {
 			return err

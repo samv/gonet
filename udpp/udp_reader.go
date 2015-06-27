@@ -53,6 +53,10 @@ func (x *UDP_Read_Manager) readAll() {
 		dst := (((uint16)(payload[2])) * 256) + ((uint16)(payload[3]))
 		//fmt.Println(dst)
 
+		if len(payload) < 8 {
+			logs.Info.Println("Dropping UDP packet:", payload)
+			continue
+		}
 		payload = payload[8:]
 		//fmt.Println(payload)
 
@@ -67,7 +71,7 @@ func (x *UDP_Read_Manager) readAll() {
 				go func() { c <- payload }()
 			}
 		} else {
-			// drop packet
+			//logs.Info.Println("Dropping UDP packet:", payload)
 		}
 	}
 }
@@ -87,7 +91,7 @@ func (x *UDP_Read_Manager) NewUDP(port uint16, ip string) (*UDP_Reader, error) {
 	}
 }
 
-func (c *UDP_Reader) read(size int) ([]byte, error) {
+func (c *UDP_Reader) Read(size int) ([]byte, error) {
 	data := <-c.bytes
 	if len(data) > size {
 		data = data[:size]
@@ -96,7 +100,7 @@ func (c *UDP_Reader) read(size int) ([]byte, error) {
 	return data, nil
 }
 
-func (c *UDP_Reader) close() error {
+func (c *UDP_Reader) Close() error {
 	delete(c.manager.buff, c.port)
 	return nil
 }

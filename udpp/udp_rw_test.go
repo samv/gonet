@@ -20,8 +20,9 @@ func TestReadWrite(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
+	defer r.Close()
 
-	data := []byte{'h', 'e', 'l', 'l', 'o'}
+	data := []byte{'h', 'e', 'l', 'l', 'o', '!'}
 
 	go func() {
 		w, err := NewUDP_Writer(20000, rwport, rwIP)
@@ -29,16 +30,19 @@ func TestReadWrite(t *testing.T) {
 			t.Fatal(err)
 		}
 
-		err = w.write(data)
+		err = w.Write(data)
 		if err != nil {
 			t.Fatal(err)
 		} else {
 			t.Log("Wrote out")
 		}
+
+		w.Close()
 	}()
 
 	go func() {
-		p, err := r.read(MAX_UDP_PACKET_LEN)
+		//time.Sleep(10*time.Second)
+		p, err := r.Read(MAX_UDP_PACKET_LEN)
 		if err != nil {
 			t.Error(err)
 		}

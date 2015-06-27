@@ -32,6 +32,7 @@ func TestBasic(t *testing.T) {
 		if err != nil {
 			t.Fatal(err)
 		}
+		defer w.Close()
 
 		// assemble data
 		data := []byte{'h', 'e', 'l', 'l', 'o'}
@@ -43,7 +44,7 @@ func TestBasic(t *testing.T) {
 
 		// send data
 		fmt.Println("Sending")
-		err = w.write(data)
+		err = w.Write(data)
 		if err != nil {
 			t.Fatal(err)
 		}

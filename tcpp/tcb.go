@@ -6,6 +6,7 @@ import (
 	"golang.org/x/net/ipv4"
 	"sync"
 	"time"
+	"network/ipv4p"
 )
 
 type TCB struct {
@@ -44,7 +45,7 @@ func New_TCB(local, remote uint16, dstIP string, read chan *TCP_Packet, write *i
 		lport:           local,
 		rport:           remote,
 		ipAddress:       dstIP,
-		srcIP:           "127.0.0.1", // TODO: don't hardcode the srcIP
+		srcIP:           ipv4p.GetSrcIP(dstIP),
 		read:            read,
 		writer:          write,
 		seqNum:          seq,

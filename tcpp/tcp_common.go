@@ -4,9 +4,9 @@ import (
 	"crypto/rand"
 	"errors"
 	"github.com/hsheth2/logs"
-	"net"
 	"network/etherp"
 	"network/ipv4p"
+	//"net"
 )
 
 // Finite State Machine
@@ -198,7 +198,7 @@ func (h *TCP_Header) Marshal_TCP_Header(dstIP, srcIP string) ([]byte, error) {
 	}, h.options...)
 
 	// insert the checksum
-	cksum := calcTCPchecksum(header, srcIP, dstIP, headerLen)
+	cksum := ipv4p.CalcTransportChecksum(header, srcIP, dstIP, headerLen, ipv4p.TCP_PROTO)
 	header[16] = byte(cksum >> 8)
 	header[17] = byte(cksum)
 
@@ -215,7 +215,7 @@ func Extract_TCP_Packet(d []byte, rip, lip string) (*TCP_Packet, error) {
 	}
 
 	// checksum verification
-	if !verifyTCPchecksum(d[:headerLen], rip, lip, headerLen) {
+	if !ipv4p.VerifyTransportChecksum(d[:headerLen], rip, lip, headerLen) {
 		return nil, errors.New("Bad TCP header checksum")
 	}
 
@@ -231,15 +231,6 @@ func Extract_TCP_Packet(d []byte, rip, lip string) (*TCP_Packet, error) {
 		options: d[TCP_BASIC_HEADER_SZ:headerLen],
 	}
 	return &TCP_Packet{header: h, payload: d[headerLen:], rip: rip, lip: lip}, nil
-}
-
-func calcTCPchecksum(header []byte, srcIP, dstIP string, headerLen uint16) uint16 {
-	return ipv4p.Checksum(append(append(append(header, net.ParseIP(srcIP)...), net.ParseIP(dstIP)...), []byte{byte(ipv4p.TCP_PROTO >> 8), byte(ipv4p.TCP_PROTO), byte(headerLen >> 8), byte(headerLen)}...))
-}
-
-func verifyTCPchecksum(header []byte, srcIP, dstIP string, headerLen uint8) bool {
-	// TODO: do TCP checksum verification
-	return true
 }
 
 func genRandSeqNum() (uint32, error) {

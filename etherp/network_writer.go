@@ -3,6 +3,7 @@ package etherp
 import (
 	"errors"
 	"syscall"
+	"github.com/hsheth2/logs"
 )
 
 type Network_Writer struct {
@@ -44,7 +45,7 @@ func (nw *Network_Writer) Write(data []byte) error {
 	    myMACSlice...), // src MAC
 	    0x08, 0x00, // ethertype (IP)
 	)*/
-	// TODO: decide this dynamically
+	// TODO: decide MAC address dynamically
 	etherHead := []byte{
 		0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 8, 0,
 	}
@@ -54,6 +55,7 @@ func (nw *Network_Writer) Write(data []byte) error {
 	newPacket := append(etherHead, data...)
 	//fmt.Println("Full Packet with ethernet header:", newPacket)
 
+	logs.Trace.Println("Ethernet Writing:", newPacket)
 	return syscall.Sendto(nw.fd, newPacket, 0, nw.sockAddr)
 }
 
