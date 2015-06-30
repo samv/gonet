@@ -24,6 +24,7 @@ type TCB struct {
 	curWindow       uint16              // the current window size
 	sendBuffer      []byte              // a buffer of bytes that need to be sent
 	urgSendBuffer   []byte              // buffer of urgent data TODO urg data later
+	sendBufferUpdate *sync.Cond // notifies of send buffer updates
 	recvBuffer      []byte              // bytes to pass to the application above
 	resendDelay     time.Duration       // the delay before resending
 	ISS             uint32              // the initial snd seq number
@@ -55,13 +56,14 @@ func New_TCB(local, remote uint16, dstIP string, read chan *TCP_Packet, write *i
 		kind:            kind,
 		serverParent:    nil,
 		curWindow:       43690, // TODO calc using http://ithitman.blogspot.com/2013/02/understanding-tcp-window-window-scaling.html
+		sendBufferUpdate: sync.NewCond(&sync.Mutex{}),
 		resendDelay:     250 * time.Millisecond,
 		ISS:             seq,
 		IRS:             0,
 		recentAckNum:    0,
 		recentAckUpdate: notifiers.NewNotifier(),
 	}
-	logs.Trace.Println("Starting the packet dealer")
+	//logs.Trace.Println("Starting the packet dealer")
 
 	go c.PacketSender()
 	go c.packetDealer()
@@ -71,11 +73,11 @@ func New_TCB(local, remote uint16, dstIP string, read chan *TCP_Packet, write *i
 
 func (c *TCB) packetDealer() {
 	// read each tcp packet and deal with it
-	logs.Trace.Println("Packet Dealing")
+	logs.Trace.Println("Packet Dealer starting")
 	for {
-		logs.Trace.Println("Waiting for packets")
+		//logs.Trace.Println("Waiting for packets")
 		segment := <-c.read
-		logs.Trace.Println("got a packet")
+		logs.Trace.Println("packetDealer received a packet:", segment)
 
 		// First check if closed, listen, or syn-sent state
 		switch c.state {
@@ -203,11 +205,13 @@ func (c *TCB) packetDealer() {
 			c.ackNum += pay_size
 			// TODO piggyback this
 
-			err := c.SendAck(c.seqNum, c.ackNum)
-			logs.Info.Println("Sent ACK data")
-			if err != nil {
-				logs.Error.Println(err)
-				continue
+			if pay_size > 1 { // TODO make this correct
+				err := c.SendAck(c.seqNum, c.ackNum)
+				logs.Info.Println("Sent ACK data")
+				if err != nil {
+					logs.Error.Println(err)
+					continue
+				}
 			}
 			continue
 		case CLOSE_WAIT, CLOSING, LAST_ACK, TIME_WAIT:
@@ -391,6 +395,7 @@ func (c *TCB) dealSynRcvd(d *TCP_Packet) {
 
 func (c *TCB) Send(data []byte) error { // a non-blocking send call
 	c.sendBuffer = append(c.sendBuffer, data...)
+	go SendUpdate(c.sendBufferUpdate)
 	return nil // TODO: read and send from the send buffer
 }
 
