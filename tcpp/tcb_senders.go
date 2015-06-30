@@ -34,7 +34,13 @@ func SendUpdate(update *sync.Cond) {
 }
 
 func (c *TCB) PacketSender() {
-	// TODO: deal with data in send and urgSend buffers
+	// TODO: deal with data in urgSend buffers
+	// TODO: Stop burning CPU :c
+	//	for {
+	//		for _, byte := range c.sendBuffer {
+	//			//c.
+	//		}
+	//	}
 }
 
 func (c *TCB) SendWithRetransmit(data *TCP_Packet) error {

@@ -5,7 +5,7 @@ import time
 
 
 TCP_IP = '127.0.0.1'
-TCP_PORT = 20102
+TCP_PORT = 20105
 BUFFER_SIZE = 20  # Normally 1024, but we want fast response
 MESSAGE = "Hello, World!"
 
