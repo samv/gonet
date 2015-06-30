@@ -50,10 +50,10 @@ func (s *Server_TCB) BindListen(port uint16, ip string) error {
 }
 
 func (s *Server_TCB) LongListener() {
-	logs.Trace.Println("Listener routine")
+	logs.Trace.Println("Server listener routine")
 	for {
 		in := <-s.listener
-		logs.Trace.Println("Server rcvd packet:", in)
+		//logs.Trace.Println("Server rcvd packet:", in)
 		if in.header.flags&TCP_RST != 0 {
 			continue // parent TCB drops the RST
 		} else if in.header.flags&TCP_ACK != 0 {
@@ -62,7 +62,7 @@ func (s *Server_TCB) LongListener() {
 			// TODO send reset
 		}
 
-		logs.Trace.Println("Packet rcvd by server has promise: responding with SYN-ACK")
+		//logs.Trace.Println("Packet rcvd by server has promise: responding with SYN-ACK")
 		go func(s *Server_TCB, in *TCP_Packet) {
 			lp := s.listenPort
 			rp := in.header.srcport
@@ -115,7 +115,7 @@ func (s *Server_TCB) LongListener() {
 				logs.Error.Println(err)
 				return
 			}
-			logs.Trace.Println("Server/TCB about to responded with SYN-ACK")
+			//logs.Trace.Println("Server/TCB about to responded with SYN-ACK")
 
 			c.UpdateState(SYN_RCVD)
 

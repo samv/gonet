@@ -12,7 +12,7 @@ import (
 )
 
 func (c *TCB) UpdateState(newState uint) {
-	logs.Info.Println("The New State is ", newState)
+	logs.Info.Println("The New State is", newState)
 	c.state = newState
 	go SendUpdate(c.stateUpdate)
 	if c.serverParent != nil {
@@ -21,7 +21,7 @@ func (c *TCB) UpdateState(newState uint) {
 }
 
 func (c *TCB) UpdateLastAck(newAck uint32) error {
-	logs.Info.Println("Got an ack:", newAck)
+	logs.Info.Println("New ack number:", newAck)
 	c.recentAckNum = newAck
 	go notifiers.SendNotifierBroadcast(c.recentAckUpdate, c.recentAckNum)
 	return nil
