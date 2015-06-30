@@ -62,23 +62,23 @@ type TCP_Port_Manager_Type struct {
 }
 
 // TODO TCP_Port_Manager_Type should have an unbind function
-func (m *TCP_Port_Manager_Type) bind(srcport, dstport uint16, ip string) (chan *TCP_Packet, error) {
-	// dstport is the local one here, srcport is the remote
-	if _, ok := m.incoming[dstport]; !ok {
-		m.incoming[dstport] = make(map[uint16](map[string](chan *TCP_Packet)))
+func (m *TCP_Port_Manager_Type) bind(rport, lport uint16, ip string) (chan *TCP_Packet, error) {
+	// lport is the local one here, rport is the remote
+	if _, ok := m.incoming[lport]; !ok {
+		m.incoming[lport] = make(map[uint16](map[string](chan *TCP_Packet)))
 	}
 
 	// TODO add an option (for servers) for all srcports
-	if _, ok := m.incoming[dstport][srcport]; !ok {
-		m.incoming[dstport][srcport] = make(map[string](chan *TCP_Packet))
+	if _, ok := m.incoming[lport][rport]; !ok {
+		m.incoming[lport][rport] = make(map[string](chan *TCP_Packet))
 	}
 
-	if _, ok := m.incoming[dstport][srcport][ip]; ok {
+	if _, ok := m.incoming[lport][rport][ip]; ok {
 		return nil, errors.New("Ports and IP already binded to")
 	}
 
-	m.incoming[dstport][srcport][ip] = make(chan *TCP_Packet, TCP_INCOMING_BUFF_SZ)
-	return m.incoming[dstport][srcport][ip], nil
+	m.incoming[lport][rport][ip] = make(chan *TCP_Packet, TCP_INCOMING_BUFF_SZ)
+	return m.incoming[lport][rport][ip], nil
 }
 
 func (m *TCP_Port_Manager_Type) readAll() {
@@ -100,17 +100,22 @@ func (m *TCP_Port_Manager_Type) readAll() {
 
 		var output chan *TCP_Packet = nil
 
+		//logs.Trace.Printf("readAll tcp packet manager dealing with packet or rport: %d and lport %d", rport, lport)
 		if _, ok := m.incoming[lport]; ok {
+			//logs.Trace.Printf("readAll: promising packet rport: %d and lport %d", rport, lport)
 			if _, ok := m.incoming[lport][rport]; ok {
+				//logs.Trace.Println("readAll: exact port number match")
 				if _, ok := m.incoming[lport][rport][rip]; ok {
 					output = m.incoming[lport][rport][rip]
 				} else if _, ok := m.incoming[lport][rport]["*"]; ok {
 					output = m.incoming[lport][rport]["*"]
 				}
-			}
-			if _, ok := m.incoming[lport][0]; ok {
+			} else if _, ok := m.incoming[lport][0]; ok {
+				//logs.Trace.Println("readAll: forwarding to a listening server")
 				if _, ok := m.incoming[lport][0]["*"]; ok {
 					output = m.incoming[lport][0]["*"]
+				} else if _, ok := m.incoming[lport][0][rip]; ok {
+					output = m.incoming[lport][0][rip]
 				}
 			}
 		}

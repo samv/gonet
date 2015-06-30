@@ -37,7 +37,7 @@ func New_Server_TCB() (*Server_TCB, error) {
 func (s *Server_TCB) BindListen(port uint16, ip string) error {
 	s.listenPort = port
 	s.listenIP = ip
-	read, err := TCP_Port_Manager.bind(port, 0, ip)
+	read, err := TCP_Port_Manager.bind(0, port, ip)
 	if err != nil {
 		return err
 	}
@@ -53,20 +53,22 @@ func (s *Server_TCB) LongListener() {
 	logs.Trace.Println("Listener routine")
 	for {
 		in := <-s.listener
+		logs.Trace.Println("Server rcvd packet:", in)
 		if in.header.flags&TCP_RST != 0 {
-			continue // parent TCB drops it
+			continue // parent TCB drops the RST
 		} else if in.header.flags&TCP_ACK != 0 {
 			// TODO send reset
 		} else if in.header.flags&TCP_SYN == 0 {
 			// TODO send reset
 		}
 
+		logs.Trace.Println("Packet rcvd by server has promise: responding with SYN-ACK")
 		go func(s *Server_TCB, in *TCP_Packet) {
 			lp := s.listenPort
 			rp := in.header.srcport
 			rIP := in.lip
 
-			read, err := TCP_Port_Manager.bind(lp, rp, rIP)
+			read, err := TCP_Port_Manager.bind(rp, lp, rIP)
 			if err != nil {
 				logs.Error.Println(err)
 				return
@@ -92,7 +94,8 @@ func (s *Server_TCB) LongListener() {
 			c.serverParent = s
 
 			// send syn-ack
-			c.ackNum = in.header.ack + 1
+			c.ackNum = in.header.seq + 1
+			logs.Trace.Printf("Server/TCB seq: %d, ack: %d", c.seqNum, c.ackNum)
 			synack := &TCP_Packet{
 				header: &TCP_Header{
 					seq:     c.seqNum,
@@ -104,18 +107,22 @@ func (s *Server_TCB) LongListener() {
 				},
 				payload: []byte{},
 			}
+			//logs.Trace.Println("Server/TCB about to respond with SYN-ACK")
 			err = c.SendPacket(synack)
+			// TODO make sure that the seq and ack numbers are set properly
+			c.seqNum += 1
 			if err != nil {
 				logs.Error.Println(err)
 				return
 			}
+			logs.Trace.Println("Server/TCB about to responded with SYN-ACK")
 
 			c.UpdateState(SYN_RCVD)
 
 			select {
 			case s.connQueue <- c:
 			default:
-				// TODO send a reset
+				// TODO send a reset or expand queue
 				logs.Error.Println(errors.New("ERR: listen queue is full"))
 				return
 			}
@@ -128,7 +135,7 @@ func (s *Server_TCB) Accept() (c *TCB, rip string, rport uint16, err error) {
 	s.connQueueUpdate.L.Lock()
 	defer s.connQueueUpdate.L.Unlock()
 	for {
-		// TODO add a timeout
+		// TODO add a timeout and remove the infinite loop
 		for i := 0; i < len(s.connQueue); i++ {
 			next := <-s.connQueue
 			if next.state == ESTABLISHED {
@@ -141,5 +148,5 @@ func (s *Server_TCB) Accept() (c *TCB, rip string, rport uint16, err error) {
 }
 
 func (s *Server_TCB) Close() error {
-	return nil
+	return nil // TODO actually close the server tcb
 }

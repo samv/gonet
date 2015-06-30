@@ -64,12 +64,12 @@ func New_TCB(local, remote uint16, dstIP string, read chan *TCP_Packet, write *i
 	logs.Trace.Println("Starting the packet dealer")
 
 	go c.PacketSender()
-	go c.PacketDealer()
+	go c.packetDealer()
 
 	return c, nil
 }
 
-func (c *TCB) PacketDealer() {
+func (c *TCB) packetDealer() {
 	// read each tcp packet and deal with it
 	logs.Trace.Println("Packet Dealing")
 	for {
@@ -81,14 +81,14 @@ func (c *TCB) PacketDealer() {
 		switch c.state {
 		case CLOSED:
 			logs.Trace.Println("Dealing closed")
-			c.DealClosed(segment)
+			c.dealClosed(segment)
 			continue
 		case LISTEN:
 			logs.Trace.Println("Dealing listen")
-			c.DealListen(segment)
+			c.dealListen(segment)
 			continue
 		case SYN_SENT:
-			c.DealSynSent(segment)
+			c.dealSynSent(segment)
 			continue
 		}
 
@@ -104,7 +104,7 @@ func (c *TCB) PacketDealer() {
 				// TODO not done
 				continue
 			case CLOSING, LAST_ACK, TIME_WAIT:
-				if segment.header.flags&TCP_RST != 0 {
+				if segment.header.flags&TCP_RST != 0 { // TODO why another if statement?
 					c.UpdateState(CLOSED)
 				}
 				continue
@@ -119,22 +119,15 @@ func (c *TCB) PacketDealer() {
 			continue
 		}
 
+		// now the segment must have an ACK flag
+
 		switch c.state {
 		case SYN_RCVD:
-			if c.recentAckNum <= segment.header.ack && segment.header.ack <= c.seqNum {
-				c.UpdateState(ESTABLISHED)
-			} else {
-				err := c.SendReset(segment.header.ack, 0)
-				logs.Info.Println("Sent RST data")
-				if err != nil {
-					logs.Error.Println(err)
-					continue
-				}
-			}
+			c.dealSynRcvd(segment)
 		case ESTABLISHED:
 			if c.recentAckNum < segment.header.ack && segment.header.ack <= c.seqNum {
 				c.UpdateLastAck(segment.header.ack)
-				// TODO handle retrans queue
+				// TODO handle retransmission queue
 				// TODO update send window
 			} else if c.recentAckNum > segment.header.ack {
 				// ignore
@@ -146,14 +139,14 @@ func (c *TCB) PacketDealer() {
 				continue
 			}
 		case FIN_WAIT_1:
-			// TODO if acking fin
+			// TODO if ACKnowledging FIN
 			c.UpdateState(FIN_WAIT_2)
 		case FIN_WAIT_2:
-			// TODO if retrans queue empty, acknowledge user's close with ok
+			// TODO if retransmission queue empty, acknowledge user's close with ok
 		case CLOSE_WAIT:
 			if c.recentAckNum < segment.header.ack && segment.header.ack <= c.seqNum {
 				c.recentAckNum = segment.header.ack
-				// TODO handle retrans queue
+				// TODO handle retransmission queue
 				// TODO update send window
 			} else if c.recentAckNum > segment.header.ack {
 				// ignore
@@ -224,7 +217,7 @@ func (c *TCB) PacketDealer() {
 	}
 }
 
-func (c *TCB) DealClosed(d *TCP_Packet) {
+func (c *TCB) dealClosed(d *TCP_Packet) {
 	if d.header.flags&TCP_RST != 0 {
 		return
 	}
@@ -251,15 +244,15 @@ func (c *TCB) DealClosed(d *TCP_Packet) {
 		payload: []byte{},
 	}
 
+	logs.Info.Printf("Sending RST data with seq %d and ack %d", seqNum, ackNum)
 	err := c.SendPacket(rst_packet)
-	logs.Info.Println("Sent ACK data")
 	if err != nil {
 		logs.Error.Println(err)
 		return
 	}
 }
 
-func (c *TCB) DealListen(d *TCP_Packet) {
+func (c *TCB) dealListen(d *TCP_Packet) {
 	if d.header.flags&TCP_RST != 0 {
 		return
 	}
@@ -305,7 +298,7 @@ func (c *TCB) DealListen(d *TCP_Packet) {
 	}
 }
 
-func (c *TCB) DealSynSent(d *TCP_Packet) {
+func (c *TCB) dealSynSent(d *TCP_Packet) {
 	logs.Trace.Println("Dealing state syn-sent")
 	if d.header.flags&TCP_ACK != 0 {
 		logs.Trace.Println("verifing the ack")
@@ -380,13 +373,19 @@ func (c *TCB) DealSynSent(d *TCP_Packet) {
 	logs.Info.Println("Dropping packet with seq: ", d.header.seq, "ack: ", d.header.ack)
 }
 
-func (c *TCB) DealSynRcvd(d *TCP_Packet) {
-	if d.header.flags&TCP_SYN != 0 {
-		// TODO send reset
-	}
-	if d.header.flags&TCP_ACK != 0 {
-		// TODO Check segment acknowledgement is acceptable
+func (c *TCB) dealSynRcvd(d *TCP_Packet) {
+	logs.Trace.Println("dealing Syn Rcvd")
+	logs.Trace.Printf("recentAck: %d, header ack: %d, seqNum: %d", c.recentAckNum, d.header.ack, c.seqNum)
+	if c.recentAckNum <= d.header.ack && d.header.ack <= c.seqNum {
+		logs.Trace.Println("SynRcvd -> Established")
 		c.UpdateState(ESTABLISHED)
+	} else {
+		err := c.SendReset(d.header.ack, 0)
+		logs.Info.Println("Sent RST data")
+		if err != nil {
+			logs.Error.Println(err)
+			return
+		}
 	}
 }
 
