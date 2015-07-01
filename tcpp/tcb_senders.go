@@ -52,7 +52,6 @@ func (c *TCB) packetSender() {
 
 func (c *TCB) sendData(data []byte) (err error) {
 	logs.Info.Println("Sending Data:", data)
-	c.seqNum += uint32(len(data))
 	psh_packet := &TCP_Packet {
 		header: &TCP_Header{
 			seq:     c.seqNum,
@@ -63,6 +62,7 @@ func (c *TCB) sendData(data []byte) (err error) {
 		},
 		payload: data,
 	}
+	c.seqNum += uint32(len(data))
 	err = c.SendWithRetransmit(psh_packet)
 	if err != nil {
 		logs.Error.Println(err)
