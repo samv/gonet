@@ -143,7 +143,7 @@ func (c *TCB) packetDealer() {
 				continue
 			}
 		case FIN_WAIT_1:
-			// TODO if ACKnowledging FIN
+			// TODO check if acknowledging FIN
 			c.UpdateState(FIN_WAIT_2)
 		case FIN_WAIT_2:
 			// TODO if retransmission queue empty, acknowledge user's close with ok
@@ -204,10 +204,11 @@ func (c *TCB) packetDealer() {
 			c.curWindow *= 2
 			pay_size := segment.getPayloadSize()
 			logs.Trace.Println("Payload Size is ", pay_size)
-			c.ackNum += pay_size
+
 			// TODO piggyback this
 
 			if pay_size > 1 { // TODO make this correct
+				c.ackNum += pay_size
 				err := c.SendAck(c.seqNum, c.ackNum)
 				logs.Info.Println("Sent ACK data")
 				if err != nil {

@@ -42,16 +42,32 @@ func (c *TCB) packetSender() {
 		if len(c.sendBuffer) > 0 {
 			sz := uint16(min(uint64(len(c.sendBuffer)), uint64(c.maxSegSize)))
 			data := c.sendBuffer[:sz]
-			c.sendBuffer = c.sendBuffer[sz:] // TODO make sure it doesn't crash
-			c.sendData(data)
+			c.sendBuffer = c.sendBuffer[sz:]
+			go c.sendData(data)
 			continue
 		}
 		c.sendBufferUpdate.Wait()
 	}
 }
 
-func (c *TCB) sendData(data []byte) {
+func (c *TCB) sendData(data []byte) (err error) {
 	logs.Info.Println("Sending Data:", data)
+	c.seqNum += uint32(len(data))
+	psh_packet := &TCP_Packet {
+		header: &TCP_Header{
+			seq:     c.seqNum,
+			ack:     c.ackNum,
+			flags:   TCP_PSH | TCP_ACK, // TODO: fix the flags
+			urg:     0,
+			options: []byte{},
+		},
+		payload: data,
+	}
+	err = c.SendWithRetransmit(psh_packet)
+	if err != nil {
+		logs.Error.Println(err)
+	}
+	return err
 }
 
 func (c *TCB) SendWithRetransmit(data *TCP_Packet) error {
