@@ -3,35 +3,11 @@ package tcpp
 import (
 	"errors"
 	"github.com/hsheth2/logs"
-	"github.com/hsheth2/notifiers"
 	"golang.org/x/net/ipv4"
 	"net"
 	"network/ipv4p"
-	"sync"
 	"time"
 )
-
-func (c *TCB) UpdateState(newState uint) {
-	logs.Info.Println("The New State is", newState)
-	c.state = newState
-	go SendUpdate(c.stateUpdate)
-	if c.serverParent != nil {
-		go SendUpdate(c.serverParent.connQueueUpdate)
-	}
-}
-
-func (c *TCB) UpdateLastAck(newAck uint32) error {
-	logs.Info.Println("New ack number:", newAck)
-	c.recentAckNum = newAck
-	go notifiers.SendNotifierBroadcast(c.recentAckUpdate, c.recentAckNum)
-	return nil
-}
-
-func SendUpdate(update *sync.Cond) {
-	update.L.Lock()
-	update.Broadcast()
-	update.L.Unlock()
-}
 
 func (c *TCB) packetSender() {
 	// TODO: deal with data in urgSend buffers
@@ -52,7 +28,7 @@ func (c *TCB) packetSender() {
 
 func (c *TCB) sendData(data []byte) (err error) {
 	logs.Info.Println("Sending Data:", data)
-	psh_packet := &TCP_Packet {
+	psh_packet := &TCP_Packet{
 		header: &TCP_Header{
 			seq:     c.seqNum,
 			ack:     c.ackNum,
@@ -63,27 +39,27 @@ func (c *TCB) sendData(data []byte) (err error) {
 		payload: data,
 	}
 	c.seqNum += uint32(len(data))
-	err = c.SendWithRetransmit(psh_packet)
+	err = c.sendWithRetransmit(psh_packet)
 	if err != nil {
 		logs.Error.Println(err)
 	}
 	return err
 }
 
-func (c *TCB) SendWithRetransmit(data *TCP_Packet) error {
+func (c *TCB) sendWithRetransmit(data *TCP_Packet) error {
 	// send the first packet
-	c.SendPacket(data)
+	c.sendPacket(data)
 
 	// ack listeners
 	ackFound := make(chan bool, 1)
 	killAckListen := make(chan bool, 1)
-	go c.ListenForAck(ackFound, killAckListen, data.header.seq+data.getPayloadSize())
+	go c.listenForAck(ackFound, killAckListen, data.header.seq+data.getPayloadSize())
 
 	// timers and timeouts
-	resendTimer := make(chan bool, TCP_RESEND_LIMIT)
+	resendTimerChan := make(chan bool, TCP_RESEND_LIMIT)
 	timeout := make(chan bool, 1)
 	killTimer := make(chan bool, 1)
-	go ResendTimer(resendTimer, timeout, killTimer, c.resendDelay)
+	go resendTimer(resendTimerChan, timeout, killTimer, c.resendDelay)
 
 	// resend if needed
 	for {
@@ -91,8 +67,8 @@ func (c *TCB) SendWithRetransmit(data *TCP_Packet) error {
 		case <-ackFound:
 			killTimer <- true
 			return nil
-		case <-resendTimer:
-			c.SendPacket(data)
+		case <-resendTimerChan:
+			c.sendPacket(data)
 		case <-timeout:
 			// TODO deal with a resend timeout fully
 			killAckListen <- true
@@ -102,7 +78,7 @@ func (c *TCB) SendWithRetransmit(data *TCP_Packet) error {
 	}
 }
 
-func (c *TCB) ListenForAck(successOut chan<- bool, end <-chan bool, targetAck uint32) {
+func (c *TCB) listenForAck(successOut chan<- bool, end <-chan bool, targetAck uint32) {
 	logs.Trace.Println("Listening for ack:", targetAck)
 	in := c.recentAckUpdate.Register(ACK_BUF_SZ)
 	defer c.recentAckUpdate.Unregister(in)
@@ -121,7 +97,7 @@ func (c *TCB) ListenForAck(successOut chan<- bool, end <-chan bool, targetAck ui
 	}
 }
 
-func ResendTimer(timerOutput, timeout chan<- bool, finished <-chan bool, delay time.Duration) {
+func resendTimer(timerOutput, timeout chan<- bool, finished <-chan bool, delay time.Duration) {
 	for i := 0; i < TCP_RESEND_LIMIT; i++ {
 		select {
 		case <-time.After(delay):
@@ -134,7 +110,7 @@ func ResendTimer(timerOutput, timeout chan<- bool, finished <-chan bool, delay t
 	timeout <- true
 }
 
-func (c *TCB) SendPacket(d *TCP_Packet) error {
+func (c *TCB) sendPacket(d *TCP_Packet) error {
 	// Requires that seq, ack, flags, urg, and options are set
 	// Will set everything else
 
@@ -172,7 +148,7 @@ func (c *TCB) SendPacket(d *TCP_Packet) error {
 	return nil
 }
 
-func (c *TCB) SendReset(seq uint32, ack uint32) error {
+func (c *TCB) sendReset(seq uint32, ack uint32) error {
 	logs.Trace.Println("Sending RST with seq: ", seq, " and ack: ", ack)
 	rst := &TCP_Packet{
 		header: &TCP_Header{
@@ -185,10 +161,10 @@ func (c *TCB) SendReset(seq uint32, ack uint32) error {
 		payload: []byte{},
 	}
 
-	return c.SendPacket(rst)
+	return c.sendPacket(rst)
 }
 
-func (c *TCB) SendAck(seq, ack uint32) error {
+func (c *TCB) sendAck(seq, ack uint32) error {
 	logs.Trace.Println("Sending ACK with seq: ", seq, " and ack: ", ack)
 	ack_packet := &TCP_Packet{
 		header: &TCP_Header{
@@ -200,5 +176,5 @@ func (c *TCB) SendAck(seq, ack uint32) error {
 		},
 		payload: []byte{},
 	}
-	return c.SendPacket(ack_packet)
+	return c.sendPacket(ack_packet)
 }

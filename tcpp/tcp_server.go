@@ -108,7 +108,7 @@ func (s *Server_TCB) LongListener() {
 				payload: []byte{},
 			}
 			//logs.Trace.Println("Server/TCB about to respond with SYN-ACK")
-			err = c.SendPacket(synack)
+			err = c.sendPacket(synack)
 			// TODO make sure that the seq and ack numbers are set properly
 			c.seqNum += 1
 			if err != nil {
@@ -135,7 +135,7 @@ func (s *Server_TCB) Accept() (c *TCB, rip string, rport uint16, err error) {
 	s.connQueueUpdate.L.Lock()
 	defer s.connQueueUpdate.L.Unlock()
 	for {
-		// TODO add a timeout and remove the infinite loop
+		// TODO add a timeout and remove the inner loop
 		for i := 0; i < len(s.connQueue); i++ {
 			next := <-s.connQueue
 			if next.state == ESTABLISHED {

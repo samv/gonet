@@ -1,9 +1,9 @@
 package tcpp
 
 import (
+	"fmt"
 	"testing"
 	"time"
-	"fmt"
 )
 
 const server_port = 20102
