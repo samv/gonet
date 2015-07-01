@@ -31,6 +31,7 @@ type TCB struct {
 	IRS             uint32              // the initial rcv seq number
 	recentAckNum    uint32              // the last ack received (also SND.UNA)
 	recentAckUpdate *notifiers.Notifier // signals changes in recentAckNum
+	maxSegSize      uint16 // MSS (MTU)
 }
 
 func New_TCB(local, remote uint16, dstIP string, read chan *TCP_Packet, write *ipv4.RawConn, kind uint) (*TCB, error) {
@@ -62,10 +63,11 @@ func New_TCB(local, remote uint16, dstIP string, read chan *TCP_Packet, write *i
 		IRS:             0,
 		recentAckNum:    0,
 		recentAckUpdate: notifiers.NewNotifier(),
+		maxSegSize: ipv4p.MTU - TCP_BASIC_HEADER_SZ,
 	}
 	//logs.Trace.Println("Starting the packet dealer")
 
-	go c.PacketSender()
+	go c.packetSender()
 	go c.packetDealer()
 
 	return c, nil

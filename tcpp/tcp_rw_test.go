@@ -40,7 +40,7 @@ func TestReadWrite(t *testing.T) {
 		defer conn.Close()
 		fmt.Println("Server Connection:", ip, port)
 
-		fmt.Println("Sending data:", data)
+		fmt.Println("Tester sending data:", data)
 		err = conn.Send(data)
 		if err != nil {
 			t.Error(err)

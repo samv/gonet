@@ -33,14 +33,25 @@ func SendUpdate(update *sync.Cond) {
 	update.L.Unlock()
 }
 
-func (c *TCB) PacketSender() {
+func (c *TCB) packetSender() {
 	// TODO: deal with data in urgSend buffers
-	// TODO: Stop burning CPU :c
-	//	for {
-	//		for _, byte := range c.sendBuffer {
-	//			//c.
-	//		}
-	//	}
+	c.sendBufferUpdate.L.Lock()
+	defer c.sendBufferUpdate.L.Lock()
+
+	for {
+		if len(c.sendBuffer) > 0 {
+			sz := uint16(min(uint64(len(c.sendBuffer)), uint64(c.maxSegSize)))
+			data := c.sendBuffer[:sz]
+			c.sendBuffer = c.sendBuffer[sz:] // TODO make sure it doesn't crash
+			c.sendData(data)
+			continue
+		}
+		c.sendBufferUpdate.Wait()
+	}
+}
+
+func (c *TCB) sendData(data []byte) {
+	logs.Info.Println("Sending Data:", data)
 }
 
 func (c *TCB) SendWithRetransmit(data *TCP_Packet) error {
