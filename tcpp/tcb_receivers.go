@@ -124,6 +124,7 @@ func (c *TCB) packetDealer() {
 				logs.Error.Println(err)
 				continue
 			}
+			// TODO update state
 			continue
 		}
 

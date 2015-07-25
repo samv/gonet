@@ -71,16 +71,16 @@ func TestReadWrite(t *testing.T) {
 			t.Error(err)
 			return
 		}
-
 		fmt.Println("got data:", out)
+
+		client.Close()
+
 		if string(data) == string(out) {
 			fmt.Println("Correct output")
 			success <- true
 		} else {
 			t.Error("Wrong output")
 		}
-
-		client.Close()
 	}()
 
 	select {

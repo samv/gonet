@@ -7,6 +7,7 @@ import (
 	"network/ipv4p"
 	"sync"
 	"time"
+	"errors"
 )
 
 type TCB struct {
@@ -25,6 +26,8 @@ type TCB struct {
 	sendBuffer       []byte              // a buffer of bytes that need to be sent
 	urgSendBuffer    []byte              // buffer of urgent data TODO urg data later
 	sendBufferUpdate *sync.Cond          // notifies of send buffer updates
+	stopSending      bool                // if the send function is allowed
+	sendFinished     *notifiers.Notifier // broadcast when done sending
 	recvBuffer       []byte              // bytes to pass to the application above
 	resendDelay      time.Duration       // the delay before resending
 	ISS              uint32              // the initial snd seq number
@@ -58,6 +61,8 @@ func New_TCB(local, remote uint16, dstIP string, read chan *TCP_Packet, write *i
 		serverParent:     nil,
 		curWindow:        43690, // TODO calc using http://ithitman.blogspot.com/2013/02/understanding-tcp-window-window-scaling.html
 		sendBufferUpdate: sync.NewCond(&sync.Mutex{}),
+		stopSending:      false,
+		sendFinished:     notifiers.NewNotifier(),
 		resendDelay:      250 * time.Millisecond,
 		ISS:              seq,
 		IRS:              0,
@@ -74,6 +79,10 @@ func New_TCB(local, remote uint16, dstIP string, read chan *TCP_Packet, write *i
 }
 
 func (c *TCB) Send(data []byte) error { // a non-blocking send call
+	if c.stopSending {
+		return errors.New("Sending is not allowed anymore")
+	}
+
 	c.sendBuffer = append(c.sendBuffer, data...)
 	go SendUpdate(c.sendBufferUpdate)
 	return nil // TODO: read and send from the send buffer
@@ -87,6 +96,10 @@ func (c *TCB) Recv(num uint64) ([]byte, error) {
 }
 
 func (c *TCB) Close() error {
+	logs.Trace.Println("Closing TCB with lport:", c.lport)
+	c.stopSending = true // block all future sends
+	<-c.sendFinished.Register(1) // wait for sending to finish
+
 	c.sendFin(c.seqNum, c.ackNum)
 	return nil // TODO: free manager read buffer and send fin/fin+ack/etc. Also kill timers with a wait group
 }
