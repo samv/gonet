@@ -19,9 +19,10 @@ func (c *TCB) packetSender() {
 			sz := uint16(min(uint64(len(c.sendBuffer)), uint64(c.maxSegSize)))
 			data := c.sendBuffer[:sz]
 			c.sendBuffer = c.sendBuffer[sz:]
-			go c.sendData(data)
+			c.sendData(data)
 			continue
 		}
+		c.sendFinished.Broadcast(true)
 		c.sendBufferUpdate.Wait()
 	}
 }
