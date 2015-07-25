@@ -10,7 +10,7 @@ func (c *TCB) packetDealer() {
 	for {
 		//logs.Trace.Println("Waiting for packets")
 		segment := <-c.read
-		logs.Trace.Println("packetDealer received a packet:", segment)
+		logs.Trace.Println("packetDealer received a packet:", segment, " in state:", c.state)
 
 		// First check if closed, listen, or syn-sent state
 		switch c.state {
