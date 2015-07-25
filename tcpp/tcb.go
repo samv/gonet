@@ -87,6 +87,7 @@ func (c *TCB) Recv(num uint64) ([]byte, error) {
 }
 
 func (c *TCB) Close() error {
+	c.sendFin(c.seqNum, c.ackNum)
 	return nil // TODO: free manager read buffer and send fin/fin+ack/etc. Also kill timers with a wait group
 }
 

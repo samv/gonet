@@ -178,3 +178,18 @@ func (c *TCB) sendAck(seq, ack uint32) error {
 	}
 	return c.sendPacket(ack_packet)
 }
+
+func (c *TCB) sendFin(seq, ack uint32) error {
+	logs.Trace.Println("Sending FIN with seq: ", seq, " and ack: ", ack)
+	fin_packet := &TCP_Packet{
+		header: &TCP_Header{
+			seq:     seq,
+			ack:     ack,
+			flags:   TCP_ACK | TCP_FIN,
+			urg:     0,
+			options: []byte{},
+		},
+		payload: []byte{},
+	}
+	return c.sendPacket(fin_packet)
+}
