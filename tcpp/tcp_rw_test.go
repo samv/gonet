@@ -88,4 +88,5 @@ func TestReadWrite(t *testing.T) {
 	case <-time.After(10 * time.Second):
 		t.Error("Timed out")
 	}
+	time.Sleep(5 * time.Second) // wait for the goroutines to exit and close the connections
 }

@@ -62,7 +62,7 @@ func (c *TCB) packetDeal(segment *TCP_Packet) {
 		logs.Info.Println("Dropping a packet without an ACK flag")
 		return
 	} else {
-		// now the segment must have an ACK flag
+		Assert(segment.header.flags&TCP_ACK != 0, "segment missing ACK flag after verification")
 
 		switch c.state {
 			case SYN_RCVD:

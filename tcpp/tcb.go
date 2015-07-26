@@ -98,8 +98,11 @@ func (c *TCB) Recv(num uint64) ([]byte, error) {
 func (c *TCB) Close() error {
 	logs.Trace.Println("Closing TCB with lport:", c.lport)
 	c.stopSending = true // block all future sends
-	<-c.sendFinished.Register(1) // wait for sending to finish
+	if len(c.sendBuffer) != 0 {
+		<-c.sendFinished.Register(1) // wait for send to finish
+	}
 
+	logs.Info.Println("Sending FIN within close")
 	c.sendFin(c.seqNum, c.ackNum)
 	return nil // TODO: free manager read buffer and send fin/fin+ack/etc. Also kill timers with a wait group
 }
