@@ -11,55 +11,88 @@ func (c *TCB) packetDealer() {
 		//logs.Trace.Println("Waiting for packets")
 		segment := <-c.read
 		logs.Trace.Println("packetDealer received a packet:", segment, " in state:", c.state)
+		c.packetDeal(segment)
+	}
+}
 
-		// First check if closed, listen, or syn-sent state
-		switch c.state {
-		case CLOSED:
-			logs.Trace.Println("Dealing closed")
-			c.dealClosed(segment)
-			continue
+func (c *TCB) packetDeal(segment *TCP_Packet) {
+	defer Recover()
+
+	// If the state is CLOSED (i.e., TCB does not exist) then
+	if c.state == CLOSED {
+		logs.Trace.Println("Dealing closed")
+		if segment.header.flags&TCP_RST != 0 {
+			// drop incoming RSTs
+			return
+		}
+
+		// respond with an RST
+		var seqNum uint32
+		var ackNum uint32
+		rstFlags := uint8(TCP_RST)
+		if segment.header.flags&TCP_ACK == 0 {
+			seqNum = 0
+			ackNum = segment.header.seq + segment.getPayloadSize()
+			rstFlags = rstFlags | TCP_ACK
+		} else {
+			seqNum = segment.header.ack
+			ackNum = 0
+		}
+
+		logs.Info.Printf("Sending RST data with seq %d and ack %d", seqNum, ackNum)
+		err := c.sendResetFlag(seqNum, ackNum, rstFlags)
+		if err != nil {
+			logs.Error.Println(err)
+			return
+		}
+		return
+	}
+	Assert(c.state != CLOSED, "state is closed")
+
+	// Check if listen, or syn-sent state
+	switch c.state {
 		case LISTEN:
 			logs.Trace.Println("Dealing listen")
 			c.dealListen(segment)
-			continue
+			return
 		case SYN_SENT:
 			c.dealSynSent(segment)
-			continue
-		}
+			return
+	}
 
-		// TODO check sequence number
+	// TODO check sequence number
 
-		if segment.header.flags&TCP_RST != 0 {
-			// TODO finish: page 70
-			switch c.state {
+	if segment.header.flags&TCP_RST != 0 {
+		// TODO finish: page 70
+		switch c.state {
 			case SYN_RCVD:
 				// TODO not done
-				continue
+				return
 			case ESTABLISHED, FIN_WAIT_1, FIN_WAIT_2, CLOSE_WAIT:
 				// TODO not done
-				continue
+				return
 			case CLOSING, LAST_ACK, TIME_WAIT:
 				if segment.header.flags&TCP_RST != 0 { // TODO why another if statement?
 					c.UpdateState(CLOSED)
 				}
-				continue
-			}
+				return
 		}
+	}
 
-		// TODO check security/precedence
-		// TODO check SYN (SYN bit shouldn't be there)
+	// TODO check security/precedence
+	// TODO check SYN (SYN bit shouldn't be there)
 
-		if segment.header.flags&TCP_ACK == 0 {
-			logs.Info.Println("Dropping a packet without an ACK flag")
-			continue
-		}
-
+	// fifth, check the ACK field
+	if segment.header.flags&TCP_ACK == 0 {
+		logs.Info.Println("Dropping a packet without an ACK flag")
+		return
+	} else {
 		// now the segment must have an ACK flag
 
 		switch c.state {
-		case SYN_RCVD:
+			case SYN_RCVD:
 			c.dealSynRcvd(segment)
-		case ESTABLISHED:
+			case ESTABLISHED:
 			if c.recentAckNum < segment.header.ack && segment.header.ack <= c.seqNum {
 				c.UpdateLastAck(segment.header.ack)
 				// TODO handle retransmission queue
@@ -67,52 +100,54 @@ func (c *TCB) packetDealer() {
 			} else if c.recentAckNum > segment.header.ack {
 				// ignore
 				logs.Info.Println("Dropping packet: ACK validation failed")
-				continue
+				return
 			} else if segment.header.ack > c.seqNum {
 				// TODO send ack, drop segment, return
 				logs.Info.Println("Dropping packet with bad ACK field")
-				continue
+				return
 			}
-		case FIN_WAIT_1:
+			case FIN_WAIT_1:
 			// TODO check if acknowledging FIN
 			c.UpdateState(FIN_WAIT_2)
-		case FIN_WAIT_2:
-		// TODO if retransmission queue empty, acknowledge user's close with ok
-		case CLOSE_WAIT:
+			case FIN_WAIT_2:
+			// TODO if retransmission queue empty, acknowledge user's close with ok
+			case CLOSE_WAIT:
 			if c.recentAckNum < segment.header.ack && segment.header.ack <= c.seqNum {
 				c.recentAckNum = segment.header.ack
 				// TODO handle retransmission queue
 				// TODO update send window
 			} else if c.recentAckNum > segment.header.ack {
 				// ignore
-				continue
+				return
 			} else if segment.header.ack > c.seqNum {
 				// TODO send ack, drop segment, return
 			}
-		case CLOSING:
+			case CLOSING:
 			// TODO if ack is acknowledging our fin
 			c.UpdateState(TIME_WAIT)
-		// TODO else drop segment
-		case LAST_ACK:
+			// TODO else drop segment
+			case LAST_ACK:
 			// TODO if fin acknowledged
 			c.UpdateState(CLOSED)
-			continue
-		case TIME_WAIT:
+			return
+			case TIME_WAIT:
 			// TODO handle remote fin
 		}
 
 		if segment.header.flags&TCP_URG != 0 {
 			switch c.state {
-			case ESTABLISHED, FIN_WAIT_1, FIN_WAIT_2:
+				case ESTABLISHED, FIN_WAIT_1, FIN_WAIT_2:
 				// TODO handle urg
 			}
-			continue
+			return
 		}
 
+		// eighth, check the FIN bit,
 		if segment.header.flags&TCP_FIN != 0 {
 			switch c.state {
-			case CLOSED, LISTEN, SYN_SENT:
-				continue
+				case CLOSED, LISTEN, SYN_SENT:
+				// drop segment
+				return
 			}
 
 			// TODO notify user of the connection closing
@@ -122,14 +157,14 @@ func (c *TCB) packetDealer() {
 			logs.Info.Println("Sent ACK data in response to FIN")
 			if err != nil {
 				logs.Error.Println(err)
-				continue
+				return
 			}
 			// TODO update state
-			continue
+			return
 		}
 
 		switch c.state {
-		case ESTABLISHED, FIN_WAIT_1, FIN_WAIT_2:
+			case ESTABLISHED, FIN_WAIT_1, FIN_WAIT_2:
 			c.recvBuffer = append(c.recvBuffer, segment.payload...)
 			// TODO handle push flag
 			// TODO adjust rcv.wnd, for now just multiplying by 2
@@ -145,56 +180,23 @@ func (c *TCB) packetDealer() {
 				logs.Info.Println("Sent ACK data")
 				if err != nil {
 					logs.Error.Println(err)
-					continue
+					return
 				}
 			}
-			continue
-		case CLOSE_WAIT, CLOSING, LAST_ACK, TIME_WAIT:
+			return
+			case CLOSE_WAIT, CLOSING, LAST_ACK, TIME_WAIT:
 			// should not occur, so drop packet
-			continue
+			return
 		}
-	}
-}
-
-func (c *TCB) dealClosed(d *TCP_Packet) {
-	if d.header.flags&TCP_RST != 0 {
-		return
-	}
-	var seqNum uint32
-	var ackNum uint32
-	rstFlags := uint8(TCP_RST)
-	if d.header.flags&TCP_ACK == 0 {
-		seqNum = 0
-		ackNum = d.header.seq + d.getPayloadSize()
-		rstFlags = rstFlags | TCP_ACK
-	} else {
-		seqNum = d.header.ack
-		ackNum = 0
-	}
-
-	rst_packet := &TCP_Packet{
-		header: &TCP_Header{
-			seq:     seqNum,
-			ack:     ackNum,
-			flags:   rstFlags,
-			urg:     0,
-			options: []byte{},
-		},
-		payload: []byte{},
-	}
-
-	logs.Info.Printf("Sending RST data with seq %d and ack %d", seqNum, ackNum)
-	err := c.sendPacket(rst_packet)
-	if err != nil {
-		logs.Error.Println(err)
-		return
 	}
 }
 
 func (c *TCB) dealListen(d *TCP_Packet) {
 	if d.header.flags&TCP_RST != 0 {
+		// drop incoming RSTs
 		return
 	}
+
 	if d.header.flags&TCP_ACK != 0 {
 		err := c.sendReset(d.header.ack, 0)
 		logs.Trace.Println("Sent ACK data")

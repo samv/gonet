@@ -137,3 +137,15 @@ func min(a, b uint64) uint64 {
 	}
 	return a
 }
+
+func Assert(assert bool, msg string) {
+	if !assert {
+		panic("ASSERTION FAILED: " + msg)
+	}
+}
+
+func Recover() {
+	if r := recover(); r != nil {
+		logs.Error.Println("Recover from PANIC:", r)
+	}
+}

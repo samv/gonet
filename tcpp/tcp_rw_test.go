@@ -63,6 +63,7 @@ func TestReadWrite(t *testing.T) {
 			return
 		}
 		fmt.Println("Client connected")
+		defer client.Close()
 
 		time.Sleep(3 * time.Second)
 		fmt.Println("Beginning the read")
@@ -72,8 +73,6 @@ func TestReadWrite(t *testing.T) {
 			return
 		}
 		fmt.Println("got data:", out)
-
-		client.Close()
 
 		if string(data) == string(out) {
 			fmt.Println("Correct output")

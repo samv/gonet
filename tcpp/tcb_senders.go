@@ -149,13 +149,13 @@ func (c *TCB) sendPacket(d *TCP_Packet) error {
 	return nil
 }
 
-func (c *TCB) sendReset(seq uint32, ack uint32) error {
+func (c *TCB) sendResetFlag(seq, ack uint32, flag uint8) error {
 	logs.Trace.Println("Sending RST with seq: ", seq, " and ack: ", ack)
 	rst := &TCP_Packet{
 		header: &TCP_Header{
 			seq:     seq,
 			ack:     ack,
-			flags:   TCP_RST,
+			flags:   flag,
 			urg:     0,
 			options: []byte{},
 		},
@@ -163,6 +163,10 @@ func (c *TCB) sendReset(seq uint32, ack uint32) error {
 	}
 
 	return c.sendPacket(rst)
+}
+
+func (c *TCB) sendReset(seq, ack uint32) error {
+	return c.sendResetFlag(seq, ack, TCP_RST)
 }
 
 func (c *TCB) sendAck(seq, ack uint32) error {
