@@ -20,31 +20,7 @@ func (c *TCB) packetDeal(segment *TCP_Packet) {
 
 	// If the state is CLOSED (i.e., TCB does not exist) then
 	if c.state == CLOSED {
-		logs.Trace.Println("Dealing closed")
-		if segment.header.flags&TCP_RST != 0 {
-			// drop incoming RSTs
-			return
-		}
-
-		// respond with an RST
-		var seqNum uint32
-		var ackNum uint32
-		rstFlags := uint8(TCP_RST)
-		if segment.header.flags&TCP_ACK == 0 {
-			seqNum = 0
-			ackNum = segment.header.seq + segment.getPayloadSize()
-			rstFlags = rstFlags | TCP_ACK
-		} else {
-			seqNum = segment.header.ack
-			ackNum = 0
-		}
-
-		logs.Info.Printf("Sending RST data with seq %d and ack %d", seqNum, ackNum)
-		err := c.sendResetFlag(seqNum, ackNum, rstFlags)
-		if err != nil {
-			logs.Error.Println(err)
-			return
-		}
+		c.rcvClosed(segment)
 		return
 	}
 	Assert(c.state != CLOSED, "state is closed")
@@ -52,8 +28,7 @@ func (c *TCB) packetDeal(segment *TCP_Packet) {
 	// Check if listen, or syn-sent state
 	switch c.state {
 		case LISTEN:
-			logs.Trace.Println("Dealing listen")
-			c.dealListen(segment)
+			c.rcvListen(segment)
 			return
 		case SYN_SENT:
 			c.dealSynSent(segment)
@@ -191,7 +166,37 @@ func (c *TCB) packetDeal(segment *TCP_Packet) {
 	}
 }
 
-func (c *TCB) dealListen(d *TCP_Packet) {
+func (c *TCB) rcvClosed(d *TCP_Packet) {
+	logs.Trace.Println("Dealing closed")
+	if d.header.flags&TCP_RST != 0 {
+		// drop incoming RSTs
+		return
+	}
+
+	// respond with an RST
+	var seqNum uint32
+	var ackNum uint32
+	rstFlags := uint8(TCP_RST)
+	if d.header.flags&TCP_ACK == 0 {
+		seqNum = 0
+		ackNum = d.header.seq + d.getPayloadSize()
+		rstFlags = rstFlags | TCP_ACK
+	} else {
+		seqNum = d.header.ack
+		ackNum = 0
+	}
+
+	logs.Info.Printf("Sending RST data with seq %d and ack %d", seqNum, ackNum)
+	err := c.sendResetFlag(seqNum, ackNum, rstFlags)
+	if err != nil {
+		logs.Error.Println(err)
+		return
+	}
+}
+
+func (c *TCB) rcvListen(d *TCP_Packet) {
+	logs.Trace.Println("Dealing listen")
+
 	if d.header.flags&TCP_RST != 0 {
 		// drop incoming RSTs
 		return
