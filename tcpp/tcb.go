@@ -1,13 +1,14 @@
 package tcpp
 
 import (
-	"github.com/hsheth2/logs"
-	"github.com/hsheth2/notifiers"
-	"golang.org/x/net/ipv4"
+	"errors"
 	"network/ipv4p"
 	"sync"
 	"time"
-	"errors"
+
+	"github.com/hsheth2/logs"
+	"github.com/hsheth2/notifiers"
+	"golang.org/x/net/ipv4"
 )
 
 type TCB struct {

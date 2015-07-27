@@ -2,9 +2,10 @@ package ipv4p
 
 import (
 	"errors"
-	"github.com/hsheth2/logs"
 	"net"
 	"network/etherp"
+
+	"github.com/hsheth2/logs"
 )
 
 type IP_Read_Manager struct {

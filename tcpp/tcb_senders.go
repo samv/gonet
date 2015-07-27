@@ -2,11 +2,12 @@ package tcpp
 
 import (
 	"errors"
-	"github.com/hsheth2/logs"
-	"golang.org/x/net/ipv4"
 	"net"
 	"network/ipv4p"
 	"time"
+
+	"github.com/hsheth2/logs"
+	"golang.org/x/net/ipv4"
 )
 
 func (c *TCB) packetSender() {

@@ -27,12 +27,12 @@ func (c *TCB) packetDeal(segment *TCP_Packet) {
 
 	// Check if listen, or syn-sent state
 	switch c.state {
-		case LISTEN:
-			c.rcvListen(segment)
-			return
-		case SYN_SENT:
-			c.dealSynSent(segment)
-			return
+	case LISTEN:
+		c.rcvListen(segment)
+		return
+	case SYN_SENT:
+		c.dealSynSent(segment)
+		return
 	}
 
 	// TODO check sequence number
@@ -40,17 +40,17 @@ func (c *TCB) packetDeal(segment *TCP_Packet) {
 	if segment.header.flags&TCP_RST != 0 {
 		// TODO finish: page 70
 		switch c.state {
-			case SYN_RCVD:
-				// TODO not done
-				return
-			case ESTABLISHED, FIN_WAIT_1, FIN_WAIT_2, CLOSE_WAIT:
-				// TODO not done
-				return
-			case CLOSING, LAST_ACK, TIME_WAIT:
-				if segment.header.flags&TCP_RST != 0 { // TODO why another if statement?
-					c.UpdateState(CLOSED)
-				}
-				return
+		case SYN_RCVD:
+			// TODO not done
+			return
+		case ESTABLISHED, FIN_WAIT_1, FIN_WAIT_2, CLOSE_WAIT:
+			// TODO not done
+			return
+		case CLOSING, LAST_ACK, TIME_WAIT:
+			if segment.header.flags&TCP_RST != 0 { // TODO why another if statement?
+				c.UpdateState(CLOSED)
+			}
+			return
 		}
 	}
 
@@ -65,9 +65,9 @@ func (c *TCB) packetDeal(segment *TCP_Packet) {
 		Assert(segment.header.flags&TCP_ACK != 0, "segment missing ACK flag after verification")
 
 		switch c.state {
-			case SYN_RCVD:
+		case SYN_RCVD:
 			c.dealSynRcvd(segment)
-			case ESTABLISHED:
+		case ESTABLISHED:
 			if c.recentAckNum < segment.header.ack && segment.header.ack <= c.seqNum {
 				c.UpdateLastAck(segment.header.ack)
 				// TODO handle retransmission queue
@@ -81,12 +81,12 @@ func (c *TCB) packetDeal(segment *TCP_Packet) {
 				logs.Info.Println("Dropping packet with bad ACK field")
 				return
 			}
-			case FIN_WAIT_1:
+		case FIN_WAIT_1:
 			// TODO check if acknowledging FIN
 			c.UpdateState(FIN_WAIT_2)
-			case FIN_WAIT_2:
-			// TODO if retransmission queue empty, acknowledge user's close with ok
-			case CLOSE_WAIT:
+		case FIN_WAIT_2:
+		// TODO if retransmission queue empty, acknowledge user's close with ok
+		case CLOSE_WAIT:
 			if c.recentAckNum < segment.header.ack && segment.header.ack <= c.seqNum {
 				c.recentAckNum = segment.header.ack
 				// TODO handle retransmission queue
@@ -97,21 +97,21 @@ func (c *TCB) packetDeal(segment *TCP_Packet) {
 			} else if segment.header.ack > c.seqNum {
 				// TODO send ack, drop segment, return
 			}
-			case CLOSING:
+		case CLOSING:
 			// TODO if ack is acknowledging our fin
 			c.UpdateState(TIME_WAIT)
-			// TODO else drop segment
-			case LAST_ACK:
+		// TODO else drop segment
+		case LAST_ACK:
 			// TODO if fin acknowledged
 			c.UpdateState(CLOSED)
 			return
-			case TIME_WAIT:
+		case TIME_WAIT:
 			// TODO handle remote fin
 		}
 
 		if segment.header.flags&TCP_URG != 0 {
 			switch c.state {
-				case ESTABLISHED, FIN_WAIT_1, FIN_WAIT_2:
+			case ESTABLISHED, FIN_WAIT_1, FIN_WAIT_2:
 				// TODO handle urg
 			}
 			return
@@ -120,7 +120,7 @@ func (c *TCB) packetDeal(segment *TCP_Packet) {
 		// eighth, check the FIN bit,
 		if segment.header.flags&TCP_FIN != 0 {
 			switch c.state {
-				case CLOSED, LISTEN, SYN_SENT:
+			case CLOSED, LISTEN, SYN_SENT:
 				// drop segment
 				return
 			}
@@ -139,7 +139,7 @@ func (c *TCB) packetDeal(segment *TCP_Packet) {
 		}
 
 		switch c.state {
-			case ESTABLISHED, FIN_WAIT_1, FIN_WAIT_2:
+		case ESTABLISHED, FIN_WAIT_1, FIN_WAIT_2:
 			c.recvBuffer = append(c.recvBuffer, segment.payload...)
 			// TODO handle push flag
 			// TODO adjust rcv.wnd, for now just multiplying by 2
@@ -159,7 +159,7 @@ func (c *TCB) packetDeal(segment *TCP_Packet) {
 				}
 			}
 			return
-			case CLOSE_WAIT, CLOSING, LAST_ACK, TIME_WAIT:
+		case CLOSE_WAIT, CLOSING, LAST_ACK, TIME_WAIT:
 			// should not occur, so drop packet
 			return
 		}

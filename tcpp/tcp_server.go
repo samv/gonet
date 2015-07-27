@@ -3,11 +3,12 @@ package tcpp
 import (
 	"errors"
 	"fmt"
-	"github.com/hsheth2/logs"
-	"golang.org/x/net/ipv4"
 	"net"
 	"network/ipv4p"
 	"sync"
+
+	"github.com/hsheth2/logs"
+	"golang.org/x/net/ipv4"
 )
 
 type Server_TCB struct {

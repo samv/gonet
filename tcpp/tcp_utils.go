@@ -1,12 +1,13 @@
 package tcpp
 
 import (
-	"errors"
 	"crypto/rand"
+	"errors"
+	"network/ipv4p"
+	"sync"
+
 	"github.com/hsheth2/logs"
 	"github.com/hsheth2/notifiers"
-	"sync"
-	"network/ipv4p"
 )
 
 func (c *TCB) UpdateState(newState uint) {
@@ -30,7 +31,6 @@ func SendUpdate(update *sync.Cond) {
 	update.Broadcast()
 	update.L.Unlock()
 }
-
 
 type TCP_Packet struct {
 	header   *TCP_Header
@@ -76,7 +76,7 @@ func (h *TCP_Header) Marshal_TCP_Header(dstIP, srcIP string) ([]byte, error) {
 		(byte)(h.seq >> 24), (byte)(h.seq >> 16), (byte)(h.seq >> 8), (byte)(h.seq), // seq
 		(byte)(h.ack >> 24), (byte)(h.ack >> 16), (byte)(h.ack >> 8), (byte)(h.ack), // ack
 		(byte)(
-		(headerLen / 4) << 4, // data offset.
+			(headerLen / 4) << 4, // data offset.
 		// bits 5-7 inclusive are reserved, always 0
 		// bit 8 is flag 0(NS flag), set to 0 here because only SYN
 		),

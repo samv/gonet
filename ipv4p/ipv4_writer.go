@@ -1,9 +1,10 @@
 package ipv4p
 
 import (
-	"golang.org/x/net/ipv4"
 	"net"
 	"network/etherp"
+
+	"golang.org/x/net/ipv4"
 	//"errors"
 	//"syscall"
 	//"github.com/hsheth2/logs"
