@@ -32,3 +32,4 @@ test_tcp: iptables
 iptables:
 	sudo iptables -I INPUT -p tcp --sport 20102 -j DROP
 	sudo iptables -I INPUT -p tcp --dport 20102 -j DROP
+	sudo iptables -I INPUT -p tcp --dport 20101 -j DROP
