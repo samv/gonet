@@ -35,6 +35,7 @@ func (c *TCB) packetDeal(segment *TCP_Packet) {
 		return
 	}
 
+	// first check sequence number pg 69 txt
 	// TODO check sequence number
 
 	if segment.header.flags&TCP_RST != 0 {
@@ -117,27 +118,9 @@ func (c *TCB) packetDeal(segment *TCP_Packet) {
 			return
 		}
 
-		// eighth, check the FIN bit,
-		if segment.header.flags&TCP_FIN != 0 {
-			switch c.state {
-			case CLOSED, LISTEN, SYN_SENT:
-				// drop segment
-				return
-			}
+		// TODO step 6, check URG bit
 
-			// TODO notify user of the connection closing
-			c.ackNum += segment.getPayloadSize()
-
-			err := c.sendAck(c.seqNum, c.ackNum)
-			logs.Info.Println("Sent ACK data in response to FIN")
-			if err != nil {
-				logs.Error.Println(err)
-				return
-			}
-			// TODO update state
-			return
-		}
-
+		// step 7 (?)
 		switch c.state {
 		case ESTABLISHED, FIN_WAIT_1, FIN_WAIT_2:
 			c.recvBuffer = append(c.recvBuffer, segment.payload...)
@@ -158,9 +141,30 @@ func (c *TCB) packetDeal(segment *TCP_Packet) {
 					return
 				}
 			}
-			return
+			//return
 		case CLOSE_WAIT, CLOSING, LAST_ACK, TIME_WAIT:
 			// should not occur, so drop packet
+			return
+		}
+
+		// eighth, check the FIN bit,
+		if segment.header.flags&TCP_FIN != 0 {
+			switch c.state {
+			case CLOSED, LISTEN, SYN_SENT:
+				// drop segment
+				return
+			}
+
+			// TODO notify user of the connection closing
+			c.ackNum += segment.getPayloadSize()
+
+			err := c.sendAck(c.seqNum, c.ackNum)
+			logs.Info.Println("Sent ACK data in response to FIN")
+			if err != nil {
+				logs.Error.Println(err)
+				return
+			}
+			// TODO update state
 			return
 		}
 	}

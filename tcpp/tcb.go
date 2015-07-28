@@ -105,6 +105,7 @@ func (c *TCB) Close() error {
 
 	logs.Info.Println("Sending FIN within close")
 	c.sendFin(c.seqNum, c.ackNum)
+	c.UpdateState(FIN_WAIT_1)
 	return nil // TODO: free manager read buffer and send fin/fin+ack/etc. Also kill timers with a wait group
 }
 
