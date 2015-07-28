@@ -86,7 +86,8 @@ func (c *TCB) packetDeal(segment *TCP_Packet) {
 			// TODO check if acknowledging FIN
 			c.UpdateState(FIN_WAIT_2)
 		case FIN_WAIT_2:
-		// TODO if retransmission queue empty, acknowledge user's close with ok
+			defer c.UpdateState(CLOSED)
+			// TODO if retransmission queue empty, acknowledge user's close with ok
 		case CLOSE_WAIT:
 			if c.recentAckNum < segment.header.ack && segment.header.ack <= c.seqNum {
 				c.recentAckNum = segment.header.ack

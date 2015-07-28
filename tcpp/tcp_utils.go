@@ -39,7 +39,7 @@ type TCP_Packet struct {
 }
 
 func (p *TCP_Packet) Marshal_TCP_Packet() ([]byte, error) {
-	head, err := p.header.Marshal_TCP_Header(p.rip, p.lip)
+	head, err := p.header.Marshal_TCP_Header(p.rip, p.lip, p.payload)
 	packet := append(head, p.payload...)
 	return packet, err
 }
@@ -62,7 +62,7 @@ type TCP_Header struct {
 	options []byte
 }
 
-func (h *TCP_Header) Marshal_TCP_Header(dstIP, srcIP string) ([]byte, error) {
+func (h *TCP_Header) Marshal_TCP_Header(dstIP, srcIP string, data []byte) ([]byte, error) {
 	// pad options with 0's
 	for len(h.options)%4 != 0 {
 		h.options = append(h.options, 0)
@@ -87,7 +87,7 @@ func (h *TCP_Header) Marshal_TCP_Header(dstIP, srcIP string) ([]byte, error) {
 	}, h.options...)
 
 	// insert the checksum
-	cksum := ipv4p.CalcTransportChecksum(header, srcIP, dstIP, headerLen, ipv4p.TCP_PROTO)
+	cksum := ipv4p.CalcTransportChecksum(append(header, data...), srcIP, dstIP, headerLen+uint16(len(data)), ipv4p.TCP_PROTO)
 	header[16] = byte(cksum >> 8)
 	header[17] = byte(cksum)
 
