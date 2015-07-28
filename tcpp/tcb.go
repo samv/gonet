@@ -103,11 +103,30 @@ func (c *TCB) Close() error {
 		<-c.sendFinished.Register(1) // wait for send to finish
 	}
 
+	// send FIN
 	logs.Info.Println("Sending FIN within close")
 	c.sendFin(c.seqNum, c.ackNum)
 	c.seqNum += 1 // TODO make this not dumb
-	c.UpdateState(FIN_WAIT_1)
-	return nil // TODO: free manager read buffer and send fin/fin+ack/etc. Also kill timers with a wait group
+
+	// update state accordingly
+	if c.state == ESTABLISHED {
+		c.UpdateState(FIN_WAIT_1)
+	} else if c.state == CLOSE_WAIT {
+		c.UpdateState(CLOSED)
+	}
+
+	// wait until state becomes CLOSED
+	c.stateUpdate.L.Lock()
+	defer c.stateUpdate.L.Unlock()
+	for {
+		if c.state == CLOSED {
+			break
+		}
+		c.stateUpdate.Wait()
+	}
+	logs.Trace.Printf("Close of TCB with lport %d finished", c.lport)
+
+	return nil // TODO: free manager read buffer. Also kill timers with a wait group
 }
 
 // TODO: support a status call
