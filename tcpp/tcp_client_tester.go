@@ -2,7 +2,6 @@ package tcpp
 
 import "time"
 import "github.com/hsheth2/logs"
-import "network/tcpp"
 
 func main() {
 	client, err := New_TCB_From_Client(20101, 49230, "10.0.0.1")
