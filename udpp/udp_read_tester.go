@@ -45,7 +45,7 @@ func read_tester() {
 					return
 				}
 				time.Sleep(3 * time.Second)
-				_, err = r.read(MAX_UDP_PACKET_LEN)
+				_, err = r.Read(MAX_UDP_PACKET_LEN)
 				if err != nil {
 					fmt.Println(err)
 					return
@@ -72,7 +72,7 @@ func read_tester() {
 
 		const layout = "2006-01-02 15:04:05.000000"
 		for {
-			p, err := r.read(MAX_UDP_PACKET_LEN)
+			p, err := r.Read(MAX_UDP_PACKET_LEN)
 			t := time.Now().Format(layout)
 			if err != nil {
 				fmt.Println(err)
