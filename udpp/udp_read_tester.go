@@ -1,4 +1,4 @@
-package main
+package udpp
 
 import (
 	"fmt"
@@ -9,14 +9,14 @@ import (
 	"time"
 )
 
-func max(x, y int) int {
+func testmax(x, y int) int {
 	if x > y {
 		return x
 	}
 	return y
 }
 
-func main() {
+func read_tester() {
 	//runtime.GOMAXPROCS(strconv.Atoi(os.Args[1]))
 
 	rm, err := NewUDP_Read_Manager()
@@ -30,7 +30,7 @@ func main() {
 		maxNumRoutines := 0
 		go func() {
 			for {
-				maxNumRoutines = max(maxNumRoutines, runtime.NumGoroutine())
+				maxNumRoutines = testmax(maxNumRoutines, runtime.NumGoroutine())
 				time.Sleep(500 * time.Microsecond)
 			}
 		}()

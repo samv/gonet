@@ -1,11 +1,11 @@
-package main
+package udpp
 
 import (
 	"fmt"
 	//"time"
 )
 
-func main() {
+func write_tester() {
 	w, err := NewUDP_Writer(20000, 20102, "127.0.0.1")
 	if err != nil {
 		fmt.Println(err)
