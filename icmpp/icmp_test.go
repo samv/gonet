@@ -15,7 +15,8 @@ func TestICMP(t *testing.T) {
 	packet, err := (&ICMP_Header{
 		typeF: 8,
 		code:  0,
-		opt:   0,
+		opt:   45<<16 | 1,
+		data:  []byte("abcdefg"),
 	}).MarshalICMPHeader()
 	if err != nil {
 		fmt.Println("Error marshaling icmp header")
