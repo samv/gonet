@@ -12,11 +12,11 @@ func TestICMP(t *testing.T) {
 		fmt.Println("error making ip writer")
 		return
 	}
-	packet, err := ICMP_Header{
+	packet, err := (&ICMP_Header{
 		typeF: 8,
 		code:  0,
-		opt:   nil,
-	}.MarshalICMPHeader()
+		opt:   0,
+	}).MarshalICMPHeader()
 	if err != nil {
 		fmt.Println("Error marshaling icmp header")
 		return
