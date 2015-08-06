@@ -7,8 +7,9 @@ import (
 )
 
 const (
-	UDP_PROTO = 17
-	TCP_PROTO = 6
+	ICMP_PROTO = 1
+	UDP_PROTO  = 17
+	TCP_PROTO  = 6
 )
 
 const (

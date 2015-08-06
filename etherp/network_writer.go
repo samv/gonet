@@ -17,13 +17,7 @@ func NewNetwork_Writer() (*Network_Writer, error) {
 		return nil, errors.New("Write's socket failed")
 	}
 
-	addr := &syscall.SockaddrLinklayer{
-		// Family is automatically set to AF_PACKET
-		Protocol: ETHERTYPE_IP, // should be inherited anyway
-		Addr:     myMACAddr,    // sending to myself
-		Halen:    ETH_ALEN,     // may not be correct
-		Ifindex:  MyIfIndex,    // TODO: don't hard code this... fix it later
-	}
+	addr := getSockAddr()
 
 	/*err = syscall.Sendto(fd, []byte{0x08, 0x00, 0x27, 0x9e, 0x29, 0x63, 0x08, 0x00, 0x27, 0x9e, 0x29, 0x63, 0x08, 0x00}, 0, addr) //Random bytes
 	  if err != nil {
