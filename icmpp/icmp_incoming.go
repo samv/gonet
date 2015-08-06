@@ -60,6 +60,7 @@ func (x *ICMP_Read_Manager) readAll() {
 			logs.Error.Println(err)
 			continue
 		}
+		logs.Info.Println("Pay", payload, "rip", rip, "lip", lip)
 
 		if len(payload) < ICMP_Header_MinSize {
 			logs.Info.Println("Dropping Small ICMP packet:", payload)

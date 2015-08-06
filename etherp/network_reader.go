@@ -4,9 +4,9 @@ import (
 	//"errors"
 	"github.com/hsheth2/logs"
 	//"net"
+	"bytes"
 	"errors"
 	"syscall"
-	"bytes"
 )
 
 var GlobalNetworkReader = func() *Network_Reader {
@@ -78,7 +78,7 @@ func (nr *Network_Reader) readFrame() ([]byte, error) {
 	//syscall.Read(nr.fd, buf)
 	ln, err := syscall.Read(nr.fd, buf)
 	if bytes.Equal(buf[:ln], nr.last) || err != nil {
-		logs.Info.Println("Dropping double read packet")
+		//logs.Info.Println("Dropping double read packet")
 		return nr.readFrame()
 	}
 	nr.last = buf[:ln]
