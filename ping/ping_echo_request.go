@@ -110,6 +110,8 @@ func (pm *Ping_Manager) SendPing(ip string, interval, timeout time.Duration, num
 		logs.Error.Println(err)
 		return err
 	}
+	defer func(){ terminate <- true }()
+
 
 	// get ip writer
 	writer, err := pm.getIP_Writer(ip)
@@ -118,20 +120,17 @@ func (pm *Ping_Manager) SendPing(ip string, interval, timeout time.Duration, num
 		return err
 	}
 
-	go func() { // TODO needs to be a go routine?
-		for i := uint16(1); i <= numPings; i++ {
-			seqChannel[i] = make(chan *icmpp.ICMP_In)
+	for i := uint16(1); i <= numPings; i++ {
+		seqChannel[i] = make(chan *icmpp.ICMP_In)
 
-			sendSinglePing(writer, id, i, timeout, seqChannel[i]) // function is non-blocking
+		sendSinglePing(writer, id, i, timeout, seqChannel[i]) // function is non-blocking
 
-			// not last
-			if i != numPings {
-				time.Sleep(interval)
-			}
+		// not last
+		if i != numPings {
+			time.Sleep(interval)
 		}
-	}()
+	}
 
-	time.Sleep(time.Duration(numPings) * timeout)
-	terminate <- true
+	time.Sleep(timeout)
 	return nil
 }
