@@ -41,7 +41,7 @@ func NewNetwork_Reader() (*Network_Reader, error) {
 	return nr, nil
 }
 
-func (nr *Network_Reader) readAll() {
+func (nr *Network_Reader) readAll() { // TODO terminate (using notifiers)
 	for {
 		data, err := nr.readFrame()
 		if err != nil {

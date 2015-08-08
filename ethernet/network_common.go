@@ -1,13 +1,32 @@
 package ethernet
 
-var myMACAddr = func(mac []byte) [8]byte {
-	mac = append(mac, 0, 0)
+//var myMACAddr = func(mac []byte) [8]byte {
+//	mac = append(mac, 0, 0)
+//	var data [8]byte
+//	for i := 0; i < 8; i++ {
+//		data[i] = mac[i]
+//	}
+//	return data
+//}(myMACSlice)
+
+type MAC_Address struct {
+	Data []byte
+}
+
+func (m *MAC_Address) Make() [8]byte {
+	// pad data to 8 bytes
+	mac := m.Data
+	for len(mac) < 8 {
+		mac = append(mac, 0)
+	}
+
+	// convert
 	var data [8]byte
 	for i := 0; i < 8; i++ {
 		data[i] = mac[i]
 	}
 	return data
-}(myMACSlice)
+}
 
 const (
 	// 768 = htons(ETH_P_ALL) = htons(3)
