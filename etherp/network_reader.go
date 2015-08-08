@@ -50,7 +50,7 @@ func (nr *Network_Reader) readAll() {
 
 		eth_protocol := uint16(data[12])<<8 | uint16(data[13])
 		if c, ok := nr.proto_buf[eth_protocol]; ok {
-			go func() { c <- data[ETH_HEADER_SZ:] }()
+			c <- data[ETH_HEADER_SZ:]
 		} else {
 			//logs.Info.Println("Dropping Ethernet packet for wrong protocol:", eth_protocol)
 		}
