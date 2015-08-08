@@ -1,8 +1,8 @@
 package ping
 
 import (
-	"network/icmpp"
-	"network/ipv4p"
+	"network/icmp"
+	"network/ipv4"
 
 	"github.com/hsheth2/logs"
 )
@@ -16,16 +16,16 @@ const (
 
 type Ping_Manager struct {
 	// Responding to pings
-	input  chan *icmpp.ICMP_In
-	output map[string](*ipv4p.IP_Writer)
+	input  chan *icmp.ICMP_In
+	output map[string](*ipv4.IP_Writer)
 
 	// Sending pings and receiving responses
-	reply             chan *icmpp.ICMP_In
+	reply             chan *icmp.ICMP_In
 	currentIdentifier uint16
-	identifiers       map[uint16](chan *icmpp.ICMP_In)
+	identifiers       map[uint16](chan *icmp.ICMP_In)
 }
 
-func NewPing_Manager(icmprm *icmpp.ICMP_Read_Manager) (*Ping_Manager, error) {
+func NewPing_Manager(icmprm *icmp.ICMP_Read_Manager) (*Ping_Manager, error) {
 	input, err := icmprm.Bind(8)
 	if err != nil {
 		return nil, err
@@ -38,10 +38,10 @@ func NewPing_Manager(icmprm *icmpp.ICMP_Read_Manager) (*Ping_Manager, error) {
 
 	pm := &Ping_Manager{
 		input:             input,
-		output:            make(map[string](*ipv4p.IP_Writer)),
+		output:            make(map[string](*ipv4.IP_Writer)),
 		reply:             reply,
 		currentIdentifier: PING_START_ID,
-		identifiers:       make(map[uint16](chan *icmpp.ICMP_In)),
+		identifiers:       make(map[uint16](chan *icmp.ICMP_In)),
 	}
 
 	go pm.ping_replier()
@@ -51,16 +51,16 @@ func NewPing_Manager(icmprm *icmpp.ICMP_Read_Manager) (*Ping_Manager, error) {
 }
 
 var GlobalPingManager = func() *Ping_Manager {
-	pm, err := NewPing_Manager(icmpp.GlobalICMPReadManager)
+	pm, err := NewPing_Manager(icmp.GlobalICMPReadManager)
 	if err != nil {
 		logs.Error.Fatal(err)
 	}
 	return pm
 }()
 
-func (pm *Ping_Manager) getIP_Writer(ip string) (*ipv4p.IP_Writer, error) {
+func (pm *Ping_Manager) getIP_Writer(ip string) (*ipv4.IP_Writer, error) {
 	if _, ok := pm.output[ip]; !ok {
-		wt, err := ipv4p.NewIP_Writer(ip, ipv4p.ICMP_PROTO)
+		wt, err := ipv4.NewIP_Writer(ip, ipv4.ICMP_PROTO)
 		if err != nil {
 			return nil, err
 		}

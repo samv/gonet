@@ -1,6 +1,6 @@
 # Makefile for Golang Network Stack
 
-pkgs = network/etherp network/ipv4p network/udpp network/tcpp network/icmpp network/ping
+pkgs = network/ethernet network/arp network/ipv4 network/udp network/tcp network/icmp network/ping
 
 install:
 	go get github.com/hsheth2/logs
@@ -20,11 +20,11 @@ test_others:
 	./run_test.sh github.com/hsheth2/notifiers
 test_network: test_udp test_tcp test_icmp test_ping
 test_udp: iptables
-	./run_test.sh network/udpp
+	./run_test.sh network/udp
 test_tcp: iptables
-	./run_test.sh network/tcpp
+	./run_test.sh network/tcp
 test_icmp:
-	./run_test.sh network/icmpp
+	./run_test.sh network/icmp
 test_ping:
 	./run_test.sh network/ping
 
