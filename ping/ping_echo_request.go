@@ -69,7 +69,7 @@ func sendSinglePing(writer *ipv4p.IP_Writer, id, seq uint16, timeout time.Durati
 	}(reply, packet, &time1, timeoutTimer)
 }
 
-func (pm *Ping_Manager) initIdentifier() (id uint16, seqChannel map[uint16](chan *icmpp.ICMP_In), err error) {
+func (pm *Ping_Manager) initIdentifier(terminate chan bool) (id uint16, seqChannel map[uint16](chan *icmpp.ICMP_In), err error) {
 	// get identifier
 	pm.currentIdentifier++
 	id = pm.currentIdentifier
@@ -79,28 +79,33 @@ func (pm *Ping_Manager) initIdentifier() (id uint16, seqChannel map[uint16](chan
 	seqChannel = make(map[uint16](chan *icmpp.ICMP_In))
 
 	// create go routine function to deal packets
-	go sequenceDealer(pm.identifiers[id], seqChannel)
+	go sequenceDealer(pm.identifiers[id], seqChannel, terminate)
 
 	return id, seqChannel, nil
 }
 
-func sequenceDealer(idInput chan *icmpp.ICMP_In, seqChan map[uint16](chan *icmpp.ICMP_In)) {
+func sequenceDealer(idInput chan *icmpp.ICMP_In, seqChan map[uint16](chan *icmpp.ICMP_In), terminate chan bool) {
 	// TODO verify IPs
 	for {
-		packet := <-idInput
-		// logs.Info.Println("icmp in =", packet.Header.Opt)
-		seqNum := uint16(packet.Header.Opt)
-		if _, ok := seqChan[seqNum]; ok {
-			seqChan[seqNum] <- packet
-		} else {
-			logs.Info.Println("Dropping bad seq num packet with existing identifier")
+		select {
+		case <-terminate:
+			logs.Info.Println("Terminating seq dealer")
+			return
+		case packet := <-idInput:
+			// logs.Info.Println("icmp in =", packet.Header.Opt)
+			seqNum := uint16(packet.Header.Opt)
+			if _, ok := seqChan[seqNum]; ok {
+				seqChan[seqNum] <- packet
+			} else {
+				logs.Info.Println("Dropping bad seq num packet with existing identifier")
+			}
 		}
 	}
-	// TODO terminate this go routine
 }
 
 func (pm *Ping_Manager) SendPing(ip string, interval, timeout time.Duration, numPings uint16) error {
-	id, seqChannel, err := pm.initIdentifier()
+	terminate := make(chan bool)
+	id, seqChannel, err := pm.initIdentifier(terminate)
 	if err != nil {
 		logs.Error.Println(err)
 		return err
@@ -127,5 +132,6 @@ func (pm *Ping_Manager) SendPing(ip string, interval, timeout time.Duration, num
 	}()
 
 	time.Sleep(time.Duration(numPings) * timeout)
+	terminate <- true
 	return nil
 }
