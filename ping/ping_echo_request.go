@@ -5,6 +5,8 @@ import (
 	"network/icmpp"
 	"time"
 
+	"network/ipv4p"
+
 	"github.com/hsheth2/logs"
 )
 
@@ -20,66 +22,102 @@ func (pm *Ping_Manager) ping_response_dealer() {
 	}
 }
 
-func (pm *Ping_Manager) SendPing(ip string, interval, timeout time.Duration, numPings uint16) error {
+func sendSinglePing(writer *ipv4p.IP_Writer, id, seq uint16, timeout time.Duration, reply chan *icmpp.ICMP_In) {
+	// prepare packet
+	packet := &icmpp.ICMP_Header{
+		TypeF: PING_ECHO_REQUEST_TYPE,
+		Code:  PING_ICMP_CODE,
+		Opt:   uint32(id)<<16 | uint32(seq),
+		Data:  []byte("abcdefg"), // TODO make legit by sending 56 bytes of Data and putting the timestamp in the data
+	}
+
+	// make data
+	data, err := packet.MarshalICMPHeader()
+	if err != nil {
+		logs.Error.Println(err)
+		return
+	}
+
+	// send
+	err = writer.WriteTo(data)
+	if err != nil {
+		logs.Error.Println(err)
+		return
+	}
+	time1 := time.Now()
+	timeoutTimer := time.NewTimer(timeout)
+	go func(seqChan chan *icmpp.ICMP_In, header *icmpp.ICMP_Header, time1 *time.Time, timer *time.Timer) {
+		for {
+			select {
+			case pingResonse := <-seqChan:
+				if !bytes.Equal(pingResonse.Header.Data, header.Data) {
+					logs.Info.Println("Dropped packet cuz data !=")
+					continue
+				}
+				time2 := time.Now()
+				logs.Info.Printf("%d bytes from %s: icmp_seq=%d time=%f ms",
+					len(header.Data)+icmpp.ICMP_Header_MinSize,
+					pingResonse.RIP,
+					uint16(header.Opt),
+					time2.Sub(*time1).Seconds()*1000) // put ttl
+				return
+			case <-timer.C:
+				logs.Info.Println("Seq num of", uint16(header.Opt), "timed out")
+				return
+			}
+		}
+	}(reply, packet, &time1, timeoutTimer)
+}
+
+func (pm *Ping_Manager) initIdentifier() (id uint16, seqChannel map[uint16](chan *icmpp.ICMP_In), err error) {
+	// get identifier
 	pm.currentIdentifier++
-	ipWriter, err := pm.getIP_Writer(ip)
+	id = pm.currentIdentifier
+
+	// setup sequence number dealer
+	pm.identifiers[id] = make(chan *icmpp.ICMP_In)
+	seqChannel = make(map[uint16](chan *icmpp.ICMP_In))
+
+	// create go routine function to deal packets
+	go sequenceDealer(pm.identifiers[id], seqChannel)
+
+	return id, seqChannel, nil
+}
+
+func sequenceDealer(idInput chan *icmpp.ICMP_In, seqChan map[uint16](chan *icmpp.ICMP_In)) {
+	// TODO verify IPs
+	for {
+		packet := <-idInput
+		// logs.Info.Println("icmp in =", packet.Header.Opt)
+		seqNum := uint16(packet.Header.Opt)
+		if _, ok := seqChan[seqNum]; ok {
+			seqChan[seqNum] <- packet
+		} else {
+			logs.Info.Println("Dropping bad seq num packet with existing identifier")
+		}
+	}
+	// TODO terminate this go routine
+}
+
+func (pm *Ping_Manager) SendPing(ip string, interval, timeout time.Duration, numPings uint16) error {
+	id, seqChannel, err := pm.initIdentifier()
 	if err != nil {
 		logs.Error.Println(err)
 		return err
 	}
 
-	channel := make(chan *icmpp.ICMP_In)
-	pm.identifiers[pm.currentIdentifier] = channel
+	// get ip writer
+	writer, err := pm.getIP_Writer(ip)
+	if err != nil {
+		logs.Error.Println(err)
+		return err
+	}
 
-	seqChannel := make(map[uint16](chan *icmpp.ICMP_In))
-
-	go func() {
+	go func() { // TODO needs to be a go routine?
 		for i := uint16(1); i <= numPings; i++ {
-			// prepare packet
-			packet := &icmpp.ICMP_Header{
-				TypeF: PING_ECHO_REQUEST_TYPE,
-				Code:  PING_ICMP_CODE,
-				Opt:   uint32(pm.currentIdentifier)<<16 | uint32(i),
-				Data:  []byte("abcdefg"), // TODO make legit by sending 56 bytes of Data
-			}
-
-			// make data
-			data, err := packet.MarshalICMPHeader()
-			if err != nil {
-				logs.Error.Println(err)
-				return
-			}
-
-			// send
-			err = ipWriter.WriteTo(data)
-			if err != nil {
-				logs.Error.Println(err)
-				return
-			}
-			time1 := time.Now()
-			timeoutTimer := time.NewTimer(timeout)
 			seqChannel[i] = make(chan *icmpp.ICMP_In)
-			go func(seqChan chan *icmpp.ICMP_In, header *icmpp.ICMP_Header, time1 *time.Time, timer *time.Timer) {
-				for {
-					select {
-					case pingResonse := <-seqChan:
-						if !bytes.Equal(pingResonse.Header.Data, header.Data) {
-							logs.Info.Println("Dropped packet cuz data !=")
-							continue
-						}
-						time2 := time.Now()
-						logs.Info.Printf("%d bytes from %s: icmp_seq=%d time=%f ms",
-							len(header.Data)+icmpp.ICMP_Header_MinSize,
-							pingResonse.RIP,
-							uint16(header.Opt),
-							time2.Sub(*time1).Seconds()*1000) // put ttl
-						return
-					case <-timer.C:
-						logs.Info.Println("Seq num of", uint16(header.Opt), "timed out")
-						return
-					}
-				}
-			}(seqChannel[i], packet, &time1, timeoutTimer)
+
+			sendSinglePing(writer, id, i, timeout, seqChannel[i]) // function is non-blocking
 
 			// not last
 			if i != numPings {
@@ -87,16 +125,6 @@ func (pm *Ping_Manager) SendPing(ip string, interval, timeout time.Duration, num
 			}
 		}
 	}()
-
-	go func(inChan chan *icmpp.ICMP_In, seqChan map[uint16](chan *icmpp.ICMP_In)) {
-		// TODO verify IPs
-		for {
-			icmp_in := <-inChan
-			//logs.Info.Println("icmp in =",icmp_in.Header.Opt)
-			seqChan[uint16(icmp_in.Header.Opt)] <- icmp_in
-		}
-		//TODO terminate this go routine
-	}(channel, seqChannel)
 
 	time.Sleep(time.Duration(numPings) * timeout)
 	return nil

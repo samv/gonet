@@ -11,7 +11,7 @@ const (
 	PING_ECHO_REQUEST_TYPE = 8
 	PING_ECHO_REPLY_TYPE   = 0
 	PING_ICMP_CODE         = 0
-	PING_START_ID          = 8000
+	PING_START_ID          = 8000 // TODO choose this randomly
 )
 
 type Ping_Manager struct {
