@@ -59,7 +59,7 @@ func sendSinglePing(writer *ipv4p.IP_Writer, id, seq uint16, timeout time.Durati
 					len(header.Data)+icmpp.ICMP_Header_MinSize,
 					pingResonse.RIP,
 					uint16(header.Opt),
-					time2.Sub(*time1).Seconds()*1000) // put ttl
+					float32(time2.Sub(*time1).Nanoseconds())/1000000) // put ttl
 				return
 			case <-timer.C:
 				logs.Info.Println("Seq num of", uint16(header.Opt), "timed out")
