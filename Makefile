@@ -8,7 +8,10 @@ install:
 	-./arp_setup.sh
 	go clean ${pkgs}
 	go install ${pkgs}
-
+clean:
+	-rm ipv4/arpv4/ips.static
+	-rm ethernet/mac.static.orig
+	-rm ethernet/mac.static
 
 # Error Checking
 vet:
