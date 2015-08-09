@@ -22,9 +22,13 @@ func NewNetwork_Writer() (*Network_Writer, error) {
 
 func (nw *Network_Writer) Write(data []byte, addr *Ethernet_Addr, ethertype EtherType) error {
 	// build the ethernet header
-	etherHead := append(
-		addr.MAC.Data[:ETH_MAC_ADDR_SZ],
-		0, 0, 0, 0, 0, 0, // source MAC TODO determine source MAC based on ifindex
+	src_mac, err := GlobalSource_MAC_Table.findByIf(addr.IF_index)
+	if err != nil {
+		return err
+	}
+	etherHead := append(append(
+		addr.MAC.Data[:ETH_MAC_ADDR_SZ],    // dst MAC
+		src_mac.Data[:ETH_MAC_ADDR_SZ]...), // src MAC
 		byte(ethertype>>8), byte(ethertype), // EtherType
 	)
 	//fmt.Println("My header:", etherHead)
