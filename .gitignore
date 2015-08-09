@@ -8,3 +8,4 @@ myMACAddr.go
 udp_read_tester
 udp_write_tester
 tcp_client_tester
+*.static*
