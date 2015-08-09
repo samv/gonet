@@ -25,13 +25,11 @@ test: test_others test_network
 test_others:
 	./run_test.sh github.com/hsheth2/logs
 	./run_test.sh github.com/hsheth2/notifiers
-test_network: test_udp test_tcp test_icmp test_ping
+test_network: test_udp test_tcp test_ping
 test_udp: iptables
 	./run_test.sh network/udp
 test_tcp: iptables
 	./run_test.sh network/tcp
-test_icmp:
-	./run_test.sh network/icmp
 test_ping:
 	./run_test.sh network/ping
 
