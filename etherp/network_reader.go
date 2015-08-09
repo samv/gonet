@@ -4,6 +4,7 @@ import (
 	//"errors"
 	"github.com/hsheth2/logs"
 	//"net"
+	"bytes"
 	"errors"
 	"syscall"
 )
@@ -18,6 +19,7 @@ var GlobalNetworkReader = func() *Network_Reader {
 
 type Network_Reader struct {
 	fd        int
+	last      []byte
 	proto_buf map[uint16](chan []byte)
 }
 
@@ -31,6 +33,7 @@ func NewNetwork_Reader() (*Network_Reader, error) {
 
 	nr := &Network_Reader{
 		fd:        fd,
+		last:      nil,
 		proto_buf: make(map[uint16](chan []byte)),
 	}
 	go nr.readAll()
@@ -47,7 +50,7 @@ func (nr *Network_Reader) readAll() {
 
 		eth_protocol := uint16(data[12])<<8 | uint16(data[13])
 		if c, ok := nr.proto_buf[eth_protocol]; ok {
-			go func() { c <- data[ETH_HEADER_SZ:] }()
+			c <- data[ETH_HEADER_SZ:]
 		} else {
 			//logs.Info.Println("Dropping Ethernet packet for wrong protocol:", eth_protocol)
 		}
@@ -72,7 +75,12 @@ func (nr *Network_Reader) Unbind(proto uint16) error {
 func (nr *Network_Reader) readFrame() ([]byte, error) {
 	buf := make([]byte, MAX_ETHERNET_FRAME_SZ)
 	// read twice to account for the double receiving TODO fix the double reading somehow
-	syscall.Read(nr.fd, buf)
+	//syscall.Read(nr.fd, buf)
 	ln, err := syscall.Read(nr.fd, buf)
+	if bytes.Equal(buf[:ln], nr.last) || err != nil {
+		//logs.Info.Println("Dropping double read packet")
+		return nr.readFrame()
+	}
+	nr.last = buf[:ln]
 	return buf[:ln], err
 }

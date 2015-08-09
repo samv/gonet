@@ -28,5 +28,5 @@ const (
 const (
 	ETH_HEADER_SZ         = 14
 	MAX_ETHERNET_FRAME_SZ = 1522
-	ETH_PROTOCOL_BUF_SZ   = 50
+	ETH_PROTOCOL_BUF_SZ   = 5000
 )
