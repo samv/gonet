@@ -2,12 +2,12 @@ package ethernet
 
 import "syscall"
 
-func getSockAddr() syscall.Sockaddr {
+func getSockAddr(addr *Ethernet_Addr) syscall.Sockaddr {
 	return &syscall.SockaddrLinklayer{
 		// Family is automatically set to AF_PACKET
-		Protocol: ETHERTYPE_IP, // should be inherited anyway
-		Addr:     myMACAddr,    // sending to myself
-		Halen:    ETH_ALEN,     // may not be correct
-		Ifindex:  MyIfIndex,    // TODO: don't hard code this... fix it later
+		Protocol: ETHERTYPE_IP,    // should be inherited anyway
+		Addr:     addr.MAC.Make(), // sending to myself
+		Halen:    ETH_ALEN,        // may not be correct
+		Ifindex:  int(addr.IF_index),
 	}
 }

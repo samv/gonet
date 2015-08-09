@@ -13,7 +13,7 @@ import (
 
 type TCB struct {
 	read             chan *TCP_Packet    // input
-	writer           *netip.RawConn       // output
+	writer           *netip.RawConn      // output
 	ipAddress        string              // destination ip address
 	srcIP            string              // src ip address
 	lport, rport     uint16              // ports

@@ -129,17 +129,17 @@ func (c *TCB) sendPacket(d *TCP_Packet) error {
 	}
 
 	err = c.writer.WriteTo(&netip.Header{
-		Version:  netip.Version,                   // protocol version
+		Version:  netip.Version,                 // protocol version
 		Len:      ipv4.IP_HEADER_LEN,            // header length
-		TOS:      0,                              // type-of-service (0 is everything normal)
+		TOS:      0,                             // type-of-service (0 is everything normal)
 		TotalLen: len(pay) + ipv4.IP_HEADER_LEN, // packet total length (octets)
-		ID:       0,                              // identification
-		Flags:    netip.DontFragment,              // flags
-		FragOff:  0,                              // fragment offset
+		ID:       0,                             // identification
+		Flags:    netip.DontFragment,            // flags
+		FragOff:  0,                             // fragment offset
 		TTL:      ipv4.DEFAULT_TTL,              // time-to-live (maximum lifespan in seconds)
 		Protocol: ipv4.TCP_PROTO,                // next protocol
-		Checksum: 0,                              // checksum (autocomputed)
-		Dst:      net.ParseIP(d.rip),             // destination address
+		Checksum: 0,                             // checksum (autocomputed)
+		Dst:      net.ParseIP(d.rip),            // destination address
 	}, pay, nil)
 
 	if err != nil {

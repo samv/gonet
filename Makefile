@@ -1,6 +1,6 @@
 # Makefile for Golang Network Stack
 
-pkgs = network/ethernet network/arpv4 network/ipv4 network/udp network/tcp network/icmp network/ping
+pkgs = network/ethernet network/ipv4/arpv4 network/ipv4 network/udp network/tcp network/icmp network/ping
 
 install:
 	go get github.com/hsheth2/logs

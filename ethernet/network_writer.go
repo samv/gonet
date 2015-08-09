@@ -3,12 +3,10 @@ package ethernet
 import (
 	"errors"
 	"syscall"
-	//"github.com/hsheth2/logs"
 )
 
 type Network_Writer struct {
-	fd       int
-	sockAddr syscall.Sockaddr
+	fd int
 }
 
 func NewNetwork_Writer() (*Network_Writer, error) {
@@ -17,7 +15,7 @@ func NewNetwork_Writer() (*Network_Writer, error) {
 		return nil, errors.New("Write's socket failed")
 	}
 
-	addr := getSockAddr()
+	//	addr := getSockAddr()
 
 	/*err = syscall.Sendto(fd, []byte{0x08, 0x00, 0x27, 0x9e, 0x29, 0x63, 0x08, 0x00, 0x27, 0x9e, 0x29, 0x63, 0x08, 0x00}, 0, addr) //Random bytes
 	  if err != nil {
@@ -27,30 +25,25 @@ func NewNetwork_Writer() (*Network_Writer, error) {
 	  }*/
 
 	return &Network_Writer{
-		fd:       fd,
-		sockAddr: addr,
+		fd: fd,
 	}, nil
 }
 
-func (nw *Network_Writer) Write(data []byte) error {
+func (nw *Network_Writer) Write(data []byte, addr *Ethernet_Addr, ethertype EtherType) error {
 	// build the ethernet header
-	/*etherHead :=  append(append(
-	    myMACSlice, // dst MAC
-	    myMACSlice...), // src MAC
-	    0x08, 0x00, // ethertype (IP)
-	)*/
-	// TODO: decide MAC address dynamically
-	etherHead := []byte{
-		0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 8, 0,
-	}
+	etherHead := append(
+		addr.MAC.Data[:ETH_MAC_ADDR_SZ],
+		0, 0, 0, 0, 0, 0, // source MAC TODO determine source MAC based on ifindex
+		byte(ethertype>>8), byte(ethertype), // EtherType
+	)
 	//fmt.Println("My header:", etherHead)
 
 	// add on the ethernet header
 	newPacket := append(etherHead, data...)
-	//fmt.Println("Full Packet with ethernet header:", newPacket)
+	//logs.Info.Println("Full Packet with ethernet header:", newPacket)
 
 	//logs.Trace.Println("Ethernet Writing:", newPacket)
-	return syscall.Sendto(nw.fd, newPacket, 0, nw.sockAddr)
+	return syscall.Sendto(nw.fd, newPacket, 0, getSockAddr(addr))
 }
 
 func (nw *Network_Writer) Close() error {

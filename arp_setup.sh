@@ -3,4 +3,4 @@
 set -e
 
 gcc -o ifaddrs getifaddrs.c
-./ifaddrs > arpv4/static.config
+./ifaddrs > ipv4/arpv4/static.config

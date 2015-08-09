@@ -110,8 +110,7 @@ func (pm *Ping_Manager) SendPing(ip string, interval, timeout time.Duration, num
 		logs.Error.Println(err)
 		return err
 	}
-	defer func(){ terminate <- true }()
-
+	defer func() { terminate <- true }()
 
 	// get ip writer
 	writer, err := pm.getIP_Writer(ip)

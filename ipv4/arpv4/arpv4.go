@@ -1,18 +1,14 @@
 package arpv4
 
 import (
-	"network/ethernet"
-	"github.com/hsheth2/logs"
 	"errors"
+	"network/ethernet"
+
+	"github.com/hsheth2/logs"
 )
 
-type ARP_Entry struct {
-	mac *ethernet.MAC_Address
-	ifindex int
-}
-
 type ARP_Table struct {
-	table map[string](ARP_Entry)
+	table map[string](*ethernet.Ethernet_Addr)
 }
 
 var GlobalARP_Table = func() *ARP_Table {
@@ -25,25 +21,25 @@ var GlobalARP_Table = func() *ARP_Table {
 
 func NewARP_Table() (*ARP_Table, error) {
 	return &ARP_Table{
-		table: make(map[string](ARP_Entry)),
+		table: make(map[string](*ethernet.Ethernet_Addr)),
 	}, nil
 }
 
-func (table *ARP_Table) Lookup(ip string) (ARP_Entry, error) {
+func (table *ARP_Table) Lookup(ip string) (*ethernet.Ethernet_Addr, error) {
 	if ans, ok := table.table[ip]; ok {
 		return ans, nil
 	}
-	return ARP_Entry{}, errors.New("ARP lookup into table failed") // TODO call probe instead
+	return &ethernet.Ethernet_Addr{}, errors.New("ARP lookup into table failed") // TODO call probe instead
 }
 
 func (table *ARP_Table) probe(ip string) {
 	// TODO implement later
 }
 
-func (table *ARP_Table) Static_Add(ip string, mac *ethernet.MAC_Address, ifindex int) error {
+func (table *ARP_Table) Static_Add(ip string, addr *ethernet.Ethernet_Addr) error {
 	if _, ok := table.table[ip]; ok {
 		return errors.New("Cannot overwrite existing entry")
 	}
-	table.table[ip] = ARP_Entry{mac, ifindex}
+	table.table[ip] = addr
 	return nil
 }

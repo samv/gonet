@@ -9,6 +9,7 @@ package ethernet
 //	return data
 //}(myMACSlice)
 
+type IF_Index int
 type MAC_Address struct {
 	Data []byte
 }
@@ -28,6 +29,11 @@ func (m *MAC_Address) Make() [8]byte {
 	return data
 }
 
+type Ethernet_Addr struct {
+	MAC      *MAC_Address
+	IF_index IF_Index
+}
+
 const (
 	// 768 = htons(ETH_P_ALL) = htons(3)
 	// see http://ideone.com/2eunQu
@@ -39,12 +45,16 @@ const (
 	SOCK_RAW        = 3
 	AF_PACKET       = 17
 	HTONS_ETH_P_ALL = 768
-	ETHERTYPE_IP    = 0x0800
-	ETHERTYPE_APR   = 0x0806
 	ETH_ALEN        = 6
 )
 
+type EtherType uint16
+
+const ETHERTYPE_IP = 0x0800
+const ETHERTYPE_APR = 0x0806
+
 const (
+	ETH_MAC_ADDR_SZ       = 6
 	ETH_HEADER_SZ         = 14
 	MAX_ETHERNET_FRAME_SZ = 1522
 	ETH_PROTOCOL_BUF_SZ   = 5000

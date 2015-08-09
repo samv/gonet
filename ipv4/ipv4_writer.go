@@ -3,6 +3,7 @@ package ipv4
 import (
 	"net"
 	"network/ethernet"
+	"network/ipv4/arpv4"
 
 	"golang.org/x/net/ipv4"
 	//"errors"
@@ -153,7 +154,7 @@ func (ipw *IP_Writer) WriteTo(p []byte) error {
 
 		// write the bytes
 		//logs.Trace.Println("IP Writing:", newPacket)
-		err := ipw.nw.Write(newPacket)
+		err := ipw.sendIP(newPacket)
 		if err != nil {
 			return err
 		}
@@ -161,6 +162,14 @@ func (ipw *IP_Writer) WriteTo(p []byte) error {
 	//fmt.Println("PAY LEN", len(p))
 
 	return nil
+}
+
+func (ipw *IP_Writer) sendIP(p []byte) error {
+	arp_data, err := arpv4.GlobalARP_Table.Lookup(ipw.dst)
+	if err != nil {
+		return err
+	}
+	return ipw.nw.Write(p, arp_data, ethernet.ETHERTYPE_IP)
 }
 
 func (ipw *IP_Writer) Close() error {
