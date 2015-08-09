@@ -4,12 +4,12 @@ import (
 	"errors"
 	"net"
 	"network/ethernet"
-
+	"network/ipv4/arpv4"
 	"github.com/hsheth2/logs"
 )
 
 type IP_Read_Manager struct {
-	incoming chan []byte
+	incoming chan *ethernet.Ethernet_Header
 	buffers  map[uint8](map[string](chan []byte))
 }
 
@@ -39,7 +39,8 @@ func NewIP_Read_Manager(in *ethernet.Network_Reader) (*IP_Read_Manager, error) {
 
 func (nr *IP_Read_Manager) readAll() {
 	for {
-		buf := <-nr.incoming
+		eth_packet := <-nr.incoming
+		buf := eth_packet.Packet
 
 		if len(buf) <= IP_HEADER_LEN {
 			logs.Info.Println("Dropping IP Packet for bogus length <=", IP_HEADER_LEN)
@@ -48,6 +49,11 @@ func (nr *IP_Read_Manager) readAll() {
 
 		protocol := uint8(buf[9])
 		ip := net.IPv4(buf[12], buf[13], buf[14], buf[15]).String()
+
+		err := arpv4.GlobalARP_Table.Static_Add(ip, eth_packet.RemAddr)
+		if err != nil {
+			logs.Error.Println(err)
+		}
 
 		//fmt.Println(ln)
 		//fmt.Println(protocol, ip)
