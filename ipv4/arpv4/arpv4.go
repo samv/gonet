@@ -37,9 +37,9 @@ func (table *ARP_Table) probe(ip string) {
 }
 
 func (table *ARP_Table) Static_Add(ip string, addr *ethernet.Ethernet_Addr) error {
-//	if _, ok := table.table[ip]; ok {
-//		return errors.New("Cannot overwrite existing entry")
-//	}
+	//	if _, ok := table.table[ip]; ok {
+	//		return errors.New("Cannot overwrite existing entry")
+	//	}
 	table.table[ip] = addr
 	return nil
 }

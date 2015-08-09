@@ -11,7 +11,7 @@ import (
 
 type Ethernet_Header struct {
 	RemAddr *Ethernet_Addr
-	Packet []byte
+	Packet  []byte
 }
 
 var GlobalNetworkReader = func() *Network_Reader {
@@ -55,18 +55,18 @@ func (nr *Network_Reader) readAll() { // TODO terminate (using notifiers)
 
 		eth_protocol := uint16(data[12])<<8 | uint16(data[13])
 		if c, ok := nr.proto_buf[eth_protocol]; ok {
-			mac := &MAC_Address {
-				Data: data[ETH_MAC_ADDR_SZ:ETH_MAC_ADDR_SZ * 2],
+			mac := &MAC_Address{
+				Data: data[ETH_MAC_ADDR_SZ : ETH_MAC_ADDR_SZ*2],
 			}
 			ifIndex, err := GlobalSource_MAC_Table.findByMac(mac)
 			if err != nil {
-//				logs.Error.Println(err)
+				//				logs.Error.Println(err)
 				continue
 			}
 			ethHead := &Ethernet_Header{
-				RemAddr: &Ethernet_Addr {
+				RemAddr: &Ethernet_Addr{
 					IF_index: ifIndex,
-					MAC: mac,
+					MAC:      mac,
 				},
 				Packet: data[ETH_HEADER_SZ:],
 			}
