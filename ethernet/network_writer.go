@@ -15,15 +15,6 @@ func NewNetwork_Writer() (*Network_Writer, error) {
 		return nil, errors.New("Write's socket failed")
 	}
 
-	//	addr := getSockAddr()
-
-	/*err = syscall.Sendto(fd, []byte{0x08, 0x00, 0x27, 0x9e, 0x29, 0x63, 0x08, 0x00, 0x27, 0x9e, 0x29, 0x63, 0x08, 0x00}, 0, addr) //Random bytes
-	  if err != nil {
-	      fmt.Println("ERROR returned by syscall.Sendto", err)
-	  } else {
-	      fmt.Println("Sent the test packet")
-	  }*/
-
 	return &Network_Writer{
 		fd: fd,
 	}, nil
@@ -42,10 +33,10 @@ func (nw *Network_Writer) Write(data []byte, addr *Ethernet_Addr, ethertype Ethe
 	newPacket := append(etherHead, data...)
 	//logs.Info.Println("Full Packet with ethernet header:", newPacket)
 
-	//logs.Trace.Println("Ethernet Writing:", newPacket)
+	// send packet
 	return syscall.Sendto(nw.fd, newPacket, 0, getSockAddr(addr))
 }
 
 func (nw *Network_Writer) Close() error {
-	return syscall.Close(nw.fd)
+	return syscall.Close(nw.fd) // TODO notify upper layers of close
 }
