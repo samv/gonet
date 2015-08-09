@@ -60,7 +60,7 @@ func (nr *Network_Reader) readAll() { // TODO terminate (using notifiers)
 			}
 			ifIndex, err := GlobalSource_MAC_Table.findByMac(mac)
 			if err != nil {
-				logs.Error.Println(err)
+//				logs.Error.Println(err)
 				continue
 			}
 			ethHead := &Ethernet_Header{
