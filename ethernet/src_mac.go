@@ -11,6 +11,7 @@ import (
 	"strings"
 
 	"github.com/hsheth2/logs"
+	"bytes"
 )
 
 const ETH_STATIC_MAC_LOAD_FILE = "mac.static"
@@ -70,7 +71,12 @@ func (smt *Source_MAC_Table) findByIf(ifindex IF_Index) (*MAC_Address, error) {
 }
 
 func (smt *Source_MAC_Table) findByMac(mac *MAC_Address) (IF_Index, error) {
-	return 0, nil // TODO
+	for ind, m := range smt.table {
+		if bytes.Equal(mac.Data, m.Data) {
+			return ind, nil
+		}
+	}
+	return 0, errors.New("Could not find requested MAC address in ARP table")
 }
 
 func (smt *Source_MAC_Table) add(ifindex IF_Index, mac *MAC_Address) error {
