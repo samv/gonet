@@ -1,4 +1,4 @@
-package arp
+package arpv4
 
 import (
 	"network/ethernet"
