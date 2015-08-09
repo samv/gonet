@@ -5,8 +5,12 @@ pkgs = network/ethernet network/arp network/ipv4 network/udp network/tcp network
 install:
 	go get github.com/hsheth2/logs
 	go get github.com/hsheth2/notifiers
+	-./arp_setup.sh
 	go clean ${pkgs}
 	go install ${pkgs}
+
+
+# Error Checking
 vet:
 	go vet ${pkgs}
 fmt:
