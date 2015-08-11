@@ -3,8 +3,10 @@
 pkgs = network/ethernet network/ipv4/arpv4 network/ipv4 network/udp network/tcp network/icmp network/ping
 
 install:
-	go get github.com/hsheth2/logs
-	go get github.com/hsheth2/notifiers
+	go get -u github.com/hsheth2/logs
+	go get -u github.com/hsheth2/notifiers
+	go get -u github.com/songgao/water
+	go get -u github.com/songgao/water/waterutil
 	-./arp_setup.sh
 	go clean ${pkgs}
 	go install ${pkgs}
@@ -32,6 +34,10 @@ test_tcp: iptables
 	./run_test.sh network/tcp
 test_ping:
 	./run_test.sh network/ping
+test_ethernet:
+	# for testing water
+	./run_test.sh network/ethernet
+
 
 iptables:
 	sudo iptables -I INPUT -p tcp --sport 20102 -j DROP
