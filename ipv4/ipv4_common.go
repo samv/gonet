@@ -75,11 +75,3 @@ func VerifyTransportChecksum(header []byte, srcIP, dstIP IPaddress, headerLen ui
 	// TODO: do TCP/UDP checksum verification
 	return true
 }
-
-func ipCompare(base, cmp IPaddress, netm Netmask) bool {
-	return false
-}
-
-func GetSrcIP(dst IPaddress) IPaddress {
-	return "127.0.0.1" // TODO: fix this function to be dynamic
-}

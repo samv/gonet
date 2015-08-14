@@ -24,7 +24,7 @@ func NewUDP_Writer(src, dest uint16, dstIP ipv4.IPaddress) (*UDP_Writer, error) 
 		src:    src,
 		dst:    dest,
 		rip:    dstIP,
-		lip:    ipv4.GetSrcIP(dstIP),
+		lip:    ipv4.GlobalSource_IP_Table.Query(dstIP),
 		writer: write,
 	}, nil
 }

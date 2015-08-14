@@ -51,7 +51,7 @@ func sendSinglePing(writer *ipv4.IP_Writer, id, seq uint16, timeout time.Duratio
 			select {
 			case pingResonse := <-seqChan:
 				if !bytes.Equal(pingResonse.Header.Data, header.Data) {
-					logs.Info.Println("Dropped packet cuz data !=")
+					logs.Info.Println("Dropped packet because header data not equal to ping sent")
 					continue
 				}
 				time2 := time.Now()

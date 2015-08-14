@@ -12,6 +12,7 @@ install:
 	go install ${pkgs}
 clean:
 	-rm ipv4/arpv4/ips.static
+	-rm ipv4/ips.static
 	-rm ethernet/mac.static.orig
 	-rm ethernet/mac.static
 

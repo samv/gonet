@@ -48,7 +48,7 @@ func NewIP_Writer(dst IPaddress, protocol uint8) (*IP_Writer, error) {
 		version:     ipv4.Version,
 		headerLen:   IP_HEADER_LEN,
 		dst:         dst,
-		src:         GetSrcIP(dst),
+		src:         GlobalSource_IP_Table.Query(dst),
 		ttl:         DEFAULT_TTL,
 		protocol:    protocol,
 		identifier:  20000, // TODO generate this properly
