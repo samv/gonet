@@ -5,8 +5,8 @@ pkgs = network/ethernet network/ipv4/arpv4 network/ipv4 network/udp network/tcp 
 install:
 	go get -u github.com/hsheth2/logs
 	go get -u github.com/hsheth2/notifiers
-	go get -u github.com/songgao/water
-	go get -u github.com/songgao/water/waterutil
+	-go get -u github.com/songgao/water
+	-go get -u github.com/songgao/water/waterutil
 	-./arp_setup.sh
 	go clean ${pkgs}
 	go install ${pkgs}

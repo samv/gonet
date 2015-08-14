@@ -14,7 +14,7 @@ import (
 type IP_Writer struct {
 	nw          *ethernet.Network_Writer
 	version     uint8
-	dst, src    string
+	dst, src    IPaddress
 	headerLen   uint16
 	ttl         uint8
 	protocol    uint8
@@ -22,7 +22,7 @@ type IP_Writer struct {
 	maxFragSize uint16
 }
 
-func NewIP_Writer(dst string, protocol uint8) (*IP_Writer, error) {
+func NewIP_Writer(dst IPaddress, protocol uint8) (*IP_Writer, error) {
 	// create its own network_writer
 	nw, err := ethernet.NewNetwork_Writer()
 	if err != nil {
@@ -70,13 +70,13 @@ func (ipw *IP_Writer) WriteTo(p []byte) error {
 	header[9] = (byte)(ipw.protocol) // Protocol
 
 	// Src and Dst IPs
-	srcIP := net.ParseIP(ipw.src)
+	srcIP := net.ParseIP(string(ipw.src))
 	//fmt.Println(srcIP)
 	//fmt.Println(srcIP[12])
 	//fmt.Println(srcIP[13])
 	//fmt.Println(srcIP[14])
 	//fmt.Println(srcIP[15])
-	dstIP := net.ParseIP(ipw.dst)
+	dstIP := net.ParseIP(string(ipw.dst))
 	//fmt.Println(dstIP)
 	header[12] = srcIP[12]
 	header[13] = srcIP[13]
@@ -165,7 +165,7 @@ func (ipw *IP_Writer) WriteTo(p []byte) error {
 }
 
 func (ipw *IP_Writer) sendIP(p []byte) error {
-	arp_data, err := arpv4.GlobalARP_Table.Lookup(ipw.dst)
+	arp_data, err := arpv4.GlobalARP_Table.Lookup(string(ipw.dst))
 	if err != nil {
 		return err
 	}

@@ -139,7 +139,7 @@ func (c *TCB) sendPacket(d *TCP_Packet) error {
 		TTL:      ipv4.DEFAULT_TTL,              // time-to-live (maximum lifespan in seconds)
 		Protocol: ipv4.TCP_PROTO,                // next protocol
 		Checksum: 0,                             // checksum (autocomputed)
-		Dst:      net.ParseIP(d.rip),            // destination address
+		Dst:      net.ParseIP(string(d.rip)),    // destination address
 	}, pay, nil)
 
 	if err != nil {

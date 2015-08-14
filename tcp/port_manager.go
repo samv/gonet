@@ -10,19 +10,19 @@ import (
 // Global src, dst port and ip registry for TCP binding
 type TCP_Port_Manager_Type struct {
 	tcp_reader *ipv4.IP_Reader
-	incoming   map[uint16](map[uint16](map[string](chan *TCP_Packet))) // dst, src port, remote ip
+	incoming   map[uint16](map[uint16](map[ipv4.IPaddress](chan *TCP_Packet))) // dst, src port, remote ip
 }
 
 // TODO TCP_Port_Manager_Type should have an unbind function
-func (m *TCP_Port_Manager_Type) bind(rport, lport uint16, ip string) (chan *TCP_Packet, error) {
+func (m *TCP_Port_Manager_Type) bind(rport, lport uint16, ip ipv4.IPaddress) (chan *TCP_Packet, error) {
 	// lport is the local one here, rport is the remote
 	if _, ok := m.incoming[lport]; !ok {
-		m.incoming[lport] = make(map[uint16](map[string](chan *TCP_Packet)))
+		m.incoming[lport] = make(map[uint16](map[ipv4.IPaddress](chan *TCP_Packet)))
 	}
 
 	// TODO add an option (for servers) for all srcports
 	if _, ok := m.incoming[lport][rport]; !ok {
-		m.incoming[lport][rport] = make(map[string](chan *TCP_Packet))
+		m.incoming[lport][rport] = make(map[ipv4.IPaddress](chan *TCP_Packet))
 	}
 
 	if _, ok := m.incoming[lport][rport][ip]; ok {
@@ -92,7 +92,7 @@ var TCP_Port_Manager = func() *TCP_Port_Manager_Type {
 
 	m := &TCP_Port_Manager_Type{
 		tcp_reader: ipr,
-		incoming:   make(map[uint16](map[uint16](map[string](chan *TCP_Packet)))),
+		incoming:   make(map[uint16](map[uint16](map[ipv4.IPaddress](chan *TCP_Packet)))),
 	}
 	go m.readAll()
 	return m

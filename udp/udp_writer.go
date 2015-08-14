@@ -8,13 +8,13 @@ import (
 const UDP_HEADER_SZ = 8
 
 type UDP_Writer struct {
-	rip      string // destination ip address
-	lip      string // source ip address
+	rip      ipv4.IPaddress // destination ip address
+	lip      ipv4.IPaddress // source ip address
 	writer   *ipv4.IP_Writer
 	src, dst uint16 // ports
 }
 
-func NewUDP_Writer(src, dest uint16, dstIP string) (*UDP_Writer, error) {
+func NewUDP_Writer(src, dest uint16, dstIP ipv4.IPaddress) (*UDP_Writer, error) {
 	write, err := ipv4.NewIP_Writer(dstIP, ipv4.UDP_PROTO)
 	if err != nil {
 		return nil, err

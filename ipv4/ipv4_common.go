@@ -65,17 +65,21 @@ func verifyIPChecksum(header []byte) bool {
 	return Checksum(header) == 0
 }
 
-func CalcTransportChecksum(header []byte, srcIP, dstIP string, headerLen uint16, proto uint8) uint16 {
+func CalcTransportChecksum(header []byte, srcIP, dstIP IPaddress, headerLen uint16, proto uint8) uint16 {
 	//logs.Trace.Println("Transport Checksum")
-	ips := append(net.ParseIP(srcIP)[12:], net.ParseIP(dstIP)[12:]...)
+	ips := append(net.ParseIP(string(srcIP))[12:], net.ParseIP(string(dstIP))[12:]...)
 	return Checksum(append(append(ips, []byte{0, byte(proto), byte(headerLen >> 8), byte(headerLen)}...), header...))
 }
 
-func VerifyTransportChecksum(header []byte, srcIP, dstIP string, headerLen uint16, proto uint8) bool {
+func VerifyTransportChecksum(header []byte, srcIP, dstIP IPaddress, headerLen uint16, proto uint8) bool {
 	// TODO: do TCP/UDP checksum verification
 	return true
 }
 
-func GetSrcIP(dst string) string {
+func ipCompare(base, cmp IPaddress, netm Netmask) bool {
+	return false
+}
+
+func GetSrcIP(dst IPaddress) IPaddress {
 	return "127.0.0.1" // TODO: fix this function to be dynamic
 }

@@ -2,9 +2,10 @@ package ethernet
 
 import (
 	"testing"
-	"github.com/songgao/water"
-	"github.com/hsheth2/logs"
 	"time"
+
+	"github.com/hsheth2/logs"
+	"github.com/songgao/water"
 )
 
 const TAP_NAME = "tap0"

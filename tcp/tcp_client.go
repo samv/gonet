@@ -10,7 +10,7 @@ import (
 	netip "golang.org/x/net/ipv4"
 )
 
-func New_TCB_From_Client(local, remote uint16, dstIP string) (*TCB, error) {
+func New_TCB_From_Client(local, remote uint16, dstIP ipv4.IPaddress) (*TCB, error) {
 	/*write, err := NewIP_Writer(dstIP, TCP_PROTO)
 	if err != nil {
 		return nil, err
@@ -22,7 +22,7 @@ func New_TCB_From_Client(local, remote uint16, dstIP string) (*TCB, error) {
 		return nil, err
 	}
 
-	p, err := net.ListenPacket(fmt.Sprintf("ip4:%d", ipv4.TCP_PROTO), dstIP) // only for read, not for write
+	p, err := net.ListenPacket(fmt.Sprintf("ip4:%d", ipv4.TCP_PROTO), string(dstIP)) // only for read, not for write
 	if err != nil {
 		logs.Error.Println(err)
 		return nil, err
