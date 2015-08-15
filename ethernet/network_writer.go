@@ -3,6 +3,7 @@ package ethernet
 import (
 	"errors"
 	"syscall"
+	"github.com/hsheth2/logs"
 )
 
 type Network_Writer struct {
@@ -35,9 +36,9 @@ func (nw *Network_Writer) Write(data []byte, addr *Ethernet_Addr, ethertype Ethe
 
 	// add on the ethernet header
 	newPacket := append(etherHead, data...)
-	//logs.Info.Println("Full Packet with ethernet header:", newPacket)
 
 	// send packet
+	logs.Info.Println("network_writer:", "write: full Packet with ethernet header:", newPacket, "with ifindex:", addr.IF_index)
 	return syscall.Sendto(nw.fd, newPacket, 0, getSockAddr(addr))
 }
 

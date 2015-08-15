@@ -3,21 +3,11 @@ package arpv4
 import (
 	"errors"
 	"network/ethernet"
-
-	"github.com/hsheth2/logs"
 )
 
 type ARP_Table struct {
 	table map[string](*ethernet.Ethernet_Addr)
 }
-
-var GlobalARP_Table = func() *ARP_Table {
-	x, err := NewARP_Table()
-	if err != nil {
-		logs.Error.Fatalln(err)
-	}
-	return x
-}()
 
 func NewARP_Table() (*ARP_Table, error) {
 	return &ARP_Table{
@@ -37,9 +27,9 @@ func (table *ARP_Table) probe(ip string) {
 }
 
 func (table *ARP_Table) Static_Add(ip string, addr *ethernet.Ethernet_Addr) error {
-	//	if _, ok := table.table[ip]; ok {
-	//		return errors.New("Cannot overwrite existing entry")
-	//	}
+	// if _, ok := table.table[ip]; ok {
+	// 	return errors.New("Cannot overwrite existing entry")
+	// }
 	table.table[ip] = addr
 	return nil
 }

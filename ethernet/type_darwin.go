@@ -1,7 +1,9 @@
+// +build !linux
+
 package ethernet
 
 import "syscall"
 
 func getSockAddr(addr *Ethernet_Addr) syscall.Sockaddr {
-	return &syscall.SockaddrInet4{}
+	panic("getSockAddr not implemented on this platform")
 }

@@ -3,7 +3,6 @@
 main
 auto-push.sh
 auto-full.sh
-myMACAddr.go
 .AppleDouble
 udp_read_tester
 udp_write_tester
