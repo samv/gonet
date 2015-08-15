@@ -1,15 +1,16 @@
 package arpv4
 
 import (
-	"github.com/hsheth2/logs"
-	"runtime"
-	"os"
-	"path"
 	"bufio"
-	"strings"
 	"net"
 	"network/ethernet"
+	"os"
+	"path"
+	"runtime"
 	"strconv"
+	"strings"
+
+	"github.com/hsheth2/logs"
 )
 
 const LOCAL_IPS_AND_MACS_LOAD_FILE = "ips_mac.static"
@@ -52,7 +53,7 @@ var GlobalARP_Table = func() *ARP_Table {
 
 		// construct mac and if index structure
 		enter := &ethernet.Ethernet_Addr{
-			MAC: mac,
+			MAC:      mac,
 			IF_index: if_index,
 		}
 
@@ -65,4 +66,3 @@ var GlobalARP_Table = func() *ARP_Table {
 
 	return table
 }()
-

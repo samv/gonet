@@ -5,12 +5,13 @@ import (
 	"time"
 
 	"github.com/hsheth2/logs"
-	"github.com/songgao/water"
+	"github.com/hsheth2/water"
 )
 
-const TAP_NAME = "tap0"
-
 func TestWater(t *testing.T) {
+	t.Skip("caution: this test will always fail, as the network_rw will already be using tap0")
+
+	const TAP_NAME = "tap0"
 	ifce, err := water.NewTAP(TAP_NAME)
 	if err != nil {
 		logs.Error.Fatalln(err)

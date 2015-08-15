@@ -4,8 +4,9 @@ import (
 	"testing"
 	"time"
 
-	"github.com/hsheth2/logs"
 	"network/ipv4"
+
+	"github.com/hsheth2/logs"
 )
 
 func ping_tester(t *testing.T, ip ipv4.IPaddress, num uint16) {
@@ -20,10 +21,9 @@ func ping_tester(t *testing.T, ip ipv4.IPaddress, num uint16) {
 }
 
 func TestLocalPing(t *testing.T) {
-	t.Skip()
 	ping_tester(t, "127.0.0.1", 5)
 }
 
 func TestExternalPing(t *testing.T) {
-	ping_tester(t, "192.168.1.2", 20) // TODO decide dynamically based on ip address
+	ping_tester(t, "192.168.1.2", 10) // TODO decide dynamically based on ip address
 }

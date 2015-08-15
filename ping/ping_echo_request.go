@@ -89,7 +89,7 @@ func sequenceDealer(idInput chan *icmp.ICMP_In, seqChan map[uint16](chan *icmp.I
 	for {
 		select {
 		case <-terminate:
-			logs.Info.Println("Terminating seq dealer")
+			//			logs.Info.Println("Terminating seq dealer")
 			return
 		case packet := <-idInput:
 			// logs.Info.Println("icmp in =", packet.Header.Opt)
