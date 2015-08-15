@@ -23,7 +23,8 @@ clean:
 vet:
 	go vet ${pkgs}
 fmt:
-	go fmt ${pkgs}
+	./auto-format.sh
+	# go fmt ${pkgs}
 
 
 # Different tests that could be run on the network's code
