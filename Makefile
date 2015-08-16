@@ -16,6 +16,7 @@ clean:
 	-rm ipv4/ips.static
 	-rm ethernet/mac.static.orig
 	-rm ethernet/mac.static
+	-rm ethernet/external_mac.static
 	-rm *.test
 	-rm *.pprof
 

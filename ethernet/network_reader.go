@@ -21,13 +21,13 @@ var GlobalNetworkReader = func() *Network_Reader {
 
 type Network_Reader struct {
 	net       *Network_Tap
-	proto_buf map[uint16](chan *Ethernet_Header)
+	proto_buf map[EtherType](chan *Ethernet_Header)
 }
 
 func NewNetwork_Reader() (*Network_Reader, error) {
 	nr := &Network_Reader{
 		net:       GlobalNetwork_Tap,
-		proto_buf: make(map[uint16](chan *Ethernet_Header)),
+		proto_buf: make(map[EtherType](chan *Ethernet_Header)),
 	}
 	go nr.readAll()
 
@@ -41,7 +41,7 @@ func (nr *Network_Reader) readAll() { // TODO terminate (using notifiers)
 			logs.Info.Println("ReadFrame failed:", err)
 		}
 
-		eth_protocol := uint16(data[12])<<8 | uint16(data[13])
+		eth_protocol := EtherType(uint16(data[12])<<8 | uint16(data[13]))
 		if c, ok := nr.proto_buf[eth_protocol]; ok {
 			mac := &MAC_Address{
 				Data: data[ETH_MAC_ADDR_SZ : ETH_MAC_ADDR_SZ*2],
@@ -65,7 +65,7 @@ func (nr *Network_Reader) readAll() { // TODO terminate (using notifiers)
 	}
 }
 
-func (nr *Network_Reader) Bind(proto uint16) (chan *Ethernet_Header, error) {
+func (nr *Network_Reader) Bind(proto EtherType) (chan *Ethernet_Header, error) {
 	if _, exists := nr.proto_buf[proto]; exists {
 		return nil, errors.New("Protocol already registered")
 	} else {
@@ -75,7 +75,7 @@ func (nr *Network_Reader) Bind(proto uint16) (chan *Ethernet_Header, error) {
 	}
 }
 
-func (nr *Network_Reader) Unbind(proto uint16) error {
+func (nr *Network_Reader) Unbind(proto EtherType) error {
 	// TODO write the unbind ether proto function
 	return nil
 }

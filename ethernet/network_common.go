@@ -1,14 +1,5 @@
 package ethernet
 
-//var myMACAddr = func(mac []byte) [8]byte {
-//	mac = append(mac, 0, 0)
-//	var data [8]byte
-//	for i := 0; i < 8; i++ {
-//		data[i] = mac[i]
-//	}
-//	return data
-//}(myMACSlice)
-
 type IF_Index int
 type MAC_Address struct {
 	Data []byte

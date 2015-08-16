@@ -1,7 +1,7 @@
 package tcp
 
 // Finite State Machine
-const (
+const ( // TODO use iota
 	CLOSED      = 1
 	LISTEN      = 2
 	SYN_SENT    = 3
@@ -37,7 +37,7 @@ const MIN_WINDOW_SZ = 500
 // TODO: set these properly based on the standard values
 
 // Flags
-const (
+const ( // TODO use iota
 	TCP_FIN = 0x01
 	TCP_SYN = 0x02
 	TCP_RST = 0x04

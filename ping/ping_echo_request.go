@@ -10,6 +10,8 @@ import (
 	"github.com/hsheth2/logs"
 )
 
+const DATA_56_BYTES = "abcdefghijklmnopqrstuvwxyzabcdefghijklmnopqrstuvwxyzabcd"
+
 func (pm *Ping_Manager) ping_response_dealer() {
 	for {
 		ping := <-pm.reply
@@ -28,7 +30,7 @@ func sendSinglePing(writer *ipv4.IP_Writer, id, seq uint16, timeout time.Duratio
 		TypeF: PING_ECHO_REQUEST_TYPE,
 		Code:  PING_ICMP_CODE,
 		Opt:   uint32(id)<<16 | uint32(seq),
-		Data:  []byte("abcdefg"), // TODO make legit by sending 56 bytes of Data and putting the timestamp in the data
+		Data:  []byte(DATA_56_BYTES), // TODO make legit by putting the timestamp in the data
 	}
 
 	// make data

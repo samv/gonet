@@ -35,11 +35,11 @@ func (nw *Network_Writer) Write(data []byte, addr *Ethernet_Addr, ethertype Ethe
 	newPacket := append(etherHead, data...)
 
 	// send packet
+	logs.Info.Println("network_writer:", "write: full packet with ethernet header:", newPacket, "with ifindex:", addr.IF_index)
 	if bytes.Equal(src_mac.Data, loopback_mac_address.Data) { // TODO find a better, dynamic way to do this
 		nw.net.readBuf <- newPacket // TODO verify the packet is correctly built
 		return nil
 	} else {
-		logs.Info.Println("network_writer:", "write: full Packet with ethernet header:", newPacket, "with ifindex:", addr.IF_index)
 		return nw.net.write(newPacket)
 	}
 }

@@ -24,6 +24,11 @@ func TestLocalPing(t *testing.T) {
 	ping_tester(t, "127.0.0.1", 5)
 }
 
+func TestTapPing(t *testing.T) {
+	ping_tester(t, "10.0.0.2", 10)
+}
+
 func TestExternalPing(t *testing.T) {
 	ping_tester(t, "192.168.1.2", 10) // TODO decide dynamically based on ip address
 }
+
