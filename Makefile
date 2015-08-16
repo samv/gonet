@@ -2,16 +2,16 @@
 
 pkgs = network/ethernet network/ipv4/arpv4 network/ipv4 network/udp network/tcp network/icmp network/ping
 
-install:
+install: clean setup
 	go get -u github.com/hsheth2/logs
 	go get -u github.com/hsheth2/notifiers
-	-go get -u github.com/hsheth2/water
-	-go get -u github.com/hsheth2/water/waterutil
-	-./arp_setup.sh
+	go get -u github.com/hsheth2/water
+	go get -u github.com/hsheth2/water/waterutil
 	go clean ${pkgs}
 	go install ${pkgs}
 clean:
 	-rm ipv4/arpv4/ips.static.orig
+	-rm ipv4/arpv4/ips_mac.static.orig
 	-rm ipv4/arpv4/ips_mac.static
 	-rm ipv4/ips.static
 	-rm ethernet/mac.static.orig
@@ -19,6 +19,11 @@ clean:
 	-rm ethernet/external_mac.static
 	-rm *.test
 	-rm *.pprof
+	go clean ${pkgs}
+setup:
+	-./tap_setup.sh
+	-./arp_setup.sh
+
 
 # Error Checking
 vet:

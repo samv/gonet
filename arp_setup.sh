@@ -13,5 +13,6 @@ echo '00:34:45:de:ca:de' > ethernet/external_mac.static
 
 (
 	cd ipv4/arpv4
-	python ips_mac_static_process.py < ips.static.orig > ips_mac.static
+	cat ips.static.orig > ips_mac.static.orig
+	python ips_mac_static_process.py < ips_mac.static.orig > ips_mac.static
 )

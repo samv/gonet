@@ -6,9 +6,10 @@ import (
 
 	"github.com/hsheth2/logs"
 	"github.com/hsheth2/water"
+	"github.com/hsheth2/water/waterutil"
 )
 
-func TestWater(t *testing.T) {
+func TestWriteWater(t *testing.T) {
 	t.Skip("caution: this test will always fail, as the network_rw will already be using tap0")
 
 	const TAP_NAME = "tap0"
@@ -40,4 +41,25 @@ func TestWater(t *testing.T) {
 	}
 
 	logs.Info.Println(input[:n])
+}
+
+func TestReadWater(t *testing.T) {
+	c, err := GlobalNetworkReader.Bind(ETHERTYPE_IP)
+	if err != nil {
+		logs.Error.Println(err)
+		t.Fail()
+	}
+
+	for {
+		buffer := <-c
+		packet := buffer.Packet
+		logs.Info.Println("Got a packet:", packet)
+		if waterutil.IsIPv4(packet) {
+			logs.Info.Printf("Source:      %v\n", waterutil.IPv4Source(packet))
+			logs.Info.Printf("Destination: %v\n", waterutil.IPv4Destination(packet))
+			logs.Info.Printf("Protocol:    %v\n", waterutil.IPv4Protocol(packet))
+			break
+		}
+		logs.Info.Println("\n")
+	}
 }

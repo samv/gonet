@@ -8,4 +8,10 @@ def file_get_contents(filename):
 
 for entry in sys.stdin:
     entry = entry.strip().split(' ')
-    print (entry[2].strip() + ' ' + entry[0].strip() + ' ' + file_get_contents("/sys/class/net/" + entry[1] + "/address").strip())
+    if 'lo' in entry[1]:
+        ifindex = entry[1]
+    else:
+        ifindex = "tap0"
+    print (entry[2].strip() + ' ' +
+           file_get_contents("/sys/class/net/" + ifindex + "/ifindex").strip() + ' ' +
+           file_get_contents("/sys/class/net/" + entry[1] + "/address").strip())

@@ -20,6 +20,14 @@ func (m *MAC_Address) Make() [8]byte {
 	return data
 }
 
+func Extract_dst(ethpacket []byte) *MAC_Address {
+	return &MAC_Address{Data: ethpacket[:ETH_MAC_ADDR_SZ]}
+}
+
+func Extract_src(ethpacket []byte) *MAC_Address {
+	return &MAC_Address{Data: ethpacket[ETH_MAC_ADDR_SZ:2*ETH_MAC_ADDR_SZ]}
+}
+
 type Ethernet_Addr struct {
 	MAC      *MAC_Address
 	IF_index IF_Index
@@ -42,7 +50,7 @@ const (
 type EtherType uint16
 
 const ETHERTYPE_IP = 0x0800
-const ETHERTYPE_APR = 0x0806
+const ETHERTYPE_ARP = 0x0806
 
 const (
 	ETH_MAC_ADDR_SZ       = 6

@@ -15,6 +15,7 @@ import (
 	"github.com/hsheth2/logs"
 )
 
+const IF_INDEX_ERROR = 0
 const ETH_STATIC_MAC_LOAD_FILE = "mac.static"
 
 type Source_MAC_Table struct {
@@ -71,13 +72,14 @@ func (smt *Source_MAC_Table) findByIf(ifindex IF_Index) (*MAC_Address, error) {
 	return nil, errors.New("Failed to find associated MAC address")
 }
 
-func (smt *Source_MAC_Table) findByMac(mac *MAC_Address) (IF_Index, error) {
+// will return IF_INDEX_ERROR as IF_Index if find fails
+func (smt *Source_MAC_Table) findByMac(mac *MAC_Address) IF_Index {
 	for ind, m := range smt.table {
 		if bytes.Equal(mac.Data, m.Data) {
-			return ind, nil
+			return ind
 		}
 	}
-	return 0, errors.New("Could not find requested MAC address in ARP table")
+	return IF_INDEX_ERROR
 }
 
 func (smt *Source_MAC_Table) add(ifindex IF_Index, mac *MAC_Address) error {

@@ -39,18 +39,20 @@ func (nr *Network_Reader) readAll() { // TODO terminate (using notifiers)
 		data, err := nr.readFrame()
 		if err != nil {
 			logs.Info.Println("ReadFrame failed:", err)
+			continue
 		}
+		//logs.Trace.Println("network_reader readAll readFrame success")
 
 		eth_protocol := EtherType(uint16(data[12])<<8 | uint16(data[13]))
 		if c, ok := nr.proto_buf[eth_protocol]; ok {
-			mac := &MAC_Address{
-				Data: data[ETH_MAC_ADDR_SZ : ETH_MAC_ADDR_SZ*2],
-			}
-			ifIndex, err := GlobalSource_MAC_Table.findByMac(mac)
-			if err != nil {
-				//				logs.Error.Println(err)
-				continue
-			}
+			mac := Extract_src(data)
+			//logs.Trace.Println("MAC:", mac.Data, "packet:", data)
+
+			ifIndex := GlobalSource_MAC_Table.findByMac(mac)
+//			if err != nil {
+//				logs.Warn.Println("Dropping for:", err)
+//				continue
+//			}
 			ethHead := &Ethernet_Header{
 				RemAddr: &Ethernet_Addr{
 					IF_index: ifIndex,
@@ -58,9 +60,10 @@ func (nr *Network_Reader) readAll() { // TODO terminate (using notifiers)
 				},
 				Packet: data[ETH_HEADER_SZ:],
 			}
-			c <- ethHead
+			c <- ethHead // TODO make non-blocking
+			//logs.Trace.Println("Forwarding packet from network_reader readAll")
 		} else {
-			//logs.Info.Println("Dropping Ethernet packet for wrong protocol:", eth_protocol)
+			logs.Warn.Println("Dropping Ethernet packet for wrong protocol:", eth_protocol)
 		}
 	}
 }

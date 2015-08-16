@@ -29,10 +29,14 @@ func newNetwork_Tap(ifname string) (*Network_Tap, error) {
 		return nil, err
 	}
 
-	return &Network_Tap{
+	nt := &Network_Tap{
 		ifce:    ifce,
 		readBuf: make(chan []byte, RX_QUEUE_SIZE),
-	}, nil
+	}
+
+	go nt.readAll()
+
+	return nt, nil
 }
 
 func (ntap *Network_Tap) write(data []byte) error {
@@ -54,9 +58,10 @@ func (ntap *Network_Tap) readAll() {
 		}
 		select {
 		case ntap.readBuf <- rx:
-			// rx packet
+			//logs.Trace.Println("Forwarded packet in readAll")
 		default:
-			continue // drop packet
+			logs.Warn.Println("Dropped packet in Network_Tap readAll")
+			continue
 		}
 	}
 }
@@ -67,10 +72,15 @@ func (ntap *Network_Tap) readOnce() ([]byte, error) {
 	if err != nil {
 		return nil, err
 	}
-	logs.Trace.Println("readOnce:", buf)
+	//logs.Trace.Println("readOnce:", buf[:ln])
 	return buf[:ln], nil
 }
 
 func (ntap *Network_Tap) read() ([]byte, error) {
+	//logs.Trace.Println("read packet off network_tap")
 	return <-ntap.readBuf, nil
+}
+
+func (ntap *Network_Tap) close() error {
+	return ntap.ifce.Close()
 }
