@@ -20,6 +20,8 @@ clean:
 setup:
 	-./tap_setup.sh
 	-./arp_setup.sh
+lines:
+	find ./ -name '*.go' -o -name '*.py' -o -name '*.c' -o -name '*.sh' | xargs wc -l
 
 
 # Error Checking
@@ -45,8 +47,6 @@ test_ping:
 test_ethernet:
 	# for testing water
 	./run_test.sh network/ethernet
-
-
 iptables:
 	sudo iptables -I INPUT -p tcp --sport 20102 -j DROP
 	sudo iptables -I INPUT -p tcp --dport 20102 -j DROP
