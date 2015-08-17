@@ -1,12 +1,14 @@
 # Makefile for Golang Network Stack
 
-pkgs = network/ethernet network/ipv4/arpv4 network/ipv4 network/udp network/tcp network/icmp network/ping
+pkgs = network/ethernet network/arp network/ipv4/arpv4 network/ipv4 network/udp network/tcp network/icmp network/ping
 
-install: clean setup
+install: clean setup depend build
+depend:
 	go get -u github.com/hsheth2/logs
 	go get -u github.com/hsheth2/notifiers
 	go get -u github.com/hsheth2/water
 	go get -u github.com/hsheth2/water/waterutil
+build:
 	go clean ${pkgs}
 	go install ${pkgs}
 clean:

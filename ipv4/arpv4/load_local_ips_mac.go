@@ -15,7 +15,7 @@ import (
 
 const LOCAL_IPS_AND_MACS_LOAD_FILE = "ips_mac.static"
 
-var GlobalARP_Table = func() *ARP_Table {
+var GlobalARP_Table = func() *ARPv4_Table {
 	// create ARP table
 	table, err := NewARP_Table()
 	if err != nil {
@@ -58,7 +58,7 @@ var GlobalARP_Table = func() *ARP_Table {
 		}
 
 		// add static ARP entry
-		err = table.Static_Add(ip, enter)
+		err = table.Add(ip, enter)
 		if err != nil {
 			logs.Error.Fatalln(err)
 		}

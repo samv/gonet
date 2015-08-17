@@ -49,8 +49,10 @@ const (
 
 type EtherType uint16
 
-const ETHERTYPE_IP = 0x0800
-const ETHERTYPE_ARP = 0x0806
+const (
+	ETHERTYPE_IP = 0x0800
+	ETHERTYPE_ARP = 0x0806
+)
 
 const (
 	ETH_MAC_ADDR_SZ       = 6
