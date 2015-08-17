@@ -2,8 +2,8 @@ package udp
 
 import (
 	"network/ipv4"
-	//"github.com/hsheth2/logs"
 	"network/ipv4/ipv4tps"
+	"network/ipv4/ipv4src"
 )
 
 const UDP_HEADER_SZ = 8
@@ -25,7 +25,7 @@ func NewUDP_Writer(src, dest uint16, dstIP ipv4tps.IPaddress) (*UDP_Writer, erro
 		src:    src,
 		dst:    dest,
 		rip:    dstIP,
-		lip:    ipv4.GlobalSource_IP_Table.Query(dstIP),
+		lip:    ipv4src.GlobalSource_IP_Table.Query(dstIP),
 		writer: write,
 	}, nil
 }

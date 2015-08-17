@@ -34,7 +34,7 @@ func (nw *Network_Writer) Write(data []byte, dst_mac *MAC_Address, ethertype Eth
 		nw.net.readBuf <- newPacket // TODO verify the packet is correctly built
 		return nil
 	} else {
-		//		logs.Info.Println("network_writer:", "write: full packet with ethernet header:", newPacket)
+		// logs.Info.Println("network_writer:", "write: full packet with ethernet header:", newPacket)
 		return nw.net.write(newPacket)
 	}
 }

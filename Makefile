@@ -1,6 +1,6 @@
 # Makefile for Golang Network Stack
 
-pkgs = network/ethernet network/arp network/ipv4/arpv4 network/ipv4 network/udp network/tcp network/icmp network/ping
+pkgs = network/ethernet network/arp network/ipv4/arpv4 network/ipv4/ipv4tps network/ipv4/ipv4src network/ipv4 network/udp network/tcp network/icmp network/ping
 
 install: clean setup depend build
 depend:

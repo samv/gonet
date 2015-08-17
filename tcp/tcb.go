@@ -11,6 +11,7 @@ import (
 	"github.com/hsheth2/logs"
 	"github.com/hsheth2/notifiers"
 	netip "golang.org/x/net/ipv4"
+	"network/ipv4/ipv4src"
 )
 
 type TCB struct {
@@ -53,7 +54,7 @@ func New_TCB(local, remote uint16, dstIP ipv4tps.IPaddress, read chan *TCP_Packe
 		lport:            local,
 		rport:            remote,
 		ipAddress:        dstIP,
-		srcIP:            ipv4.GlobalSource_IP_Table.Query(dstIP),
+		srcIP:            ipv4src.GlobalSource_IP_Table.Query(dstIP),
 		read:             read,
 		writer:           write,
 		seqNum:           seq,

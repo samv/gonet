@@ -4,12 +4,10 @@ import (
 	"net"
 	"network/ethernet"
 	"network/ipv4/arpv4"
+	"network/ipv4/ipv4tps"
+	"network/ipv4/ipv4src"
 
 	"golang.org/x/net/ipv4"
-	//"errors"
-	//"syscall"
-	//"github.com/hsheth2/logs"
-	"network/ipv4/ipv4tps"
 )
 
 type IP_Writer struct {
@@ -49,7 +47,7 @@ func NewIP_Writer(dst ipv4tps.IPaddress, protocol uint8) (*IP_Writer, error) {
 		version:     ipv4.Version,
 		headerLen:   IP_HEADER_LEN,
 		dst:         dst,
-		src:         GlobalSource_IP_Table.Query(dst),
+		src:         ipv4src.GlobalSource_IP_Table.Query(dst),
 		ttl:         DEFAULT_TTL,
 		protocol:    protocol,
 		identifier:  20000, // TODO generate this properly

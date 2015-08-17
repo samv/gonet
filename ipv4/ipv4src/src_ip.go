@@ -1,20 +1,24 @@
-package ipv4
+package ipv4src
 
 import (
-	"bufio"
 	"net"
-	"os"
 	"path"
 	"runtime"
 	"strings"
+	"io/ioutil"
 
 	"network/ipv4/ipv4tps"
 
 	"github.com/hsheth2/logs"
 )
 
-const IPv4_IPS_STATIC_FILENAME = "ips.static"
+const IPv4_STATIC_IP_LOAD_FILE = "external_ip.static"
 const IPv4_DEFAULT_NETMASK = 24
+
+var (
+	Loopback_ip_address *ipv4tps.IPaddress = ipv4tps.MakeIP("127.0.0.1")
+	External_ip_address *ipv4tps.IPaddress
+)
 
 type Source_IP_Table struct {
 	// TODO make this thread safe
@@ -33,19 +37,20 @@ var GlobalSource_IP_Table = func() *Source_IP_Table {
 
 	// Load preferences and defaults file
 	_, filename, _, _ := runtime.Caller(1)
-	file, err := os.Open(path.Join(path.Dir(filename), IPv4_IPS_STATIC_FILENAME))
+	data, err := ioutil.ReadFile(path.Join(path.Dir(filename), IPv4_STATIC_IP_LOAD_FILE))
 	if err != nil {
-		logs.Error.Fatal(err)
+		logs.Error.Fatalln(err)
 	}
-	sc := bufio.NewScanner(file)
-	for sc.Scan() {
-		line := strings.Split(sc.Text(), " ")
+	str := strings.TrimSpace(string(data))
+	External_ip_address = ipv4tps.MakeIP(str)
 
-		//		logs.Trace.Println("Source_IP_Table adding", line[2])
-		err = table.add(ipv4tps.IPaddress(line[2])) // TODO make sure this array subscript doesn't fail
-		if err != nil {
-			logs.Error.Fatal(err)
-		}
+	err = table.add(*Loopback_ip_address)
+	if err != nil {
+		logs.Error.Fatalln(err)
+	}
+	err = table.add(*External_ip_address)
+	if err != nil {
+		logs.Error.Fatalln(err)
 	}
 
 	return table
