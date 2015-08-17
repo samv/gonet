@@ -1,14 +1,15 @@
 package arp
 
 import (
-	"network/ethernet"
-	"github.com/hsheth2/logs"
 	"errors"
+	"network/ethernet"
+
+	"github.com/hsheth2/logs"
 )
 
 type ARP_Manager struct {
-	read chan *ethernet.Ethernet_Header
-	write *ethernet.Network_Writer
+	read          chan *ethernet.Ethernet_Header
+	write         *ethernet.Network_Writer
 	ethtp_manager map[ethernet.EtherType](ARP_Protocol_Dealer)
 }
 
@@ -32,8 +33,8 @@ func NewARP_Manager(in *ethernet.Network_Reader) (*ARP_Manager, error) {
 	}
 
 	am := &ARP_Manager{
-		read: read,
-		write: write,
+		read:          read,
+		write:         write,
 		ethtp_manager: make(map[ethernet.EtherType](ARP_Protocol_Dealer)),
 	}
 
@@ -63,19 +64,19 @@ func (am *ARP_Manager) dealer() {
 
 		if pd, ok := am.ethtp_manager[packet.ptype]; ok && packet.htype == ARP_HTYPE_ETHERNET {
 			packet = ParseARP_Packet_Type(data, packet, pd)
-//			logs.Trace.Println("ARP packet:", packet)
+			//			logs.Trace.Println("ARP packet:", packet)
 			if packet.oper == ARP_OPER_REQUEST {
-//				logs.Trace.Println("Got ARP Request")
+				//				logs.Trace.Println("Got ARP Request")
 				reply := &ARP_Packet{
 					htype: packet.htype,
 					ptype: packet.ptype,
-					hlen: packet.hlen,
-					plen: packet.plen,
-					oper: ARP_OPER_REPLY,
-					sha: ethernet.External_mac_address,
-					spa: pd.GetAddress(),
-					tha: packet.sha,
-					tpa: packet.spa,
+					hlen:  packet.hlen,
+					plen:  packet.plen,
+					oper:  ARP_OPER_REPLY,
+					sha:   ethernet.External_mac_address,
+					spa:   pd.GetAddress(),
+					tha:   packet.sha,
+					tpa:   packet.spa,
 				}
 				rp, err := reply.MarshalPacket()
 				if err != nil {

@@ -1,8 +1,8 @@
 package icmp
 
 import (
-	"network/ipv4/ipv4tps"
 	"network/ipv4"
+	"network/ipv4/ipv4tps"
 )
 
 const ICMP_Header_MinSize = 8

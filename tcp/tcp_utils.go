@@ -6,9 +6,10 @@ import (
 	"network/ipv4"
 	"sync"
 
+	"network/ipv4/ipv4tps"
+
 	"github.com/hsheth2/logs"
 	"github.com/hsheth2/notifiers"
-	"network/ipv4/ipv4tps"
 )
 
 func (c *TCB) UpdateState(newState uint) {

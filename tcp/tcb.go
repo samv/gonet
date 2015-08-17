@@ -6,17 +6,18 @@ import (
 	"sync"
 	"time"
 
+	"network/ipv4/ipv4tps"
+
 	"github.com/hsheth2/logs"
 	"github.com/hsheth2/notifiers"
 	netip "golang.org/x/net/ipv4"
-	"network/ipv4/ipv4tps"
 )
 
 type TCB struct {
 	read             chan *TCP_Packet    // input
 	writer           *netip.RawConn      // output
-	ipAddress        ipv4tps.IPaddress      // destination ip address
-	srcIP            ipv4tps.IPaddress      // src ip address
+	ipAddress        ipv4tps.IPaddress   // destination ip address
+	srcIP            ipv4tps.IPaddress   // src ip address
 	lport, rport     uint16              // ports
 	seqNum           uint32              // seq number (SND.NXT)
 	ackNum           uint32              // ack number (RCV.NXT)

@@ -4,8 +4,9 @@ import (
 	"testing"
 	"time"
 
-	"github.com/hsheth2/logs"
 	"network/ipv4/ipv4tps"
+
+	"github.com/hsheth2/logs"
 )
 
 func ping_tester(t *testing.T, ip ipv4tps.IPaddress, num uint16) {
@@ -30,4 +31,3 @@ func TestTapPing(t *testing.T) {
 func TestExternalPing(t *testing.T) {
 	ping_tester(t, "192.168.1.2", 5) // TODO decide dynamically based on ip address
 }
-

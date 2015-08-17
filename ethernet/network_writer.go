@@ -1,8 +1,6 @@
 package ethernet
 
-import (
 //	"github.com/hsheth2/logs"
-)
 
 type Network_Writer struct {
 	net *Network_Tap
@@ -22,7 +20,7 @@ func (nw *Network_Writer) Write(data []byte, dst_mac *MAC_Address, ethertype Eth
 		return err
 	}
 	etherHead := append(append(
-		dst_mac.Data[:ETH_MAC_ADDR_SZ],    // dst MAC
+		dst_mac.Data[:ETH_MAC_ADDR_SZ],     // dst MAC
 		src_mac.Data[:ETH_MAC_ADDR_SZ]...), // src MAC
 		byte(ethertype>>8), byte(ethertype), // EtherType
 	)
@@ -36,7 +34,7 @@ func (nw *Network_Writer) Write(data []byte, dst_mac *MAC_Address, ethertype Eth
 		nw.net.readBuf <- newPacket // TODO verify the packet is correctly built
 		return nil
 	} else {
-//		logs.Info.Println("network_writer:", "write: full packet with ethernet header:", newPacket)
+		//		logs.Info.Println("network_writer:", "write: full packet with ethernet header:", newPacket)
 		return nw.net.write(newPacket)
 	}
 }

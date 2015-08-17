@@ -11,8 +11,9 @@ import (
 
 	"network/ipv4/arpv4"
 
-	"github.com/hsheth2/logs"
 	"network/ipv4/ipv4tps"
+
+	"github.com/hsheth2/logs"
 )
 
 const LOCAL_IPS_AND_MACS_LOAD_FILE = "arpv4/ips_mac.static"

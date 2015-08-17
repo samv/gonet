@@ -8,7 +8,7 @@ import (
 
 type Ethernet_Header struct {
 	Rmac, Lmac *MAC_Address
-	Packet  []byte
+	Packet     []byte
 }
 
 var GlobalNetworkReader = func() *Network_Reader {
@@ -44,15 +44,15 @@ func (nr *Network_Reader) readAll() { // TODO terminate (using notifiers)
 		//logs.Trace.Println("network_reader readAll readFrame success")
 
 		eth_protocol := EtherType(uint16(data[12])<<8 | uint16(data[13]))
-//		logs.Trace.Println("Eth frame with protocol:", eth_protocol)
+		//		logs.Trace.Println("Eth frame with protocol:", eth_protocol)
 		if c, ok := nr.proto_buf[eth_protocol]; ok {
-//			logs.Trace.Println("Something binded to protocol:", eth_protocol)
+			//			logs.Trace.Println("Something binded to protocol:", eth_protocol)
 			rmac := extract_src(data)
 			lmac := extract_dst(data)
 
 			ethHead := &Ethernet_Header{
-				Rmac: rmac,
-				Lmac: lmac,
+				Rmac:   rmac,
+				Lmac:   lmac,
 				Packet: data[ETH_HEADER_SZ:],
 			}
 			//logs.Trace.Println("Forwarding packet from network_reader readAll")

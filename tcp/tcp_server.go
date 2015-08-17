@@ -7,9 +7,10 @@ import (
 	"network/ipv4"
 	"sync"
 
+	"network/ipv4/ipv4tps"
+
 	"github.com/hsheth2/logs"
 	netip "golang.org/x/net/ipv4"
-	"network/ipv4/ipv4tps"
 )
 
 type Server_TCB struct {

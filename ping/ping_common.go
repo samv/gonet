@@ -4,8 +4,9 @@ import (
 	"network/icmp"
 	"network/ipv4"
 
-	"github.com/hsheth2/logs"
 	"network/ipv4/ipv4tps"
+
+	"github.com/hsheth2/logs"
 )
 
 const (

@@ -6,9 +6,10 @@ import (
 	"net"
 	"network/ipv4"
 
+	"network/ipv4/ipv4tps"
+
 	"github.com/hsheth2/logs"
 	netip "golang.org/x/net/ipv4"
-	"network/ipv4/ipv4tps"
 )
 
 func New_TCB_From_Client(local, remote uint16, dstIP ipv4tps.IPaddress) (*TCB, error) {

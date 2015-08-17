@@ -6,8 +6,9 @@ import (
 	"network/ethernet"
 	"network/ipv4/arpv4"
 
-	"github.com/hsheth2/logs"
 	"network/ipv4/ipv4tps"
+
+	"github.com/hsheth2/logs"
 )
 
 type IP_Read_Manager struct {

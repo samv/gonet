@@ -26,7 +26,7 @@ func extract_dst(ethpacket []byte) *MAC_Address {
 }
 
 func extract_src(ethpacket []byte) *MAC_Address {
-	return &MAC_Address{Data: ethpacket[ETH_MAC_ADDR_SZ:2*ETH_MAC_ADDR_SZ]}
+	return &MAC_Address{Data: ethpacket[ETH_MAC_ADDR_SZ : 2*ETH_MAC_ADDR_SZ]}
 }
 
 //type Ethernet_Addr struct {
@@ -51,7 +51,7 @@ const (
 type EtherType uint16
 
 const (
-	ETHERTYPE_IP = 0x0800
+	ETHERTYPE_IP  = 0x0800
 	ETHERTYPE_ARP = 0x0806
 )
 

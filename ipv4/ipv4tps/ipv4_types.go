@@ -7,6 +7,7 @@ import (
 type Netmask uint8
 
 type IPaddress string
+
 func (ip *IPaddress) Marshal() ([]byte, error) {
 	x := net.ParseIP(string(*ip))
 	return x[12:], nil

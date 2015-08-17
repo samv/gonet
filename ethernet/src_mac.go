@@ -1,14 +1,15 @@
 package ethernet
 
 import (
-	"github.com/hsheth2/logs"
-	"runtime"
-	"path"
-	"io/ioutil"
-	"strings"
-	"net"
 	"errors"
+	"io/ioutil"
+	"net"
+	"path"
 	"reflect"
+	"runtime"
+	"strings"
+
+	"github.com/hsheth2/logs"
 )
 
 const ETH_STATIC_MAC_LOAD_FILE = "external_mac.static"

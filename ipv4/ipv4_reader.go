@@ -2,8 +2,8 @@ package ipv4
 
 import (
 	"net"
-	"time"
 	"network/ipv4/ipv4tps"
+	"time"
 )
 
 type IP_Reader struct {
