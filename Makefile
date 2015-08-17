@@ -15,7 +15,6 @@ clean:
 	-rm -rf *.static.orig
 	-rm -rf *.static
 	-rm *.test
-	-rm *.pprof
 	go clean ${pkgs}
 setup:
 	-./tap_setup.sh
