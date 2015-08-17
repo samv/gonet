@@ -44,7 +44,9 @@ func (nr *Network_Reader) readAll() { // TODO terminate (using notifiers)
 		//logs.Trace.Println("network_reader readAll readFrame success")
 
 		eth_protocol := EtherType(uint16(data[12])<<8 | uint16(data[13]))
+//		logs.Trace.Println("Eth frame with protocol:", eth_protocol)
 		if c, ok := nr.proto_buf[eth_protocol]; ok {
+//			logs.Trace.Println("Something binded to protocol:", eth_protocol)
 			rmac := extract_src(data)
 			lmac := extract_dst(data)
 

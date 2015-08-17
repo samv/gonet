@@ -5,6 +5,7 @@ import (
 	"network/ethernet"
 	"network/arp"
 	"network/ipv4/ipv4tps"
+	"net"
 )
 
 type ARPv4_Table struct {
@@ -36,6 +37,12 @@ func (table *ARPv4_Table) Add(ip arp.ARP_Protocol_Address, addr *ethernet.MAC_Ad
 	return nil
 }
 
-func (table *ARPv4_Table) Unmarshal([]byte) arp.ARP_Protocol_Address {
-	return nil // TODO implement
+func (table *ARPv4_Table) Unmarshal(d []byte) arp.ARP_Protocol_Address {
+	s := ipv4tps.IPaddress(net.IPv4(d[0], d[1], d[2], d[3]).String())
+	return &s
+}
+
+func (table *ARPv4_Table) GetAddress() arp.ARP_Protocol_Address {
+	addr := ipv4tps.IPaddress("10.0.0.1") // TODO fix this
+	return &addr
 }
