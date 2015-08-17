@@ -7,8 +7,12 @@ import (
 
 	"network/ipv4"
 
+	"network/ipv4/ipv4tps"
+
 	"github.com/hsheth2/logs"
 )
+
+const DATA_56_BYTES = "abcdefghijklmnopqrstuvwxyzabcdefghijklmnopqrstuvwxyzabcd"
 
 func (pm *Ping_Manager) ping_response_dealer() {
 	for {
@@ -28,7 +32,7 @@ func sendSinglePing(writer *ipv4.IP_Writer, id, seq uint16, timeout time.Duratio
 		TypeF: PING_ECHO_REQUEST_TYPE,
 		Code:  PING_ICMP_CODE,
 		Opt:   uint32(id)<<16 | uint32(seq),
-		Data:  []byte("abcdefg"), // TODO make legit by sending 56 bytes of Data and putting the timestamp in the data
+		Data:  []byte(DATA_56_BYTES), // TODO make legit by putting the timestamp in the data
 	}
 
 	// make data
@@ -51,7 +55,7 @@ func sendSinglePing(writer *ipv4.IP_Writer, id, seq uint16, timeout time.Duratio
 			select {
 			case pingResonse := <-seqChan:
 				if !bytes.Equal(pingResonse.Header.Data, header.Data) {
-					logs.Info.Println("Dropped packet cuz data !=")
+					logs.Info.Println("Dropped packet because header data not equal to ping sent")
 					continue
 				}
 				time2 := time.Now()
@@ -89,7 +93,7 @@ func sequenceDealer(idInput chan *icmp.ICMP_In, seqChan map[uint16](chan *icmp.I
 	for {
 		select {
 		case <-terminate:
-			logs.Info.Println("Terminating seq dealer")
+			//			logs.Info.Println("Terminating seq dealer")
 			return
 		case packet := <-idInput:
 			// logs.Info.Println("icmp in =", packet.Header.Opt)
@@ -103,7 +107,7 @@ func sequenceDealer(idInput chan *icmp.ICMP_In, seqChan map[uint16](chan *icmp.I
 	}
 }
 
-func (pm *Ping_Manager) SendPing(ip string, interval, timeout time.Duration, numPings uint16) error {
+func (pm *Ping_Manager) SendPing(ip ipv4tps.IPaddress, interval, timeout time.Duration, numPings uint16) error {
 	terminate := make(chan bool)
 	id, seqChannel, err := pm.initIdentifier(terminate)
 	if err != nil {

@@ -2,19 +2,18 @@ package tcp
 
 import (
 	"errors"
-	"fmt"
-	"net"
 	"network/ipv4"
 	"sync"
 
+	"network/ipv4/ipv4tps"
+
 	"github.com/hsheth2/logs"
-	netip "golang.org/x/net/ipv4"
 )
 
 type Server_TCB struct {
 	listener        chan *TCP_Packet
 	listenPort      uint16
-	listenIP        string
+	listenIP        ipv4tps.IPaddress
 	state           uint
 	kind            uint
 	connQueue       chan *TCB
@@ -35,7 +34,7 @@ func New_Server_TCB() (*Server_TCB, error) {
 	return x, nil
 }
 
-func (s *Server_TCB) BindListen(port uint16, ip string) error {
+func (s *Server_TCB) BindListen(port uint16, ip ipv4tps.IPaddress) error {
 	s.listenPort = port
 	s.listenIP = ip
 	read, err := TCP_Port_Manager.bind(0, port, ip)
@@ -75,13 +74,7 @@ func (s *Server_TCB) LongListener() {
 				return
 			}
 
-			p, err := net.ListenPacket(fmt.Sprintf("ip4:%d", ipv4.TCP_PROTO), rIP) // only for read, not for write
-			if err != nil {
-				logs.Error.Println(err)
-				return
-			}
-
-			r, err := netip.NewRawConn(p)
+			r, err := ipv4.NewIP_Writer(s.listenIP, ipv4.TCP_PROTO)
 			if err != nil {
 				logs.Error.Println(err)
 				return
@@ -132,7 +125,7 @@ func (s *Server_TCB) LongListener() {
 	}
 }
 
-func (s *Server_TCB) Accept() (c *TCB, rip string, rport uint16, err error) {
+func (s *Server_TCB) Accept() (c *TCB, rip ipv4tps.IPaddress, rport uint16, err error) {
 	s.connQueueUpdate.L.Lock()
 	defer s.connQueueUpdate.L.Unlock()
 	for {

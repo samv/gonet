@@ -2,6 +2,7 @@ package icmp
 
 import (
 	"network/ipv4"
+	"network/ipv4/ipv4tps"
 )
 
 const ICMP_Header_MinSize = 8
@@ -16,7 +17,7 @@ type ICMP_Header struct {
 
 type ICMP_In struct {
 	Header   *ICMP_Header
-	LIP, RIP string
+	LIP, RIP ipv4tps.IPaddress
 }
 
 func (h *ICMP_Header) MarshalICMPHeader() ([]byte, error) {
@@ -31,7 +32,7 @@ func (h *ICMP_Header) MarshalICMPHeader() ([]byte, error) {
 	return marshaledHeader, nil
 }
 
-func ExtractICMPHeader(dat []byte, lip, rip string) (*ICMP_In, error) {
+func ExtractICMPHeader(dat []byte, lip, rip ipv4tps.IPaddress) (*ICMP_In, error) {
 	// TODO: ICMP checksum validation
 	return &ICMP_In{
 		Header: &ICMP_Header{

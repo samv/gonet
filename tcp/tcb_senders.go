@@ -2,12 +2,9 @@ package tcp
 
 import (
 	"errors"
-	"net"
-	"network/ipv4"
 	"time"
 
 	"github.com/hsheth2/logs"
-	netip "golang.org/x/net/ipv4"
 )
 
 func (c *TCB) packetSender() {
@@ -128,19 +125,7 @@ func (c *TCB) sendPacket(d *TCP_Packet) error {
 		return err
 	}
 
-	err = c.writer.WriteTo(&netip.Header{
-		Version:  netip.Version,                 // protocol version
-		Len:      ipv4.IP_HEADER_LEN,            // header length
-		TOS:      0,                             // type-of-service (0 is everything normal)
-		TotalLen: len(pay) + ipv4.IP_HEADER_LEN, // packet total length (octets)
-		ID:       0,                             // identification
-		Flags:    netip.DontFragment,            // flags
-		FragOff:  0,                             // fragment offset
-		TTL:      ipv4.DEFAULT_TTL,              // time-to-live (maximum lifespan in seconds)
-		Protocol: ipv4.TCP_PROTO,                // next protocol
-		Checksum: 0,                             // checksum (autocomputed)
-		Dst:      net.ParseIP(d.rip),            // destination address
-	}, pay, nil)
+	err = c.writer.WriteTo(pay)
 
 	if err != nil {
 		logs.Error.Println(err)

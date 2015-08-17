@@ -2,19 +2,20 @@ package udp
 
 import (
 	"network/ipv4"
-	//"github.com/hsheth2/logs"
+	"network/ipv4/ipv4src"
+	"network/ipv4/ipv4tps"
 )
 
 const UDP_HEADER_SZ = 8
 
 type UDP_Writer struct {
-	rip      string // destination ip address
-	lip      string // source ip address
+	rip      ipv4tps.IPaddress // destination ip address
+	lip      ipv4tps.IPaddress // source ip address
 	writer   *ipv4.IP_Writer
 	src, dst uint16 // ports
 }
 
-func NewUDP_Writer(src, dest uint16, dstIP string) (*UDP_Writer, error) {
+func NewUDP_Writer(src, dest uint16, dstIP ipv4tps.IPaddress) (*UDP_Writer, error) {
 	write, err := ipv4.NewIP_Writer(dstIP, ipv4.UDP_PROTO)
 	if err != nil {
 		return nil, err
@@ -24,7 +25,7 @@ func NewUDP_Writer(src, dest uint16, dstIP string) (*UDP_Writer, error) {
 		src:    src,
 		dst:    dest,
 		rip:    dstIP,
-		lip:    ipv4.GetSrcIP(dstIP),
+		lip:    ipv4src.GlobalSource_IP_Table.Query(dstIP),
 		writer: write,
 	}, nil
 }

@@ -1,33 +1,26 @@
 package ethernet
 
-import (
-	"errors"
-	"syscall"
-)
+//	"github.com/hsheth2/logs"
 
 type Network_Writer struct {
-	fd int
+	net *Network_Tap
 }
 
 func NewNetwork_Writer() (*Network_Writer, error) {
-	fd, err := syscall.Socket(AF_PACKET, SOCK_RAW, HTONS_ETH_P_ALL)
-	if err != nil {
-		return nil, errors.New("Write's socket failed")
-	}
-
 	return &Network_Writer{
-		fd: fd,
+		net: GlobalNetwork_Tap,
 	}, nil
 }
 
-func (nw *Network_Writer) Write(data []byte, addr *Ethernet_Addr, ethertype EtherType) error {
+func (nw *Network_Writer) Write(data []byte, dst_mac *MAC_Address, ethertype EtherType) error {
 	// build the ethernet header
-	src_mac, err := GlobalSource_MAC_Table.findByIf(addr.IF_index)
+	index := getInternalIndex(dst_mac)
+	src_mac, err := globalSource_MAC_Table.search(index)
 	if err != nil {
 		return err
 	}
 	etherHead := append(append(
-		addr.MAC.Data[:ETH_MAC_ADDR_SZ],    // dst MAC
+		dst_mac.Data[:ETH_MAC_ADDR_SZ],     // dst MAC
 		src_mac.Data[:ETH_MAC_ADDR_SZ]...), // src MAC
 		byte(ethertype>>8), byte(ethertype), // EtherType
 	)
@@ -35,12 +28,17 @@ func (nw *Network_Writer) Write(data []byte, addr *Ethernet_Addr, ethertype Ethe
 
 	// add on the ethernet header
 	newPacket := append(etherHead, data...)
-	//logs.Info.Println("Full Packet with ethernet header:", newPacket)
 
 	// send packet
-	return syscall.Sendto(nw.fd, newPacket, 0, getSockAddr(addr))
+	if index == loopback_internal_index {
+		nw.net.readBuf <- newPacket // TODO verify the packet is correctly built
+		return nil
+	} else {
+		// logs.Info.Println("network_writer:", "write: full packet with ethernet header:", newPacket)
+		return nw.net.write(newPacket)
+	}
 }
 
 func (nw *Network_Writer) Close() error {
-	return syscall.Close(nw.fd) // TODO notify upper layers of close
+	return nil
 }

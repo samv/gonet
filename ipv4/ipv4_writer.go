@@ -4,17 +4,16 @@ import (
 	"net"
 	"network/ethernet"
 	"network/ipv4/arpv4"
+	"network/ipv4/ipv4src"
+	"network/ipv4/ipv4tps"
 
 	"golang.org/x/net/ipv4"
-	//"errors"
-	//"syscall"
-	//"github.com/hsheth2/logs"
 )
 
 type IP_Writer struct {
 	nw          *ethernet.Network_Writer
 	version     uint8
-	dst, src    string
+	dst, src    ipv4tps.IPaddress
 	headerLen   uint16
 	ttl         uint8
 	protocol    uint8
@@ -22,7 +21,7 @@ type IP_Writer struct {
 	maxFragSize uint16
 }
 
-func NewIP_Writer(dst string, protocol uint8) (*IP_Writer, error) {
+func NewIP_Writer(dst ipv4tps.IPaddress, protocol uint8) (*IP_Writer, error) {
 	// create its own network_writer
 	nw, err := ethernet.NewNetwork_Writer()
 	if err != nil {
@@ -48,7 +47,7 @@ func NewIP_Writer(dst string, protocol uint8) (*IP_Writer, error) {
 		version:     ipv4.Version,
 		headerLen:   IP_HEADER_LEN,
 		dst:         dst,
-		src:         GetSrcIP(dst),
+		src:         ipv4src.GlobalSource_IP_Table.Query(dst),
 		ttl:         DEFAULT_TTL,
 		protocol:    protocol,
 		identifier:  20000, // TODO generate this properly
@@ -70,13 +69,13 @@ func (ipw *IP_Writer) WriteTo(p []byte) error {
 	header[9] = (byte)(ipw.protocol) // Protocol
 
 	// Src and Dst IPs
-	srcIP := net.ParseIP(ipw.src)
+	srcIP := net.ParseIP(string(ipw.src))
 	//fmt.Println(srcIP)
 	//fmt.Println(srcIP[12])
 	//fmt.Println(srcIP[13])
 	//fmt.Println(srcIP[14])
 	//fmt.Println(srcIP[15])
-	dstIP := net.ParseIP(ipw.dst)
+	dstIP := net.ParseIP(string(ipw.dst))
 	//fmt.Println(dstIP)
 	header[12] = srcIP[12]
 	header[13] = srcIP[13]
@@ -165,7 +164,8 @@ func (ipw *IP_Writer) WriteTo(p []byte) error {
 }
 
 func (ipw *IP_Writer) sendIP(p []byte) error {
-	arp_data, err := arpv4.GlobalARP_Table.Lookup(ipw.dst)
+	gateway := ipv4src.GlobalSource_IP_Table.Gateway(&ipw.dst)
+	arp_data, err := arpv4.GlobalARPv4_Table.Lookup(gateway)
 	if err != nil {
 		return err
 	}
