@@ -1,6 +1,7 @@
 package ethernet
 
-type IF_Index int
+type internal_index int
+
 type MAC_Address struct {
 	Data []byte
 }
@@ -20,18 +21,18 @@ func (m *MAC_Address) Make() [8]byte {
 	return data
 }
 
-func Extract_dst(ethpacket []byte) *MAC_Address {
+func extract_dst(ethpacket []byte) *MAC_Address {
 	return &MAC_Address{Data: ethpacket[:ETH_MAC_ADDR_SZ]}
 }
 
-func Extract_src(ethpacket []byte) *MAC_Address {
+func extract_src(ethpacket []byte) *MAC_Address {
 	return &MAC_Address{Data: ethpacket[ETH_MAC_ADDR_SZ:2*ETH_MAC_ADDR_SZ]}
 }
 
-type Ethernet_Addr struct {
-	MAC      *MAC_Address
-	IF_index IF_Index
-}
+//type Ethernet_Addr struct {
+//	MAC    *MAC_Address
+//	intind InternalIndex
+//}
 
 const (
 	// 768 = htons(ETH_P_ALL) = htons(3)

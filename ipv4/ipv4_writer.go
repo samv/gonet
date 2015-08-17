@@ -9,12 +9,13 @@ import (
 	//"errors"
 	//"syscall"
 	//"github.com/hsheth2/logs"
+	"network/ipv4/ipv4tps"
 )
 
 type IP_Writer struct {
 	nw          *ethernet.Network_Writer
 	version     uint8
-	dst, src    IPaddress
+	dst, src    ipv4tps.IPaddress
 	headerLen   uint16
 	ttl         uint8
 	protocol    uint8
@@ -22,7 +23,7 @@ type IP_Writer struct {
 	maxFragSize uint16
 }
 
-func NewIP_Writer(dst IPaddress, protocol uint8) (*IP_Writer, error) {
+func NewIP_Writer(dst ipv4tps.IPaddress, protocol uint8) (*IP_Writer, error) {
 	// create its own network_writer
 	nw, err := ethernet.NewNetwork_Writer()
 	if err != nil {
@@ -165,7 +166,7 @@ func (ipw *IP_Writer) WriteTo(p []byte) error {
 }
 
 func (ipw *IP_Writer) sendIP(p []byte) error {
-	arp_data, err := arpv4.GlobalARP_Table.Lookup(string(ipw.dst))
+	arp_data, err := arpv4.GlobalARPv4_Table.Lookup(&ipw.dst)
 	if err != nil {
 		return err
 	}

@@ -8,6 +8,7 @@ import (
 	"network/ipv4"
 
 	"github.com/hsheth2/logs"
+	"network/ipv4/ipv4tps"
 )
 
 const DATA_56_BYTES = "abcdefghijklmnopqrstuvwxyzabcdefghijklmnopqrstuvwxyzabcd"
@@ -105,7 +106,7 @@ func sequenceDealer(idInput chan *icmp.ICMP_In, seqChan map[uint16](chan *icmp.I
 	}
 }
 
-func (pm *Ping_Manager) SendPing(ip ipv4.IPaddress, interval, timeout time.Duration, numPings uint16) error {
+func (pm *Ping_Manager) SendPing(ip ipv4tps.IPaddress, interval, timeout time.Duration, numPings uint16) error {
 	terminate := make(chan bool)
 	id, seqChannel, err := pm.initIdentifier(terminate)
 	if err != nil {

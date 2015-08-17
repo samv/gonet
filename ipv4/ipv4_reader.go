@@ -3,17 +3,18 @@ package ipv4
 import (
 	"net"
 	"time"
+	"network/ipv4/ipv4tps"
 )
 
 type IP_Reader struct {
 	incomingPackets chan []byte
 	irm             *IP_Read_Manager
 	protocol        uint8
-	ip              IPaddress
+	ip              ipv4tps.IPaddress
 	fragBuf         map[string](chan []byte)
 }
 
-func NewIP_Reader(irm *IP_Read_Manager, ip IPaddress, protocol uint8) (*IP_Reader, error) {
+func NewIP_Reader(irm *IP_Read_Manager, ip ipv4tps.IPaddress, protocol uint8) (*IP_Reader, error) {
 	c, err := irm.Bind(ip, protocol)
 	if err != nil {
 		return nil, err
@@ -124,7 +125,7 @@ func (ipr *IP_Reader) killFragmentAssembler(quit chan<- bool, didQuit <-chan boo
 	delete(ipr.fragBuf, bufID)
 }
 
-func (ipr *IP_Reader) ReadFrom() (rip, lip IPaddress, b, payload []byte, e error) {
+func (ipr *IP_Reader) ReadFrom() (rip, lip ipv4tps.IPaddress, b, payload []byte, e error) {
 	//fmt.Println("STARTING READ")
 	b = <-ipr.incomingPackets
 	//fmt.Println("RAW READ COMPLETED")
@@ -135,8 +136,8 @@ func (ipr *IP_Reader) ReadFrom() (rip, lip IPaddress, b, payload []byte, e error
 	hdr, p := slicePacket(b)
 
 	// extract source IP and protocol
-	rip = IPaddress(net.IPv4(hdr[12], hdr[13], hdr[14], hdr[15]).String())
-	lip = IPaddress(net.IPv4(hdr[16], hdr[17], hdr[18], hdr[19]).String())
+	rip = ipv4tps.IPaddress(net.IPv4(hdr[12], hdr[13], hdr[14], hdr[15]).String())
+	lip = ipv4tps.IPaddress(net.IPv4(hdr[16], hdr[17], hdr[18], hdr[19]).String())
 	proto := uint8(hdr[9])
 	if !((ipr.ip == rip || ipr.ip == "*") && ipr.protocol == proto) {
 		//Info.Println("Not interested in packet: dropping.")

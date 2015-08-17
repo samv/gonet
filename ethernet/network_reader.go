@@ -7,7 +7,7 @@ import (
 )
 
 type Ethernet_Header struct {
-	RemAddr *Ethernet_Addr
+	Rmac, Lmac *MAC_Address
 	Packet  []byte
 }
 
@@ -45,23 +45,16 @@ func (nr *Network_Reader) readAll() { // TODO terminate (using notifiers)
 
 		eth_protocol := EtherType(uint16(data[12])<<8 | uint16(data[13]))
 		if c, ok := nr.proto_buf[eth_protocol]; ok {
-			mac := Extract_src(data)
-			//logs.Trace.Println("MAC:", mac.Data, "packet:", data)
+			rmac := extract_src(data)
+			lmac := extract_dst(data)
 
-			ifIndex := GlobalSource_MAC_Table.findByMac(mac)
-//			if err != nil {
-//				logs.Warn.Println("Dropping for:", err)
-//				continue
-//			}
 			ethHead := &Ethernet_Header{
-				RemAddr: &Ethernet_Addr{
-					IF_index: ifIndex,
-					MAC:      mac,
-				},
+				Rmac: rmac,
+				Lmac: lmac,
 				Packet: data[ETH_HEADER_SZ:],
 			}
-			c <- ethHead // TODO make non-blocking
 			//logs.Trace.Println("Forwarding packet from network_reader readAll")
+			c <- ethHead
 		} else {
 			logs.Warn.Println("Dropping Ethernet packet for wrong protocol:", eth_protocol)
 		}

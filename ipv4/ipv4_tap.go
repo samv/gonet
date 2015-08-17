@@ -8,6 +8,8 @@ import (
 	"runtime"
 	"strings"
 
+	"network/ipv4/ipv4tps"
+
 	"github.com/hsheth2/logs"
 )
 
@@ -16,7 +18,7 @@ const IPv4_DEFAULT_NETMASK = 24
 
 type Source_IP_Table struct {
 	// TODO make this thread safe
-	table []IPaddress // ordered by precedence, last one is default
+	table []ipv4tps.IPaddress // ordered by precedence, last one is default
 }
 
 func NewSource_IP_Table() (*Source_IP_Table, error) {
@@ -40,7 +42,7 @@ var GlobalSource_IP_Table = func() *Source_IP_Table {
 		line := strings.Split(sc.Text(), " ")
 
 		//		logs.Trace.Println("Source_IP_Table adding", line[2])
-		err = table.add(IPaddress(line[2])) // TODO make sure this array subscript doesn't fail
+		err = table.add(ipv4tps.IPaddress(line[2])) // TODO make sure this array subscript doesn't fail
 		if err != nil {
 			logs.Error.Fatal(err)
 		}
@@ -49,12 +51,12 @@ var GlobalSource_IP_Table = func() *Source_IP_Table {
 	return table
 }()
 
-func (sipt *Source_IP_Table) add(ip IPaddress) error {
+func (sipt *Source_IP_Table) add(ip ipv4tps.IPaddress) error {
 	sipt.table = append(sipt.table, ip) // TODO ensure the entry has not already been inserted
 	return nil
 }
 
-func ipCompare(baseS, cmpS IPaddress, netm Netmask) bool {
+func ipCompare(baseS, cmpS ipv4tps.IPaddress, netm ipv4tps.Netmask) bool {
 	base := net.ParseIP(string(baseS))[12:]
 	cmp := net.ParseIP(string(cmpS))[12:]
 
@@ -67,7 +69,7 @@ func ipCompare(baseS, cmpS IPaddress, netm Netmask) bool {
 	return true
 }
 
-func (sipt *Source_IP_Table) Query(dst IPaddress) (src IPaddress) {
+func (sipt *Source_IP_Table) Query(dst ipv4tps.IPaddress) (src ipv4tps.IPaddress) {
 	if len(sipt.table) == 0 {
 		logs.Error.Fatalln("sipt Query: no entries in table")
 	}

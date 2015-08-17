@@ -5,6 +5,7 @@ import (
 	"network/ipv4"
 
 	"github.com/hsheth2/logs"
+	"network/ipv4/ipv4tps"
 )
 
 const (
@@ -17,7 +18,7 @@ const (
 type Ping_Manager struct {
 	// Responding to pings
 	input  chan *icmp.ICMP_In
-	output map[ipv4.IPaddress](*ipv4.IP_Writer)
+	output map[ipv4tps.IPaddress](*ipv4.IP_Writer)
 
 	// Sending pings and receiving responses
 	reply             chan *icmp.ICMP_In
@@ -38,7 +39,7 @@ func NewPing_Manager(icmprm *icmp.ICMP_Read_Manager) (*Ping_Manager, error) {
 
 	pm := &Ping_Manager{
 		input:             input,
-		output:            make(map[ipv4.IPaddress](*ipv4.IP_Writer)),
+		output:            make(map[ipv4tps.IPaddress](*ipv4.IP_Writer)),
 		reply:             reply,
 		currentIdentifier: PING_START_ID,
 		identifiers:       make(map[uint16](chan *icmp.ICMP_In)),
@@ -58,7 +59,7 @@ var GlobalPingManager = func() *Ping_Manager {
 	return pm
 }()
 
-func (pm *Ping_Manager) getIP_Writer(ip ipv4.IPaddress) (*ipv4.IP_Writer, error) {
+func (pm *Ping_Manager) getIP_Writer(ip ipv4tps.IPaddress) (*ipv4.IP_Writer, error) {
 	if _, ok := pm.output[ip]; !ok {
 		wt, err := ipv4.NewIP_Writer(ip, ipv4.ICMP_PROTO)
 		if err != nil {

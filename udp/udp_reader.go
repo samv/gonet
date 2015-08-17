@@ -6,20 +6,21 @@ import (
 	"network/ipv4"
 
 	"github.com/hsheth2/logs"
+	"network/ipv4/ipv4tps"
 )
 
 const MAX_UDP_PACKET_LEN = 65507
 
 type UDP_Read_Manager struct {
 	reader *ipv4.IP_Reader
-	buff   map[uint16](map[ipv4.IPaddress](chan []byte))
+	buff   map[uint16](map[ipv4tps.IPaddress](chan []byte))
 }
 
 type UDP_Reader struct {
 	manager   *UDP_Read_Manager
 	bytes     <-chan []byte
 	port      uint16 // ports
-	ipAddress ipv4.IPaddress
+	ipAddress ipv4tps.IPaddress
 }
 
 func NewUDP_Read_Manager() (*UDP_Read_Manager, error) {
@@ -32,7 +33,7 @@ func NewUDP_Read_Manager() (*UDP_Read_Manager, error) {
 
 	x := &UDP_Read_Manager{
 		reader: ipr,
-		buff:   make(map[uint16](map[ipv4.IPaddress](chan []byte))),
+		buff:   make(map[uint16](map[ipv4tps.IPaddress](chan []byte))),
 	}
 
 	go x.readAll()
@@ -83,10 +84,10 @@ func (x *UDP_Read_Manager) readAll() {
 	}
 }
 
-func (x *UDP_Read_Manager) NewUDP(port uint16, ip ipv4.IPaddress) (*UDP_Reader, error) {
+func (x *UDP_Read_Manager) NewUDP(port uint16, ip ipv4tps.IPaddress) (*UDP_Reader, error) {
 	// add the port if not already there
 	if _, found := x.buff[port]; !found {
-		x.buff[port] = make(map[ipv4.IPaddress](chan []byte))
+		x.buff[port] = make(map[ipv4tps.IPaddress](chan []byte))
 	}
 
 	// add the ip to the port's list

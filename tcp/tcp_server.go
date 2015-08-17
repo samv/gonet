@@ -9,12 +9,13 @@ import (
 
 	"github.com/hsheth2/logs"
 	netip "golang.org/x/net/ipv4"
+	"network/ipv4/ipv4tps"
 )
 
 type Server_TCB struct {
 	listener        chan *TCP_Packet
 	listenPort      uint16
-	listenIP        ipv4.IPaddress
+	listenIP        ipv4tps.IPaddress
 	state           uint
 	kind            uint
 	connQueue       chan *TCB
@@ -35,7 +36,7 @@ func New_Server_TCB() (*Server_TCB, error) {
 	return x, nil
 }
 
-func (s *Server_TCB) BindListen(port uint16, ip ipv4.IPaddress) error {
+func (s *Server_TCB) BindListen(port uint16, ip ipv4tps.IPaddress) error {
 	s.listenPort = port
 	s.listenIP = ip
 	read, err := TCP_Port_Manager.bind(0, port, ip)
@@ -132,7 +133,7 @@ func (s *Server_TCB) LongListener() {
 	}
 }
 
-func (s *Server_TCB) Accept() (c *TCB, rip ipv4.IPaddress, rport uint16, err error) {
+func (s *Server_TCB) Accept() (c *TCB, rip ipv4tps.IPaddress, rport uint16, err error) {
 	s.connQueueUpdate.L.Lock()
 	defer s.connQueueUpdate.L.Unlock()
 	for {

@@ -1,8 +1,6 @@
 package ethernet
 
 import (
-	"bytes"
-
 	"github.com/hsheth2/logs"
 )
 
@@ -16,16 +14,15 @@ func NewNetwork_Writer() (*Network_Writer, error) {
 	}, nil
 }
 
-var loopback_mac_address *MAC_Address = &MAC_Address{Data: []byte{0, 0, 0, 0, 0, 0}}
-
-func (nw *Network_Writer) Write(data []byte, addr *Ethernet_Addr, ethertype EtherType) error {
+func (nw *Network_Writer) Write(data []byte, dst_mac *MAC_Address, ethertype EtherType) error {
 	// build the ethernet header
-	src_mac, err := GlobalSource_MAC_Table.findByIf(addr.IF_index)
+	index := getInternalIndex(dst_mac)
+	src_mac, err := globalSource_MAC_Table.search(index)
 	if err != nil {
 		return err
 	}
 	etherHead := append(append(
-		addr.MAC.Data[:ETH_MAC_ADDR_SZ],    // dst MAC
+		dst_mac.Data[:ETH_MAC_ADDR_SZ],    // dst MAC
 		src_mac.Data[:ETH_MAC_ADDR_SZ]...), // src MAC
 		byte(ethertype>>8), byte(ethertype), // EtherType
 	)
@@ -35,11 +32,11 @@ func (nw *Network_Writer) Write(data []byte, addr *Ethernet_Addr, ethertype Ethe
 	newPacket := append(etherHead, data...)
 
 	// send packet
-	if bytes.Equal(src_mac.Data, loopback_mac_address.Data) { // TODO find a better, dynamic way to do this
+	if index == loopback_internal_index {
 		nw.net.readBuf <- newPacket // TODO verify the packet is correctly built
 		return nil
 	} else {
-		logs.Info.Println("network_writer:", "write: full packet with ethernet header:", newPacket, "with ifindex:", addr.IF_index)
+		logs.Info.Println("network_writer:", "write: full packet with ethernet header:", newPacket)
 		return nw.net.write(newPacket)
 	}
 }

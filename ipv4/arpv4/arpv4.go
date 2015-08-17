@@ -4,30 +4,35 @@ import (
 	"errors"
 	"network/ethernet"
 	"network/arp"
+	"network/ipv4/ipv4tps"
 )
 
 type ARPv4_Table struct {
-	table map[arp.ARP_Protocol_Address](*ethernet.Ethernet_Addr)
+	table map[ipv4tps.IPaddress](*ethernet.MAC_Address)
 }
 
 func NewARP_Table() (*ARPv4_Table, error) {
 	return &ARPv4_Table{
-		table: make(map[arp.ARP_Protocol_Address](*ethernet.Ethernet_Addr)),
+		table: make(map[ipv4tps.IPaddress](*ethernet.MAC_Address)),
 	}, nil
 }
 
-func (table *ARPv4_Table) Lookup(ip arp.ARP_Protocol_Address) (*ethernet.Ethernet_Addr, error) {
-	if ans, ok := table.table[ip]; ok {
+func (table *ARPv4_Table) Lookup(ip arp.ARP_Protocol_Address) (*ethernet.MAC_Address, error) {
+	if ans, ok := table.table[*(ip.(*ipv4tps.IPaddress))]; ok {
 		return ans, nil
 	}
-	return &ethernet.Ethernet_Addr{}, errors.New("ARP lookup into table failed") // TODO call probe instead
+//	d, _ := ip.Marshal()
+//	logs.Error.Printf("ARP lookup into table failed; ip: %v\n", d)
+	return nil, errors.New("ARP lookup into table failed") // TODO call request instead
 }
 
-func (table *ARPv4_Table) Add(ip arp.ARP_Protocol_Address, addr *ethernet.Ethernet_Addr) error {
+func (table *ARPv4_Table) Add(ip arp.ARP_Protocol_Address, addr *ethernet.MAC_Address) error {
 	// if _, ok := table.table[ip]; ok {
 	// 	return errors.New("Cannot overwrite existing entry")
 	// }
-	table.table[ip] = addr
+	d := ip.(*ipv4tps.IPaddress)
+//	logs.Trace.Printf("ARPv4 table: add: %v (%v)\n", addr.Data, *d)
+	table.table[*d] = addr
 	return nil
 }
 

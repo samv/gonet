@@ -4,12 +4,11 @@ import (
 	"testing"
 	"time"
 
-	"network/ipv4"
-
 	"github.com/hsheth2/logs"
+	"network/ipv4/ipv4tps"
 )
 
-func ping_tester(t *testing.T, ip ipv4.IPaddress, num uint16) {
+func ping_tester(t *testing.T, ip ipv4tps.IPaddress, num uint16) {
 	err := GlobalPingManager.SendPing(ip, time.Second, time.Second, num)
 	if err != nil {
 		logs.Error.Println(err)
