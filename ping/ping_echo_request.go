@@ -2,13 +2,17 @@ package ping
 
 import (
 	"bytes"
-	"network/icmpp"
+	"network/icmp"
 	"time"
 
-	"network/ipv4p"
+	"network/ipv4"
+
+	"network/ipv4/ipv4tps"
 
 	"github.com/hsheth2/logs"
 )
+
+const DATA_56_BYTES = "abcdefghijklmnopqrstuvwxyzabcdefghijklmnopqrstuvwxyzabcd"
 
 func (pm *Ping_Manager) ping_response_dealer() {
 	for {
@@ -22,13 +26,13 @@ func (pm *Ping_Manager) ping_response_dealer() {
 	}
 }
 
-func sendSinglePing(writer *ipv4p.IP_Writer, id, seq uint16, timeout time.Duration, reply chan *icmpp.ICMP_In) {
+func sendSinglePing(writer *ipv4.IP_Writer, id, seq uint16, timeout time.Duration, reply chan *icmp.ICMP_In) {
 	// prepare packet
-	packet := &icmpp.ICMP_Header{
+	packet := &icmp.ICMP_Header{
 		TypeF: PING_ECHO_REQUEST_TYPE,
 		Code:  PING_ICMP_CODE,
 		Opt:   uint32(id)<<16 | uint32(seq),
-		Data:  []byte("abcdefg"), // TODO make legit by sending 56 bytes of Data and putting the timestamp in the data
+		Data:  []byte(DATA_56_BYTES), // TODO make legit by putting the timestamp in the data
 	}
 
 	// make data
@@ -46,17 +50,17 @@ func sendSinglePing(writer *ipv4p.IP_Writer, id, seq uint16, timeout time.Durati
 	}
 	time1 := time.Now()
 	timeoutTimer := time.NewTimer(timeout)
-	go func(seqChan chan *icmpp.ICMP_In, header *icmpp.ICMP_Header, time1 *time.Time, timer *time.Timer) {
+	go func(seqChan chan *icmp.ICMP_In, header *icmp.ICMP_Header, time1 *time.Time, timer *time.Timer) {
 		for {
 			select {
 			case pingResonse := <-seqChan:
 				if !bytes.Equal(pingResonse.Header.Data, header.Data) {
-					logs.Info.Println("Dropped packet cuz data !=")
+					logs.Info.Println("Dropped packet because header data not equal to ping sent")
 					continue
 				}
 				time2 := time.Now()
 				logs.Info.Printf("%d bytes from %s: icmp_seq=%d time=%f ms",
-					len(header.Data)+icmpp.ICMP_Header_MinSize,
+					len(header.Data)+icmp.ICMP_Header_MinSize,
 					pingResonse.RIP,
 					uint16(header.Opt),
 					float32(time2.Sub(*time1).Nanoseconds())/1000000) // put ttl
@@ -69,14 +73,14 @@ func sendSinglePing(writer *ipv4p.IP_Writer, id, seq uint16, timeout time.Durati
 	}(reply, packet, &time1, timeoutTimer)
 }
 
-func (pm *Ping_Manager) initIdentifier(terminate chan bool) (id uint16, seqChannel map[uint16](chan *icmpp.ICMP_In), err error) {
+func (pm *Ping_Manager) initIdentifier(terminate chan bool) (id uint16, seqChannel map[uint16](chan *icmp.ICMP_In), err error) {
 	// get identifier
 	pm.currentIdentifier++
 	id = pm.currentIdentifier
 
 	// setup sequence number dealer
-	pm.identifiers[id] = make(chan *icmpp.ICMP_In)
-	seqChannel = make(map[uint16](chan *icmpp.ICMP_In))
+	pm.identifiers[id] = make(chan *icmp.ICMP_In)
+	seqChannel = make(map[uint16](chan *icmp.ICMP_In))
 
 	// create go routine function to deal packets
 	go sequenceDealer(pm.identifiers[id], seqChannel, terminate)
@@ -84,12 +88,12 @@ func (pm *Ping_Manager) initIdentifier(terminate chan bool) (id uint16, seqChann
 	return id, seqChannel, nil
 }
 
-func sequenceDealer(idInput chan *icmpp.ICMP_In, seqChan map[uint16](chan *icmpp.ICMP_In), terminate chan bool) {
+func sequenceDealer(idInput chan *icmp.ICMP_In, seqChan map[uint16](chan *icmp.ICMP_In), terminate chan bool) {
 	// TODO verify IPs
 	for {
 		select {
 		case <-terminate:
-			logs.Info.Println("Terminating seq dealer")
+			//			logs.Info.Println("Terminating seq dealer")
 			return
 		case packet := <-idInput:
 			// logs.Info.Println("icmp in =", packet.Header.Opt)
@@ -103,15 +107,14 @@ func sequenceDealer(idInput chan *icmpp.ICMP_In, seqChan map[uint16](chan *icmpp
 	}
 }
 
-func (pm *Ping_Manager) SendPing(ip string, interval, timeout time.Duration, numPings uint16) error {
+func (pm *Ping_Manager) SendPing(ip ipv4tps.IPaddress, interval, timeout time.Duration, numPings uint16) error {
 	terminate := make(chan bool)
 	id, seqChannel, err := pm.initIdentifier(terminate)
 	if err != nil {
 		logs.Error.Println(err)
 		return err
 	}
-	defer func(){ terminate <- true }()
-
+	defer func() { terminate <- true }()
 
 	// get ip writer
 	writer, err := pm.getIP_Writer(ip)
@@ -121,7 +124,7 @@ func (pm *Ping_Manager) SendPing(ip string, interval, timeout time.Duration, num
 	}
 
 	for i := uint16(1); i <= numPings; i++ {
-		seqChannel[i] = make(chan *icmpp.ICMP_In)
+		seqChannel[i] = make(chan *icmp.ICMP_In)
 
 		sendSinglePing(writer, id, i, timeout, seqChannel[i]) // function is non-blocking
 
