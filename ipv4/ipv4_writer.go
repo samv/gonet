@@ -4,8 +4,8 @@ import (
 	"net"
 	"network/ethernet"
 	"network/ipv4/arpv4"
-	"network/ipv4/ipv4tps"
 	"network/ipv4/ipv4src"
+	"network/ipv4/ipv4tps"
 
 	"golang.org/x/net/ipv4"
 )
@@ -164,7 +164,8 @@ func (ipw *IP_Writer) WriteTo(p []byte) error {
 }
 
 func (ipw *IP_Writer) sendIP(p []byte) error {
-	arp_data, err := arpv4.GlobalARPv4_Table.Lookup(&ipw.dst)
+	gateway := ipv4src.GlobalSource_IP_Table.Gateway(&ipw.dst)
+	arp_data, err := arpv4.GlobalARPv4_Table.Lookup(gateway)
 	if err != nil {
 		return err
 	}

@@ -2,8 +2,8 @@ package udp
 
 import (
 	"network/ipv4"
-	"network/ipv4/ipv4tps"
 	"network/ipv4/ipv4src"
+	"network/ipv4/ipv4tps"
 )
 
 const UDP_HEADER_SZ = 8

@@ -12,13 +12,8 @@ build:
 	go clean ${pkgs}
 	go install ${pkgs}
 clean:
-	-rm ipv4/arpv4/ips.static.orig
-	-rm ipv4/arpv4/ips_mac.static.orig
-	-rm ipv4/arpv4/ips_mac.static
-	-rm ipv4/ips.static
-	-rm ethernet/mac.static.orig
-	-rm ethernet/mac.static
-	-rm ethernet/external_mac.static
+	-rm -rf *.static.orig
+	-rm -rf *.static
 	-rm *.test
 	-rm *.pprof
 	go clean ${pkgs}

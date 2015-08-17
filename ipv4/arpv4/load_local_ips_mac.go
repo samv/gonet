@@ -4,14 +4,15 @@ import (
 	"network/arp"
 	"network/ethernet"
 
-	"github.com/hsheth2/logs"
-	"runtime"
-	"path"
-	"os"
 	"bufio"
-	"strings"
-	"network/ipv4/ipv4tps"
 	"net"
+	"network/ipv4/ipv4tps"
+	"os"
+	"path"
+	"runtime"
+	"strings"
+
+	"github.com/hsheth2/logs"
 )
 
 const LOCAL_IPS_AND_MACS_LOAD_FILE = "ips_mac.static"

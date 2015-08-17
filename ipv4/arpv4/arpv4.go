@@ -5,6 +5,7 @@ import (
 	"net"
 	"network/arp"
 	"network/ethernet"
+	"network/ipv4/ipv4src"
 	"network/ipv4/ipv4tps"
 )
 
@@ -43,6 +44,5 @@ func (table *ARPv4_Table) Unmarshal(d []byte) arp.ARP_Protocol_Address {
 }
 
 func (table *ARPv4_Table) GetAddress() arp.ARP_Protocol_Address {
-	addr := ipv4tps.IPaddress("10.0.0.1") // TODO fix this
-	return &addr
+	return ipv4src.External_ip_address
 }

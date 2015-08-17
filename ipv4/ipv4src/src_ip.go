@@ -1,23 +1,35 @@
 package ipv4src
 
 import (
+	"io/ioutil"
 	"net"
 	"path"
 	"runtime"
 	"strings"
-	"io/ioutil"
 
 	"network/ipv4/ipv4tps"
 
 	"github.com/hsheth2/logs"
 )
 
-const IPv4_STATIC_IP_LOAD_FILE = "external_ip.static"
+const (
+	IPv4_STATIC_IP_LOAD_FILE      = "external_ip.static"
+	IPv4_STATIC_GATEWAY_LOAD_FILE = "external_gateway.static"
+)
 const IPv4_DEFAULT_NETMASK = 24
 
 var (
 	Loopback_ip_address *ipv4tps.IPaddress = ipv4tps.MakeIP("127.0.0.1")
 	External_ip_address *ipv4tps.IPaddress
+	external_gateway    *ipv4tps.IPaddress = func() *ipv4tps.IPaddress {
+		_, filename, _, _ := runtime.Caller(1)
+		data, err := ioutil.ReadFile(path.Join(path.Dir(filename), IPv4_STATIC_GATEWAY_LOAD_FILE))
+		if err != nil {
+			logs.Error.Fatalln(err)
+		}
+		str := strings.TrimSpace(string(data))
+		return ipv4tps.MakeIP(str)
+	}()
 )
 
 type Source_IP_Table struct {
@@ -86,4 +98,13 @@ func (sipt *Source_IP_Table) Query(dst ipv4tps.IPaddress) (src ipv4tps.IPaddress
 		}
 	}
 	return sipt.table[len(sipt.table)-1]
+}
+
+func (sipt *Source_IP_Table) Gateway(dst *ipv4tps.IPaddress) *ipv4tps.IPaddress {
+	for _, base := range sipt.table {
+		if ipCompare(base, *dst, IPv4_DEFAULT_NETMASK) { // TODO determine dynamically
+			return dst
+		}
+	}
+	return external_gateway
 }
