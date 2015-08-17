@@ -12,12 +12,11 @@ import (
 
 	"github.com/hsheth2/logs"
 	"github.com/hsheth2/notifiers"
-	netip "golang.org/x/net/ipv4"
 )
 
 type TCB struct {
 	read             chan *TCP_Packet    // input
-	writer           *netip.RawConn      // output
+	writer           *ipv4.IP_Writer      // output
 	ipAddress        ipv4tps.IPaddress   // destination ip address
 	srcIP            ipv4tps.IPaddress   // src ip address
 	lport, rport     uint16              // ports
@@ -42,7 +41,7 @@ type TCB struct {
 	maxSegSize       uint16              // MSS (MTU)
 }
 
-func New_TCB(local, remote uint16, dstIP ipv4tps.IPaddress, read chan *TCP_Packet, write *netip.RawConn, kind uint) (*TCB, error) {
+func New_TCB(local, remote uint16, dstIP ipv4tps.IPaddress, read chan *TCP_Packet, write *ipv4.IP_Writer, kind uint) (*TCB, error) {
 	logs.Trace.Println("New_TCB")
 
 	seq, err := genRandSeqNum()

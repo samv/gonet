@@ -2,14 +2,11 @@ package tcp
 
 import (
 	"errors"
-	"fmt"
-	"net"
 	"network/ipv4"
 
 	"network/ipv4/ipv4tps"
 
 	"github.com/hsheth2/logs"
-	netip "golang.org/x/net/ipv4"
 )
 
 func New_TCB_From_Client(local, remote uint16, dstIP ipv4tps.IPaddress) (*TCB, error) {
@@ -24,13 +21,7 @@ func New_TCB_From_Client(local, remote uint16, dstIP ipv4tps.IPaddress) (*TCB, e
 		return nil, err
 	}
 
-	p, err := net.ListenPacket(fmt.Sprintf("ip4:%d", ipv4.TCP_PROTO), string(dstIP)) // only for read, not for write
-	if err != nil {
-		logs.Error.Println(err)
-		return nil, err
-	}
-
-	r, err := netip.NewRawConn(p)
+	r, err := ipv4.NewIP_Writer(dstIP, ipv4.TCP_PROTO)
 	if err != nil {
 		logs.Error.Println(err)
 		return nil, err

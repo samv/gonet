@@ -2,15 +2,12 @@ package tcp
 
 import (
 	"errors"
-	"fmt"
-	"net"
 	"network/ipv4"
 	"sync"
 
 	"network/ipv4/ipv4tps"
 
 	"github.com/hsheth2/logs"
-	netip "golang.org/x/net/ipv4"
 )
 
 type Server_TCB struct {
@@ -77,13 +74,7 @@ func (s *Server_TCB) LongListener() {
 				return
 			}
 
-			p, err := net.ListenPacket(fmt.Sprintf("ip4:%d", ipv4.TCP_PROTO), string(rIP)) // only for read, not for write
-			if err != nil {
-				logs.Error.Println(err)
-				return
-			}
-
-			r, err := netip.NewRawConn(p)
+			r, err := ipv4.NewIP_Writer(s.listenIP, ipv4.TCP_PROTO)
 			if err != nil {
 				logs.Error.Println(err)
 				return
