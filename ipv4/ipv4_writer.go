@@ -165,7 +165,7 @@ func (ipw *IP_Writer) WriteTo(p []byte) error {
 
 func (ipw *IP_Writer) sendIP(p []byte) error {
 	gateway := ipv4src.GlobalSource_IP_Table.Gateway(&ipw.dst)
-	arp_data, err := arpv4.GlobalARPv4_Table.Lookup(gateway)
+	arp_data, err := arpv4.GlobalARPv4_Table.LookupRequest(gateway)
 	if err != nil {
 		return err
 	}
