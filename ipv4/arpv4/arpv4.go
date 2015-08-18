@@ -7,15 +7,19 @@ import (
 	"network/ethernet"
 	"network/ipv4/ipv4src"
 	"network/ipv4/ipv4tps"
+
+	"github.com/hsheth2/notifiers"
 )
 
 type ARPv4_Table struct {
-	table map[ipv4tps.IPaddress](*ethernet.MAC_Address)
+	table         map[ipv4tps.IPaddress](*ethernet.MAC_Address)
+	replyNotifier *notifiers.Notifier
 }
 
 func NewARP_Table() (*ARPv4_Table, error) {
 	return &ARPv4_Table{
-		table: make(map[ipv4tps.IPaddress](*ethernet.MAC_Address)),
+		table:         make(map[ipv4tps.IPaddress](*ethernet.MAC_Address)),
+		replyNotifier: notifiers.NewNotifier(),
 	}, nil
 }
 
@@ -25,7 +29,19 @@ func (table *ARPv4_Table) Lookup(ip arp.ARP_Protocol_Address) (*ethernet.MAC_Add
 	}
 	//	d, _ := ip.Marshal()
 	//	logs.Error.Printf("ARP lookup into table failed; ip: %v\n", d)
-	return nil, errors.New("ARP lookup into table failed") // TODO call request instead
+	return nil, errors.New("ARP lookup into table failed")
+}
+
+func (table *ARPv4_Table) LookupRequest(ip arp.ARP_Protocol_Address) (*ethernet.MAC_Address, error) {
+	x, err := table.Lookup(ip)
+	if err == nil {
+		return x, nil
+	}
+	return table.Request(ip)
+}
+
+func (table *ARPv4_Table) Request(rip arp.ARP_Protocol_Address) (*ethernet.MAC_Address, error) {
+	return arp.GlobalARP_Manager.Request(ethernet.ETHERTYPE_IP, rip)
 }
 
 func (table *ARPv4_Table) Add(ip arp.ARP_Protocol_Address, addr *ethernet.MAC_Address) error {
@@ -33,14 +49,17 @@ func (table *ARPv4_Table) Add(ip arp.ARP_Protocol_Address, addr *ethernet.MAC_Ad
 	// 	return errors.New("Cannot overwrite existing entry")
 	// }
 	d := ip.(*ipv4tps.IPaddress)
-	//	logs.Trace.Printf("ARPv4 table: add: %v (%v)\n", addr.Data, *d)
+	// logs.Trace.Printf("ARPv4 table: add: %v (%v)\n", addr.Data, *d)
 	table.table[*d] = addr
 	return nil
 }
 
+func (table *ARPv4_Table) GetReplyNotifier() *notifiers.Notifier {
+	return table.replyNotifier
+}
+
 func (table *ARPv4_Table) Unmarshal(d []byte) arp.ARP_Protocol_Address {
-	s := ipv4tps.IPaddress(net.IPv4(d[0], d[1], d[2], d[3]).String())
-	return &s
+	return ipv4tps.MakeIP(net.IPv4(d[0], d[1], d[2], d[3]).String())
 }
 
 func (table *ARPv4_Table) GetAddress() arp.ARP_Protocol_Address {
