@@ -47,9 +47,14 @@ test_ethernet:
 	# for testing water
 	./run_test.sh network/ethernet
 test_latency:
+	-sudo pkill runStack
+	-sudo pkill tapip
 	go build runStack.go
 	sudo setcap CAP_NET_RAW=epi ./runStack
-	./runStack
+	./runStack > /dev/null 2>&1 &
+	sleep 1
+	sudo ping -f -W 1 -c 500000 10.0.0.3
+	pkill runStack
 iptables:
 	sudo iptables -I INPUT -p tcp --sport 20102 -j DROP
 	sudo iptables -I INPUT -p tcp --dport 20102 -j DROP
