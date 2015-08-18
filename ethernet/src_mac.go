@@ -21,6 +21,8 @@ const (
 
 var Loopback_mac_address *MAC_Address = &MAC_Address{Data: []byte{0, 0, 0, 0, 0, 0}}
 var External_mac_address *MAC_Address
+var Loopback_bcast_address *MAC_Address = &MAC_Address{Data: []byte{0, 0, 0, 0, 0, 0}}
+var External_bcast_address *MAC_Address = &MAC_Address{Data: []byte{0xff, 0xff, 0xff, 0xff, 0xff, 0xff}}
 
 type source_MAC_Table struct {
 	table map[internal_index](*MAC_Address)
@@ -71,7 +73,7 @@ func (smt *source_MAC_Table) add(in internal_index, mac *MAC_Address) error {
 }
 
 func getInternalIndex(rmac *MAC_Address) internal_index {
-	if reflect.DeepEqual(rmac, Loopback_mac_address) {
+	if reflect.DeepEqual(rmac, Loopback_mac_address) || reflect.DeepEqual(rmac, Loopback_bcast_address) {
 		return loopback_internal_index
 	}
 	return external_internal_index

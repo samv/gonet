@@ -3,15 +3,22 @@ package arp
 import (
 	"bytes"
 	"network/ethernet"
+	"time"
 )
 
 type ARP_htype uint16
 
-const ARP_HTYPE_ETHERNET = 1
 const (
 	ARP_OPER_REQUEST = 1
 	ARP_OPER_REPLY   = 2
 )
+
+const (
+	ARP_HTYPE_ETHERNET = 1
+	ARP_HLEN_ETHERNET  = 6
+)
+
+const ARP_REQUEST_TIMEOUT = 500 * time.Millisecond
 
 type ARP_Packet struct {
 	htype      ARP_htype

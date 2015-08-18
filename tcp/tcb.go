@@ -16,7 +16,7 @@ import (
 
 type TCB struct {
 	read             chan *TCP_Packet    // input
-	writer           *ipv4.IP_Writer      // output
+	writer           *ipv4.IP_Writer     // output
 	ipAddress        ipv4tps.IPaddress   // destination ip address
 	srcIP            ipv4tps.IPaddress   // src ip address
 	lport, rport     uint16              // ports
