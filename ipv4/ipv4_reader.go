@@ -93,10 +93,13 @@ func (ipr *IP_Reader) fragmentAssembler(in <-chan []byte, quit <-chan bool, didQ
 				fullPacketHdr[11] = byte(check)
 
 				// send the packet back into processing
-				go func() {
-					ipr.incomingPackets <- append(fullPacketHdr, payload...)
+				//go func() {
+				select {
+				case ipr.incomingPackets <- append(fullPacketHdr, payload...):
+				default: logs.Warn.Println("Dropping defragmented packet, no space in buffer")
+				}
 					//fmt.Println("FINISHED")
-				}()
+				//}()
 				//Trace.Println("Just wrote back in")
 				done <- true
 				return // from goroutine
