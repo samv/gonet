@@ -4,6 +4,8 @@ import (
 	"net"
 	"network/ipv4/ipv4tps"
 	"time"
+
+	"github.com/hsheth2/logs"
 )
 
 type IP_Reader struct {
@@ -96,9 +98,10 @@ func (ipr *IP_Reader) fragmentAssembler(in <-chan []byte, quit <-chan bool, didQ
 				//go func() {
 				select {
 				case ipr.incomingPackets <- append(fullPacketHdr, payload...):
-				default: logs.Warn.Println("Dropping defragmented packet, no space in buffer")
+				default:
+					logs.Warn.Println("Dropping defragmented packet, no space in buffer")
 				}
-					//fmt.Println("FINISHED")
+				//fmt.Println("FINISHED")
 				//}()
 				//Trace.Println("Just wrote back in")
 				done <- true
@@ -170,7 +173,7 @@ func (ipr *IP_Reader) ReadFrom() (rip, lip ipv4tps.IPaddress, b, payload []byte,
 		if _, ok := ipr.fragBuf[bufID]; !ok {
 			// create the fragment buffer and quit
 			//Trace.Printf("creating a new buffer for %x\n", bufID)
-			ipr.fragBuf[bufID] = make(chan []byte)
+			ipr.fragBuf[bufID] = make(chan []byte, FRAGMENT_ASSEMBLER_BUFFER_SIZE)
 			quit := make(chan bool)
 			done := make(chan bool)
 			didQuit := make(chan bool)

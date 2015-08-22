@@ -1,10 +1,10 @@
 package main
 
 import (
-	_ "net/http/pprof"
-	_ "network/ping"
 	"log"
 	"net/http"
+	_ "net/http/pprof"
+	_ "network/ping"
 )
 
 func main() {

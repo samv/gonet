@@ -66,12 +66,18 @@ func (nr *IP_Read_Manager) readAll() {
 		//fmt.Println(protocol, ip)
 		if protoBuf, foundProto := nr.buffers[protocol]; foundProto {
 			//fmt.Println("Dealing with packet")
+			var output chan []byte = nil
 			if c, foundIP := protoBuf[rip]; foundIP {
 				//fmt.Println("Found exact")
-				go func() { c <- buf }()
+				output = c
 			} else if c, foundAll := protoBuf["*"]; foundAll {
 				//fmt.Println("Found global")
-				go func() { c <- buf }()
+				output = c
+			}
+			select {
+			case output <- buf:
+			default:
+				logs.Warn.Println("Dropping incoming IPv4 packet: no space in buffer")
 			}
 		}
 	}
