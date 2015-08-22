@@ -12,7 +12,7 @@ import (
 
 func ping_tester(t *testing.T, ip ipv4tps.IPaddress, num uint16) {
 	defer profile.Start(profile.CPUProfile, profile.ProfilePath(".")).Stop()
-	
+
 	err := GlobalPingManager.SendPing(ip, time.Second, time.Second, num)
 	if err != nil {
 		logs.Error.Println(err)
