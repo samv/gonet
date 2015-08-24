@@ -175,9 +175,9 @@ func (ipr *IP_Reader) ReadFrom() (rip, lip *ipv4tps.IPaddress, b, payload []byte
 			// create the fragment buffer and quit
 			//Trace.Printf("creating a new buffer for %x\n", bufID)
 			ipr.fragBuf[bufID] = make(chan []byte, FRAGMENT_ASSEMBLER_BUFFER_SIZE)
-			quit := make(chan bool)
-			done := make(chan bool)
-			didQuit := make(chan bool)
+			quit := make(chan bool, 1)
+			done := make(chan bool, 1)
+			didQuit := make(chan bool, 1)
 
 			// create the packet assembler in a goroutine to allow the program to continue
 			go ipr.fragmentAssembler(ipr.fragBuf[bufID], quit, didQuit, done)

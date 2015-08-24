@@ -59,5 +59,5 @@ const (
 	ETH_MAC_ADDR_SZ       = 6
 	ETH_HEADER_SZ         = 14
 	MAX_ETHERNET_FRAME_SZ = 1522 // for 1500 MTU + 22 bytes
-	ETH_PROTOCOL_BUF_SZ   = 5000
+	ETH_PROTOCOL_BUF_SZ   = 500
 )

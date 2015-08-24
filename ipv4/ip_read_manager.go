@@ -8,6 +8,8 @@ import (
 	"github.com/hsheth2/logs"
 )
 
+const IP_READ_MANAGER_BUFFER_SIZE = 5000
+
 type IP_Read_Manager struct {
 	incoming chan *ethernet.Ethernet_Header
 	buffers  map[uint8](map[*ipv4tps.IPaddress](chan []byte))
@@ -90,7 +92,7 @@ func (irm *IP_Read_Manager) Bind(ip *ipv4tps.IPaddress, protocol uint8) (chan []
 	// add the IP binding, if possible
 	if _, IP_exists := irm.buffers[protocol][ip]; !IP_exists {
 		// doesn't exist in map already
-		irm.buffers[protocol][ip] = make(chan []byte, 1)
+		irm.buffers[protocol][ip] = make(chan []byte, IP_READ_MANAGER_BUFFER_SIZE)
 
 		ret, _ := irm.buffers[protocol][ip]
 		return ret, nil
