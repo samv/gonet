@@ -7,8 +7,8 @@ import (
 )
 
 type Ethernet_Header struct {
-	Rmac, Lmac *MAC_Address
-	Packet     []byte
+	//Rmac, Lmac *MAC_Address
+	Packet []byte
 }
 
 var GlobalNetworkReader = func() *Network_Reader {
