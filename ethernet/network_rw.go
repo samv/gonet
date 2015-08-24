@@ -47,6 +47,7 @@ func (ntap *Network_Tap) write(data []byte) error {
 	if len(data) != n {
 		return errors.New("ifce failed to write all data")
 	}
+	//logs.Info.Println("Finished write")
 	return nil
 }
 

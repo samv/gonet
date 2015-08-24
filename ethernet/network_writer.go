@@ -14,11 +14,14 @@ func NewNetwork_Writer() (*Network_Writer, error) {
 
 func (nw *Network_Writer) Write(data []byte, dst_mac *MAC_Address, ethertype EtherType) error {
 	// build the ethernet header
+	//	logs.Info.Println("Ethernet write request")
 	index := getInternalIndex(dst_mac)
+	//	logs.Info.Println("Found internal index")
 	src_mac, err := globalSource_MAC_Table.search(index)
 	if err != nil {
 		return err
 	}
+	//	logs.Info.Println("Finished ARP lookup stuff")
 	etherHead := append(append(
 		dst_mac.Data[:ETH_MAC_ADDR_SZ],     // dst MAC
 		src_mac.Data[:ETH_MAC_ADDR_SZ]...), // src MAC
@@ -30,6 +33,7 @@ func (nw *Network_Writer) Write(data []byte, dst_mac *MAC_Address, ethertype Eth
 	newPacket := append(etherHead, data...)
 
 	// send packet
+	//	logs.Info.Println("Send ethernet packet")
 	if index == loopback_internal_index {
 		nw.net.readBuf <- newPacket // TODO verify the packet is correctly built
 		return nil

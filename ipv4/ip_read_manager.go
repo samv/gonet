@@ -3,7 +3,6 @@ package ipv4
 import (
 	"errors"
 	"network/ethernet"
-
 	"network/ipv4/ipv4tps"
 
 	"github.com/hsheth2/logs"
@@ -41,10 +40,11 @@ func NewIP_Read_Manager(in *ethernet.Network_Reader) (*IP_Read_Manager, error) {
 func (nr *IP_Read_Manager) readAll() {
 	for {
 		eth_packet := <-nr.incoming
+		// logs.Info.Println("IP read_manager recv packet")
 		buf := eth_packet.Packet
 
 		if len(buf) <= IP_HEADER_LEN {
-			logs.Info.Println("Dropping IP Packet for bogus length <=", IP_HEADER_LEN)
+			logs.Warn.Println("Dropping IP Packet for bogus length <=", IP_HEADER_LEN)
 			continue
 		}
 

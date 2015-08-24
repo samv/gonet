@@ -32,6 +32,7 @@ func (pm *Ping_Manager) respondTo(writer *ipv4.IP_Writer, ping *icmp.ICMP_In) er
 
 	// send
 	err = writer.WriteTo(bts)
+	//	logs.Info.Println("Send ping reply")
 	if err != nil {
 		logs.Error.Println(err)
 	}

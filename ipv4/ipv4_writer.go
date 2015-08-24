@@ -56,6 +56,7 @@ func NewIP_Writer(dst *ipv4tps.IPaddress, protocol uint8) (*IP_Writer, error) {
 
 func (ipw *IP_Writer) WriteTo(p []byte) error {
 	//logs.Trace.Println("IP Preparing to Write:", p)
+	//	logs.Info.Println("IPv4 WriteTo request")
 
 	header := make([]byte, ipw.headerLen)
 	header[0] = (byte)((ipw.version << 4) + (uint8)(ipw.headerLen/4)) // Version, IHL
@@ -149,7 +150,8 @@ func (ipw *IP_Writer) WriteTo(p []byte) error {
 		}
 
 		// write the bytes
-		//logs.Trace.Println("IP Writing:", newPacket)
+		// logs.Trace.Println("IP Writing:", newPacket)
+		// logs.Info.Println("IP beginning send")
 		err := ipw.sendIP(newPacket)
 		if err != nil {
 			return err
@@ -166,6 +168,7 @@ func (ipw *IP_Writer) sendIP(p []byte) error {
 	if err != nil {
 		return err
 	}
+	//	logs.Info.Println("Finished IP address lookup stuff; Send IP packet")
 	return ipw.nw.Write(p, arp_data, ethernet.ETHERTYPE_IP)
 }
 

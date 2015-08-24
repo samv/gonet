@@ -37,26 +37,31 @@ func NewNetwork_Reader() (*Network_Reader, error) {
 func (nr *Network_Reader) readAll() { // TODO terminate (using notifiers)
 	for {
 		data, err := nr.readFrame()
+		// logs.Info.Println("Recv ethernet packet")
 		if err != nil {
-			logs.Info.Println("ReadFrame failed:", err)
+			// logs.Error.Println("ReadFrame failed:", err)
 			continue
 		}
-		//logs.Trace.Println("network_reader readAll readFrame success")
+		// logs.Trace.Println("network_reader readAll readFrame success")
 
 		eth_protocol := EtherType(uint16(data[12])<<8 | uint16(data[13]))
-		//		logs.Trace.Println("Eth frame with protocol:", eth_protocol)
+		// logs.Trace.Println("Eth frame with protocol:", eth_protocol)
 		if c, ok := nr.proto_buf[eth_protocol]; ok {
-			//			logs.Trace.Println("Something binded to protocol:", eth_protocol)
-			rmac := extract_src(data)
-			lmac := extract_dst(data)
+			// logs.Trace.Println("Something binded to protocol:", eth_protocol)
+			// logs.Info.Println("Found that ethernet protocol is registered")
 
 			ethHead := &Ethernet_Header{
-				Rmac:   rmac,
-				Lmac:   lmac,
+				//Rmac: &MAC_Address{Data: data[ETH_MAC_ADDR_SZ : 2*ETH_MAC_ADDR_SZ]},
+				//Lmac:   &MAC_Address{Data: data[0:ETH_MAC_ADDR_SZ]},
 				Packet: data[ETH_HEADER_SZ:],
 			}
-			//logs.Trace.Println("Forwarding packet from network_reader readAll")
-			c <- ethHead
+			//			logs.Info.Println("Beginning to forward ethernet packet")
+			select {
+			case c <- ethHead:
+				// logs.Info.Println("Forwarding ethernet packet")
+			default:
+				logs.Warn.Println("Dropping Ethernet packet: buffer full")
+			}
 		} else {
 			logs.Warn.Println("Dropping Ethernet packet for wrong protocol:", eth_protocol)
 		}
