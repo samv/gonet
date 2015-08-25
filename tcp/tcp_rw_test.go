@@ -5,16 +5,23 @@ import (
 	"testing"
 	"time"
 
-	"github.com/pkg/profile"
+	"network/ipv4/ipv4tps"
+	"network/ipv4/ipv4src"
 )
 
 const server_port = 20102
 const client_port = 20101
-const test_ip = "127.0.0.1"
 
-func TestReadWrite(t *testing.T) {
-	defer profile.Start(profile.MemProfile, profile.ProfilePath(".")).Stop()
+func TestReadWriteLocal(t *testing.T) {
+	t.Skip("Only test remote")
+	read_write_test(t, ipv4tps.MakeIP("127.0.0.1"))
+}
 
+func TestReadWriteOverNetwork(t *testing.T) {
+	read_write_test(t, ipv4src.External_ip_address)
+}
+
+func read_write_test(t *testing.T, ip *ipv4tps.IPaddress) {
 	// TODO make both server and client read and write
 	success := make(chan bool, 1)
 
@@ -29,7 +36,7 @@ func TestReadWrite(t *testing.T) {
 		}
 		defer s.Close()
 
-		err = s.BindListen(server_port, test_ip)
+		err = s.BindListen(server_port, ip)
 		if err != nil {
 			t.Error(err)
 			return
@@ -54,7 +61,7 @@ func TestReadWrite(t *testing.T) {
 
 	// client (reads data)
 	go func() {
-		client, err := New_TCB_From_Client(client_port, server_port, test_ip)
+		client, err := New_TCB_From_Client(client_port, server_port, ip)
 		if err != nil {
 			t.Error("err", err)
 			return

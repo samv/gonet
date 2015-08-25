@@ -42,7 +42,7 @@ func NewIP_Read_Manager(in *ethernet.Network_Reader) (*IP_Read_Manager, error) {
 func (nr *IP_Read_Manager) readAll() {
 	for {
 		eth_packet := <-nr.incoming
-		// logs.Info.Println("IP read_manager recv packet")
+		// logs.Info.Println("IP read_manager recvd packet:", eth_packet.Packet)
 		buf := eth_packet.Packet
 
 		if len(buf) <= IP_HEADER_LEN {

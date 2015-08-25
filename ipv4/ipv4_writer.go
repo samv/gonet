@@ -105,9 +105,9 @@ func (ipw *IP_Writer) WriteTo(p []byte) error {
 		totalLen := uint16(0)
 
 		// Payload
-		ln := max(len(p) - maxPaySize*i, maxPaySize)
-		newPacket := make([]byte, IP_HEADER_LEN + ln)
+		var newPacket []byte
 		if len(p) <= maxFragSize*(i+1) {
+			newPacket = make([]byte, IP_HEADER_LEN + len(p[maxPaySize*i:]))
 			//logs.Trace.Println("IP Writing Entire Packet:", p[maxPaySize*i:], "i:", i)
 			totalLen = uint16(ipw.headerLen) + uint16(len(p[maxPaySize*i:]))
 			//fmt.Println("Full Pack")
@@ -130,6 +130,7 @@ func (ipw *IP_Writer) WriteTo(p []byte) error {
 			//logs.Trace.Println("Full Packet to Send in IPv4 Writer:", newPacket, "(len ", len(newPacket), ")")
 			//fmt.Println("CALCULATED LEN:", i*maxFragSize+len(p[maxPaySize*i:]))
 		} else {
+			newPacket = make([]byte, IP_HEADER_LEN + len(p[maxPaySize*i:maxPaySize*(i+1)]))
 			//logs.Trace.Println("IP Writer Fragmenting Packet")
 			totalLen = uint16(ipw.headerLen) + uint16(len(p[maxPaySize*i:maxPaySize*(i+1)]))
 			//fmt.Println("Partial packet")
@@ -154,7 +155,6 @@ func (ipw *IP_Writer) WriteTo(p []byte) error {
 
 		// write the bytes
 		// logs.Trace.Println("IP Writing:", newPacket)
-		// logs.Info.Println("IP beginning send")
 		err := ipw.sendIP(newPacket)
 		if err != nil {
 			return err

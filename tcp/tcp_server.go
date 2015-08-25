@@ -66,7 +66,7 @@ func (s *Server_TCB) LongListener() {
 		go func(s *Server_TCB, in *TCP_Packet) {
 			lp := s.listenPort
 			rp := in.header.srcport
-			rIP := in.lip
+			rIP := in.rip
 
 			read, err := TCP_Port_Manager.bind(rp, lp, rIP)
 			if err != nil {
@@ -74,7 +74,7 @@ func (s *Server_TCB) LongListener() {
 				return
 			}
 
-			r, err := ipv4.NewIP_Writer(s.listenIP, ipv4.TCP_PROTO)
+			r, err := ipv4.NewIP_Writer(rIP, ipv4.TCP_PROTO)
 			if err != nil {
 				logs.Error.Println(err)
 				return
@@ -89,7 +89,7 @@ func (s *Server_TCB) LongListener() {
 
 			// send syn-ack
 			c.ackNum = in.header.seq + 1
-			logs.Trace.Printf("Server/TCB seq: %d, ack: %d", c.seqNum, c.ackNum)
+			logs.Trace.Printf("Server/TCB seq: %d, ack: %d, to rip: %v\n", c.seqNum, c.ackNum, c.ipAddress.IP)
 			synack := &TCP_Packet{
 				header: &TCP_Header{
 					seq:     c.seqNum,

@@ -64,11 +64,11 @@ latency:
 	sudo ping -f -W 1 -c 50000 -s 1471 10.0.0.3
 	pkill runStack
 scale:
-	-sudo pkill scale_test
+	-sudo pkill scaleTest
 	-sudo pkill tapip
 	go build scaleTest.go
-	sudo setcap CAP_NET_RAW=epi ./runStack
-	./runStack > /dev/null 2>&1 &
+	sudo setcap CAP_NET_RAW=epi ./scaleTest
+	./scaleTest > /dev/null 2>&1 &
 	sleep 1
 	python tcp/tcp_client.py
 	pkill scaleTest

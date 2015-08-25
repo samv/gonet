@@ -79,10 +79,3 @@ func VerifyTransportChecksum(header []byte, srcIP, dstIP *ipv4tps.IPaddress, hea
 	// TODO: do TCP/UDP checksum verification
 	return true
 }
-
-func max(a, b int) int {
-	if a > b {
-		return a
-	}
-	return b
-}

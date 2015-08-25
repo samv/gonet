@@ -1,9 +1,12 @@
 #!/usr/bin/env python
 
 import socket
+import sys
 
-
-TCP_IP = '10.0.0.1'
+if 'tapip' in sys.argv:
+    TCP_IP = '10.0.0.1'
+else:
+    TCP_IP = '10.0.0.3'
 TCP_PORT = 49230
 BUFFER_SIZE = 1024
 MESSAGE = "Hello, World!"
