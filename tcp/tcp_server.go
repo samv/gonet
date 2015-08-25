@@ -13,7 +13,7 @@ import (
 type Server_TCB struct {
 	listener        chan *TCP_Packet
 	listenPort      uint16
-	listenIP        ipv4tps.IPaddress
+	listenIP        *ipv4tps.IPaddress
 	state           uint
 	kind            uint
 	connQueue       chan *TCB
@@ -24,7 +24,7 @@ func New_Server_TCB() (*Server_TCB, error) {
 	x := &Server_TCB{
 		listener:        nil,
 		listenPort:      0,
-		listenIP:        "*",
+		listenIP:        ipv4tps.IP_ALL,
 		state:           CLOSED,
 		kind:            TCP_SERVER,
 		connQueue:       make(chan *TCB, TCP_LISTEN_QUEUE_SZ),
@@ -34,7 +34,7 @@ func New_Server_TCB() (*Server_TCB, error) {
 	return x, nil
 }
 
-func (s *Server_TCB) BindListen(port uint16, ip ipv4tps.IPaddress) error {
+func (s *Server_TCB) BindListen(port uint16, ip *ipv4tps.IPaddress) error {
 	s.listenPort = port
 	s.listenIP = ip
 	read, err := TCP_Port_Manager.bind(0, port, ip)
@@ -125,7 +125,7 @@ func (s *Server_TCB) LongListener() {
 	}
 }
 
-func (s *Server_TCB) Accept() (c *TCB, rip ipv4tps.IPaddress, rport uint16, err error) {
+func (s *Server_TCB) Accept() (c *TCB, rip *ipv4tps.IPaddress, rport uint16, err error) {
 	s.connQueueUpdate.L.Lock()
 	defer s.connQueueUpdate.L.Unlock()
 	for {

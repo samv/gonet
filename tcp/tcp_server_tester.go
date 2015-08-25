@@ -2,6 +2,7 @@ package tcp
 
 import (
 	"github.com/hsheth2/logs"
+	"network/ipv4/ipv4tps"
 )
 
 func server_tester() {
@@ -11,7 +12,7 @@ func server_tester() {
 		return
 	}
 
-	err = s.BindListen(20102, "*")
+	err = s.BindListen(20102, ipv4tps.IP_ALL)
 	if err != nil {
 		logs.Error.Println(err)
 		return

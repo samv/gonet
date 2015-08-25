@@ -15,7 +15,8 @@ type IPaddress struct {
 const IPv4_ADDRESS_LENGTH = 4
 
 var all_ip = []byte{0, 0, 0, 0}
-var IP_ALL = &IPaddress{IP: all_ip}
+var IP_ALL *IPaddress = &IPaddress{IP: all_ip}
+var IP_ALL_HASH = IP_ALL.Hash()
 
 func (ip *IPaddress) Marshal() ([]byte, error) {
 	return ip.IP, nil

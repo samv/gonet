@@ -4,10 +4,11 @@ import (
 	"time"
 
 	"github.com/hsheth2/logs"
+	"network/ipv4/ipv4tps"
 )
 
 func client_tester() {
-	client, err := New_TCB_From_Client(20101, 49230, "10.0.0.1")
+	client, err := New_TCB_From_Client(20101, 49230, ipv4tps.MakeIP("10.0.0.1"))
 	if err != nil {
 		logs.Error.Println("err", err)
 		return

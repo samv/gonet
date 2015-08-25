@@ -12,7 +12,7 @@ const IP_READ_MANAGER_BUFFER_SIZE = 5000
 
 type IP_Read_Manager struct {
 	incoming chan *ethernet.Ethernet_Header
-	buffers  map[uint8](map[*ipv4tps.IPaddress](chan []byte)) // TODO switch to using Hash function
+	buffers  map[uint8](map[ipv4tps.IPhash](chan []byte))
 }
 
 var GlobalIPReadManager = func() *IP_Read_Manager {
@@ -31,7 +31,7 @@ func NewIP_Read_Manager(in *ethernet.Network_Reader) (*IP_Read_Manager, error) {
 
 	irm := &IP_Read_Manager{
 		incoming: input,
-		buffers:  make(map[uint8](map[*ipv4tps.IPaddress](chan []byte))),
+		buffers:  make(map[uint8](map[ipv4tps.IPhash](chan []byte))),
 	}
 
 	go irm.readAll()
@@ -62,10 +62,10 @@ func (nr *IP_Read_Manager) readAll() {
 		if protoBuf, foundProto := nr.buffers[protocol]; foundProto {
 			//fmt.Println("Dealing with packet")
 			var output chan []byte = nil
-			if c, foundIP := protoBuf[rip]; foundIP {
+			if c, foundIP := protoBuf[rip.Hash()]; foundIP {
 				//fmt.Println("Found exact")
 				output = c
-			} else if c, foundAll := protoBuf[ipv4tps.IP_ALL]; foundAll {
+			} else if c, foundAll := protoBuf[ipv4tps.IP_ALL_HASH]; foundAll {
 				//fmt.Println("Found global")
 				output = c
 			} else {
@@ -85,17 +85,16 @@ func (irm *IP_Read_Manager) Bind(ip *ipv4tps.IPaddress, protocol uint8) (chan []
 	// create the protocol buffer if it doesn't exist already
 	_, protoOk := irm.buffers[protocol]
 	if !protoOk {
-		irm.buffers[protocol] = make(map[*ipv4tps.IPaddress](chan []byte))
+		irm.buffers[protocol] = make(map[ipv4tps.IPhash](chan []byte))
 		//Trace.Println("Bound to", protocol)
 	}
 
 	// add the IP binding, if possible
-	if _, IP_exists := irm.buffers[protocol][ip]; !IP_exists {
+	if _, IP_exists := irm.buffers[protocol][ip.Hash()]; !IP_exists {
 		// doesn't exist in map already
-		irm.buffers[protocol][ip] = make(chan []byte, IP_READ_MANAGER_BUFFER_SIZE)
-
-		ret, _ := irm.buffers[protocol][ip]
-		return ret, nil
+		buf := make(chan []byte, IP_READ_MANAGER_BUFFER_SIZE)
+		irm.buffers[protocol][ip.Hash()] = buf
+		return buf, nil
 	}
 	return nil, errors.New("IP already bound to.")
 }
@@ -106,8 +105,8 @@ func (irm *IP_Read_Manager) Unbind(ip *ipv4tps.IPaddress, protocol uint8) error 
 		return errors.New("IP not bound, cannot unbind")
 	}
 
-	if _, ok := ipBuf[ip]; ok {
-		delete(ipBuf, ip)
+	if _, ok := ipBuf[ip.Hash()]; ok {
+		delete(ipBuf, ip.Hash())
 		return nil
 	}
 	return errors.New("Not bound, can't unbind.")
