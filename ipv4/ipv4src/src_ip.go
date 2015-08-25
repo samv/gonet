@@ -2,7 +2,6 @@ package ipv4src
 
 import (
 	"io/ioutil"
-	"net"
 	"path"
 	"runtime"
 	"strings"
@@ -34,7 +33,7 @@ var (
 
 type Source_IP_Table struct {
 	// TODO make this thread safe
-	table []ipv4tps.IPaddress // ordered by precedence, last one is default
+	table []*ipv4tps.IPaddress // ordered by precedence, last one is default
 }
 
 func NewSource_IP_Table() (*Source_IP_Table, error) {
@@ -55,12 +54,13 @@ var GlobalSource_IP_Table = func() *Source_IP_Table {
 	}
 	str := strings.TrimSpace(string(data))
 	External_ip_address = ipv4tps.MakeIP(str)
+	logs.Info.Println("using ext ip:", External_ip_address)
 
-	err = table.add(*Loopback_ip_address)
+	err = table.add(Loopback_ip_address)
 	if err != nil {
 		logs.Error.Fatalln(err)
 	}
-	err = table.add(*External_ip_address)
+	err = table.add(External_ip_address)
 	if err != nil {
 		logs.Error.Fatalln(err)
 	}
@@ -68,14 +68,14 @@ var GlobalSource_IP_Table = func() *Source_IP_Table {
 	return table
 }()
 
-func (sipt *Source_IP_Table) add(ip ipv4tps.IPaddress) error {
+func (sipt *Source_IP_Table) add(ip *ipv4tps.IPaddress) error {
 	sipt.table = append(sipt.table, ip) // TODO ensure the entry has not already been inserted
 	return nil
 }
 
-func ipCompare(baseS, cmpS ipv4tps.IPaddress, netm ipv4tps.Netmask) bool {
-	base := net.ParseIP(string(baseS))[12:]
-	cmp := net.ParseIP(string(cmpS))[12:]
+func ipCompare(baseS, cmpS *ipv4tps.IPaddress, netm ipv4tps.Netmask) bool {
+	base := baseS.IP
+	cmp := cmpS.IP
 
 	// TODO take netmask into account
 	for i := 0; i < len(base); i++ {
@@ -86,7 +86,7 @@ func ipCompare(baseS, cmpS ipv4tps.IPaddress, netm ipv4tps.Netmask) bool {
 	return true
 }
 
-func (sipt *Source_IP_Table) Query(dst ipv4tps.IPaddress) (src ipv4tps.IPaddress) {
+func (sipt *Source_IP_Table) Query(dst *ipv4tps.IPaddress) (src *ipv4tps.IPaddress) {
 	if len(sipt.table) == 0 {
 		logs.Error.Fatalln("sipt Query: no entries in table")
 	}
@@ -102,7 +102,7 @@ func (sipt *Source_IP_Table) Query(dst ipv4tps.IPaddress) (src ipv4tps.IPaddress
 
 func (sipt *Source_IP_Table) Gateway(dst *ipv4tps.IPaddress) *ipv4tps.IPaddress {
 	for _, base := range sipt.table {
-		if ipCompare(base, *dst, IPv4_DEFAULT_NETMASK) { // TODO determine dynamically
+		if ipCompare(base, dst, IPv4_DEFAULT_NETMASK) { // TODO determine dynamically
 			return dst
 		}
 	}

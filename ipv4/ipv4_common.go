@@ -1,7 +1,6 @@
 package ipv4
 
 import (
-	"net"
 	"time"
 	//"github.com/hsheth2/logs"
 	"network/ipv4/ipv4tps"
@@ -72,7 +71,7 @@ func verifyIPChecksum(header []byte) bool {
 
 func CalcTransportChecksum(header []byte, srcIP, dstIP ipv4tps.IPaddress, headerLen uint16, proto uint8) uint16 {
 	//logs.Trace.Println("Transport Checksum")
-	ips := append(net.ParseIP(string(srcIP))[12:], net.ParseIP(string(dstIP))[12:]...)
+	ips := append(srcIP.IP, dstIP.IP...)
 	return Checksum(append(append(ips, []byte{0, byte(proto), byte(headerLen >> 8), byte(headerLen)}...), header...))
 }
 

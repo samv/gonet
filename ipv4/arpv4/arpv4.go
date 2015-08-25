@@ -2,7 +2,6 @@ package arpv4
 
 import (
 	"errors"
-	"net"
 	"network/arp"
 	"network/ethernet"
 	"network/ipv4/ipv4src"
@@ -12,19 +11,19 @@ import (
 )
 
 type ARPv4_Table struct {
-	table         map[ipv4tps.IPaddress](*ethernet.MAC_Address)
+	table         map[ipv4tps.IPhash](*ethernet.MAC_Address)
 	replyNotifier *notifiers.Notifier
 }
 
 func NewARP_Table() (*ARPv4_Table, error) {
 	return &ARPv4_Table{
-		table:         make(map[ipv4tps.IPaddress](*ethernet.MAC_Address)),
+		table:         make(map[ipv4tps.IPhash](*ethernet.MAC_Address)),
 		replyNotifier: notifiers.NewNotifier(),
 	}, nil
 }
 
 func (table *ARPv4_Table) Lookup(ip arp.ARP_Protocol_Address) (*ethernet.MAC_Address, error) {
-	if ans, ok := table.table[*(ip.(*ipv4tps.IPaddress))]; ok {
+	if ans, ok := table.table[ip.(*ipv4tps.IPaddress).Hash()]; ok {
 		return ans, nil
 	}
 	//	d, _ := ip.Marshal()
@@ -50,7 +49,7 @@ func (table *ARPv4_Table) Add(ip arp.ARP_Protocol_Address, addr *ethernet.MAC_Ad
 	// }
 	d := ip.(*ipv4tps.IPaddress)
 	// logs.Trace.Printf("ARPv4 table: add: %v (%v)\n", addr.Data, *d)
-	table.table[*d] = addr
+	table.table[d.Hash()] = addr
 	return nil
 }
 
@@ -59,7 +58,7 @@ func (table *ARPv4_Table) GetReplyNotifier() *notifiers.Notifier {
 }
 
 func (table *ARPv4_Table) Unmarshal(d []byte) arp.ARP_Protocol_Address {
-	return ipv4tps.MakeIP(net.IPv4(d[0], d[1], d[2], d[3]).String())
+	return &ipv4tps.IPaddress{IP: d}
 }
 
 func (table *ARPv4_Table) GetAddress() arp.ARP_Protocol_Address {

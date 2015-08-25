@@ -2,9 +2,7 @@ package ipv4
 
 import (
 	"errors"
-	"net"
 	"network/ethernet"
-	"network/ipv4/arpv4"
 
 	"network/ipv4/ipv4tps"
 
@@ -13,7 +11,7 @@ import (
 
 type IP_Read_Manager struct {
 	incoming chan *ethernet.Ethernet_Header
-	buffers  map[uint8](map[ipv4tps.IPaddress](chan []byte))
+	buffers  map[uint8](map[*ipv4tps.IPaddress](chan []byte))
 }
 
 var GlobalIPReadManager = func() *IP_Read_Manager {
@@ -32,7 +30,7 @@ func NewIP_Read_Manager(in *ethernet.Network_Reader) (*IP_Read_Manager, error) {
 
 	irm := &IP_Read_Manager{
 		incoming: input,
-		buffers:  make(map[uint8](map[ipv4tps.IPaddress](chan []byte))),
+		buffers:  make(map[uint8](map[*ipv4tps.IPaddress](chan []byte))),
 	}
 
 	go irm.readAll()
@@ -51,12 +49,7 @@ func (nr *IP_Read_Manager) readAll() {
 		}
 
 		protocol := uint8(buf[9])
-		rip := ipv4tps.IPaddress(net.IPv4(buf[12], buf[13], buf[14], buf[15]).String())
-
-		err := arpv4.GlobalARPv4_Table.Add(&rip, eth_packet.Rmac)
-		if err != nil {
-			logs.Error.Println(err)
-		}
+		rip := &ipv4tps.IPaddress{buf[12:16]}
 
 		//fmt.Println(ln)
 		//fmt.Println(protocol, ip)
@@ -70,9 +63,12 @@ func (nr *IP_Read_Manager) readAll() {
 			if c, foundIP := protoBuf[rip]; foundIP {
 				//fmt.Println("Found exact")
 				output = c
-			} else if c, foundAll := protoBuf["*"]; foundAll {
+			} else if c, foundAll := protoBuf[&ipv4tps.IPaddress{IP: ipv4tps.IP_ALL}]; foundAll {
 				//fmt.Println("Found global")
 				output = c
+			} else {
+				logs.Warn.Println("output buf doesn't exist, rip:", rip)
+				continue
 			}
 			select {
 			case output <- buf:
@@ -83,11 +79,11 @@ func (nr *IP_Read_Manager) readAll() {
 	}
 }
 
-func (irm *IP_Read_Manager) Bind(ip ipv4tps.IPaddress, protocol uint8) (chan []byte, error) {
+func (irm *IP_Read_Manager) Bind(ip *ipv4tps.IPaddress, protocol uint8) (chan []byte, error) {
 	// create the protocol buffer if it doesn't exist already
 	_, protoOk := irm.buffers[protocol]
 	if !protoOk {
-		irm.buffers[protocol] = make(map[ipv4tps.IPaddress](chan []byte))
+		irm.buffers[protocol] = make(map[*ipv4tps.IPaddress](chan []byte))
 		//Trace.Println("Bound to", protocol)
 	}
 
@@ -102,7 +98,7 @@ func (irm *IP_Read_Manager) Bind(ip ipv4tps.IPaddress, protocol uint8) (chan []b
 	return nil, errors.New("IP already bound to.")
 }
 
-func (irm *IP_Read_Manager) Unbind(ip ipv4tps.IPaddress, protocol uint8) error {
+func (irm *IP_Read_Manager) Unbind(ip *ipv4tps.IPaddress, protocol uint8) error {
 	ipBuf, protoOk := irm.buffers[protocol]
 	if !protoOk {
 		return errors.New("IP not bound, cannot unbind")

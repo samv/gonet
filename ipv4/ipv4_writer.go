@@ -1,7 +1,6 @@
 package ipv4
 
 import (
-	"net"
 	"network/ethernet"
 	"network/ipv4/arpv4"
 	"network/ipv4/ipv4src"
@@ -13,7 +12,7 @@ import (
 type IP_Writer struct {
 	nw          *ethernet.Network_Writer
 	version     uint8
-	dst, src    ipv4tps.IPaddress
+	dst, src    *ipv4tps.IPaddress
 	headerLen   uint16
 	ttl         uint8
 	protocol    uint8
@@ -21,7 +20,7 @@ type IP_Writer struct {
 	maxFragSize uint16
 }
 
-func NewIP_Writer(dst ipv4tps.IPaddress, protocol uint8) (*IP_Writer, error) {
+func NewIP_Writer(dst *ipv4tps.IPaddress, protocol uint8) (*IP_Writer, error) {
 	// create its own network_writer
 	nw, err := ethernet.NewNetwork_Writer()
 	if err != nil {
@@ -69,22 +68,20 @@ func (ipw *IP_Writer) WriteTo(p []byte) error {
 	header[9] = (byte)(ipw.protocol) // Protocol
 
 	// Src and Dst IPs
-	srcIP := net.ParseIP(string(ipw.src))
 	//fmt.Println(srcIP)
 	//fmt.Println(srcIP[12])
 	//fmt.Println(srcIP[13])
 	//fmt.Println(srcIP[14])
 	//fmt.Println(srcIP[15])
-	dstIP := net.ParseIP(string(ipw.dst))
 	//fmt.Println(dstIP)
-	header[12] = srcIP[12]
-	header[13] = srcIP[13]
-	header[14] = srcIP[14]
-	header[15] = srcIP[15]
-	header[16] = dstIP[12]
-	header[17] = dstIP[13]
-	header[18] = dstIP[14]
-	header[19] = dstIP[15]
+	header[12] = ipw.src.IP[0]
+	header[13] = ipw.src.IP[1]
+	header[14] = ipw.src.IP[2]
+	header[15] = ipw.src.IP[3]
+	header[16] = ipw.dst.IP[0]
+	header[17] = ipw.dst.IP[1]
+	header[18] = ipw.dst.IP[2]
+	header[19] = ipw.dst.IP[3]
 
 	maxFragSize := int(ipw.maxFragSize)
 	maxPaySize := maxFragSize - int(ipw.headerLen)
@@ -164,7 +161,7 @@ func (ipw *IP_Writer) WriteTo(p []byte) error {
 }
 
 func (ipw *IP_Writer) sendIP(p []byte) error {
-	gateway := ipv4src.GlobalSource_IP_Table.Gateway(&ipw.dst)
+	gateway := ipv4src.GlobalSource_IP_Table.Gateway(ipw.dst)
 	arp_data, err := arpv4.GlobalARPv4_Table.LookupRequest(gateway)
 	if err != nil {
 		return err
