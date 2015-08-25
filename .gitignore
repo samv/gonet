@@ -10,3 +10,4 @@ tcp_client_tester
 *.static*
 *.pprof
 *.test
+*.orig

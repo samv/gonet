@@ -18,7 +18,7 @@ type ICMP_Header struct {
 type ICMP_In struct {
 	Header         *ICMP_Header
 	OriginalPacket []byte
-	LIP, RIP       ipv4tps.IPaddress
+	LIP, RIP       *ipv4tps.IPaddress
 }
 
 func (h *ICMP_Header) MarshalICMPHeader() ([]byte, error) {
