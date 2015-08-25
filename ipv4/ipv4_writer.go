@@ -1,7 +1,6 @@
 package ipv4
 
 import (
-	"net"
 	"network/ethernet"
 	"network/ipv4/arpv4"
 	"network/ipv4/ipv4src"
@@ -13,7 +12,7 @@ import (
 type IP_Writer struct {
 	nw          *ethernet.Network_Writer
 	version     uint8
-	dst, src    ipv4tps.IPaddress
+	dst, src    *ipv4tps.IPaddress
 	headerLen   uint16
 	ttl         uint8
 	protocol    uint8
@@ -21,7 +20,7 @@ type IP_Writer struct {
 	maxFragSize uint16
 }
 
-func NewIP_Writer(dst ipv4tps.IPaddress, protocol uint8) (*IP_Writer, error) {
+func NewIP_Writer(dst *ipv4tps.IPaddress, protocol uint8) (*IP_Writer, error) {
 	// create its own network_writer
 	nw, err := ethernet.NewNetwork_Writer()
 	if err != nil {
@@ -57,6 +56,7 @@ func NewIP_Writer(dst ipv4tps.IPaddress, protocol uint8) (*IP_Writer, error) {
 
 func (ipw *IP_Writer) WriteTo(p []byte) error {
 	//logs.Trace.Println("IP Preparing to Write:", p)
+	//	logs.Info.Println("IPv4 WriteTo request")
 
 	header := make([]byte, ipw.headerLen)
 	header[0] = (byte)((ipw.version << 4) + (uint8)(ipw.headerLen/4)) // Version, IHL
@@ -69,22 +69,20 @@ func (ipw *IP_Writer) WriteTo(p []byte) error {
 	header[9] = (byte)(ipw.protocol) // Protocol
 
 	// Src and Dst IPs
-	srcIP := net.ParseIP(string(ipw.src))
 	//fmt.Println(srcIP)
 	//fmt.Println(srcIP[12])
 	//fmt.Println(srcIP[13])
 	//fmt.Println(srcIP[14])
 	//fmt.Println(srcIP[15])
-	dstIP := net.ParseIP(string(ipw.dst))
 	//fmt.Println(dstIP)
-	header[12] = srcIP[12]
-	header[13] = srcIP[13]
-	header[14] = srcIP[14]
-	header[15] = srcIP[15]
-	header[16] = dstIP[12]
-	header[17] = dstIP[13]
-	header[18] = dstIP[14]
-	header[19] = dstIP[15]
+	header[12] = ipw.src.IP[0]
+	header[13] = ipw.src.IP[1]
+	header[14] = ipw.src.IP[2]
+	header[15] = ipw.src.IP[3]
+	header[16] = ipw.dst.IP[0]
+	header[17] = ipw.dst.IP[1]
+	header[18] = ipw.dst.IP[2]
+	header[19] = ipw.dst.IP[3]
 
 	maxFragSize := int(ipw.maxFragSize)
 	maxPaySize := maxFragSize - int(ipw.headerLen)
@@ -107,7 +105,8 @@ func (ipw *IP_Writer) WriteTo(p []byte) error {
 		totalLen := uint16(0)
 
 		// Payload
-		newPacket := make([]byte, 1)
+		ln := max(len(p) - maxPaySize*i, maxPaySize)
+		newPacket := make([]byte, IP_HEADER_LEN + ln)
 		if len(p) <= maxFragSize*(i+1) {
 			//logs.Trace.Println("IP Writing Entire Packet:", p[maxPaySize*i:], "i:", i)
 			totalLen = uint16(ipw.headerLen) + uint16(len(p[maxPaySize*i:]))
@@ -126,7 +125,8 @@ func (ipw *IP_Writer) WriteTo(p []byte) error {
 			header[10] = byte(checksum >> 8)
 			header[11] = byte(checksum)
 
-			newPacket = append(header, p[maxPaySize*i:]...)
+			copy(newPacket[:IP_HEADER_LEN], header)
+			copy(newPacket[IP_HEADER_LEN:], p[maxPaySize*i:])
 			//logs.Trace.Println("Full Packet to Send in IPv4 Writer:", newPacket, "(len ", len(newPacket), ")")
 			//fmt.Println("CALCULATED LEN:", i*maxFragSize+len(p[maxPaySize*i:]))
 		} else {
@@ -147,12 +147,14 @@ func (ipw *IP_Writer) WriteTo(p []byte) error {
 			header[10] = byte(checksum >> 8)
 			header[11] = byte(checksum)
 
-			newPacket = append(header, p[maxPaySize*i:maxPaySize*(i+1)]...)
+			copy(newPacket[:IP_HEADER_LEN], header)
+			copy(newPacket[IP_HEADER_LEN:], p[maxPaySize*i:maxPaySize*(i+1)])
 			//logs.Trace.Println("Full Packet Frag to Send in IPv4 Writer:", newPacket, "(len ", len(newPacket), ")")
 		}
 
 		// write the bytes
-		//logs.Trace.Println("IP Writing:", newPacket)
+		// logs.Trace.Println("IP Writing:", newPacket)
+		// logs.Info.Println("IP beginning send")
 		err := ipw.sendIP(newPacket)
 		if err != nil {
 			return err
@@ -164,11 +166,12 @@ func (ipw *IP_Writer) WriteTo(p []byte) error {
 }
 
 func (ipw *IP_Writer) sendIP(p []byte) error {
-	gateway := ipv4src.GlobalSource_IP_Table.Gateway(&ipw.dst)
+	gateway := ipv4src.GlobalSource_IP_Table.Gateway(ipw.dst)
 	arp_data, err := arpv4.GlobalARPv4_Table.LookupRequest(gateway)
 	if err != nil {
 		return err
 	}
+	//	logs.Info.Println("Finished IP address lookup stuff; Send IP packet")
 	return ipw.nw.Write(p, arp_data, ethernet.ETHERTYPE_IP)
 }
 

@@ -8,7 +8,7 @@ import (
 )
 
 const TAP_NAME = "tap0"
-const RX_QUEUE_SIZE = 2040 // TODO
+const RX_QUEUE_SIZE = ETH_PROTOCOL_BUF_SZ
 
 type Network_Tap struct {
 	ifce    *water.Interface
@@ -47,6 +47,7 @@ func (ntap *Network_Tap) write(data []byte) error {
 	if len(data) != n {
 		return errors.New("ifce failed to write all data")
 	}
+	//logs.Info.Println("Finished write")
 	return nil
 }
 

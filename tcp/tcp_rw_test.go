@@ -4,6 +4,8 @@ import (
 	"fmt"
 	"testing"
 	"time"
+
+	"github.com/pkg/profile"
 )
 
 const server_port = 20102
@@ -11,6 +13,8 @@ const client_port = 20101
 const test_ip = "127.0.0.1"
 
 func TestReadWrite(t *testing.T) {
+	defer profile.Start(profile.MemProfile, profile.ProfilePath(".")).Stop()
+
 	// TODO make both server and client read and write
 	success := make(chan bool, 1)
 

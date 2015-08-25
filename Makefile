@@ -6,6 +6,7 @@ install: clean setup depend build
 depend:
 	go get -u github.com/hsheth2/logs
 	go get -u github.com/hsheth2/notifiers
+	go get -u github.com/pkg/profile
 	go get -u github.com/hsheth2/water
 	go get -u github.com/hsheth2/water/waterutil
 build:
@@ -15,6 +16,7 @@ clean:
 	-rm -rf *.static.orig
 	-rm -rf *.static
 	-rm *.test
+	-rm runStack
 	go clean ${pkgs}
 setup:
 	-./tap_setup.sh
@@ -53,7 +55,7 @@ test_latency:
 	sudo setcap CAP_NET_RAW=epi ./runStack
 	./runStack > /dev/null 2>&1 &
 	sleep 1
-	sudo ping -f -W 1 -c 10000 10.0.0.3
+	sudo ping -f -W 1 -c 50000 -s 1471 10.0.0.3
 	pkill runStack
 iptables:
 	sudo iptables -I INPUT -p tcp --sport 20102 -j DROP

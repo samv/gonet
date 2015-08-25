@@ -3,6 +3,7 @@ package icmp
 import (
 	"errors"
 	"network/ipv4"
+	"network/ipv4/ipv4tps"
 
 	"github.com/hsheth2/logs"
 )
@@ -15,7 +16,7 @@ type ICMP_Read_Manager struct {
 func NewICMP_Read_Manager() (*ICMP_Read_Manager, error) {
 	irm := ipv4.GlobalIPReadManager
 
-	ipr, err := ipv4.NewIP_Reader(irm, "*", ipv4.ICMP_PROTO)
+	ipr, err := ipv4.NewIP_Reader(irm, ipv4tps.IP_ALL, ipv4.ICMP_PROTO)
 	if err != nil {
 		return nil, err
 	}

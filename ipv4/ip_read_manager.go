@@ -2,18 +2,17 @@ package ipv4
 
 import (
 	"errors"
-	"net"
 	"network/ethernet"
-	"network/ipv4/arpv4"
-
 	"network/ipv4/ipv4tps"
 
 	"github.com/hsheth2/logs"
 )
 
+const IP_READ_MANAGER_BUFFER_SIZE = 5000
+
 type IP_Read_Manager struct {
 	incoming chan *ethernet.Ethernet_Header
-	buffers  map[uint8](map[ipv4tps.IPaddress](chan []byte))
+	buffers  map[uint8](map[*ipv4tps.IPaddress](chan []byte)) // TODO switch to using Hash function
 }
 
 var GlobalIPReadManager = func() *IP_Read_Manager {
@@ -32,7 +31,7 @@ func NewIP_Read_Manager(in *ethernet.Network_Reader) (*IP_Read_Manager, error) {
 
 	irm := &IP_Read_Manager{
 		incoming: input,
-		buffers:  make(map[uint8](map[ipv4tps.IPaddress](chan []byte))),
+		buffers:  make(map[uint8](map[*ipv4tps.IPaddress](chan []byte))),
 	}
 
 	go irm.readAll()
@@ -43,20 +42,16 @@ func NewIP_Read_Manager(in *ethernet.Network_Reader) (*IP_Read_Manager, error) {
 func (nr *IP_Read_Manager) readAll() {
 	for {
 		eth_packet := <-nr.incoming
+		// logs.Info.Println("IP read_manager recv packet")
 		buf := eth_packet.Packet
 
 		if len(buf) <= IP_HEADER_LEN {
-			logs.Info.Println("Dropping IP Packet for bogus length <=", IP_HEADER_LEN)
+			logs.Warn.Println("Dropping IP Packet for bogus length <=", IP_HEADER_LEN)
 			continue
 		}
 
 		protocol := uint8(buf[9])
-		rip := ipv4tps.IPaddress(net.IPv4(buf[12], buf[13], buf[14], buf[15]).String())
-
-		err := arpv4.GlobalARPv4_Table.Add(&rip, eth_packet.Rmac)
-		if err != nil {
-			logs.Error.Println(err)
-		}
+		rip := &ipv4tps.IPaddress{buf[12:16]}
 
 		//fmt.Println(ln)
 		//fmt.Println(protocol, ip)
@@ -66,29 +61,38 @@ func (nr *IP_Read_Manager) readAll() {
 		//fmt.Println(protocol, ip)
 		if protoBuf, foundProto := nr.buffers[protocol]; foundProto {
 			//fmt.Println("Dealing with packet")
+			var output chan []byte = nil
 			if c, foundIP := protoBuf[rip]; foundIP {
 				//fmt.Println("Found exact")
-				go func() { c <- buf }()
-			} else if c, foundAll := protoBuf["*"]; foundAll {
+				output = c
+			} else if c, foundAll := protoBuf[ipv4tps.IP_ALL]; foundAll {
 				//fmt.Println("Found global")
-				go func() { c <- buf }()
+				output = c
+			} else {
+				logs.Warn.Println("output buf doesn't exist, rip:", rip)
+				continue
+			}
+			select {
+			case output <- buf:
+			default:
+				logs.Warn.Println("Dropping incoming IPv4 packet: no space in buffer")
 			}
 		}
 	}
 }
 
-func (irm *IP_Read_Manager) Bind(ip ipv4tps.IPaddress, protocol uint8) (chan []byte, error) {
+func (irm *IP_Read_Manager) Bind(ip *ipv4tps.IPaddress, protocol uint8) (chan []byte, error) {
 	// create the protocol buffer if it doesn't exist already
 	_, protoOk := irm.buffers[protocol]
 	if !protoOk {
-		irm.buffers[protocol] = make(map[ipv4tps.IPaddress](chan []byte))
+		irm.buffers[protocol] = make(map[*ipv4tps.IPaddress](chan []byte))
 		//Trace.Println("Bound to", protocol)
 	}
 
 	// add the IP binding, if possible
 	if _, IP_exists := irm.buffers[protocol][ip]; !IP_exists {
 		// doesn't exist in map already
-		irm.buffers[protocol][ip] = make(chan []byte, 1)
+		irm.buffers[protocol][ip] = make(chan []byte, IP_READ_MANAGER_BUFFER_SIZE)
 
 		ret, _ := irm.buffers[protocol][ip]
 		return ret, nil
@@ -96,7 +100,7 @@ func (irm *IP_Read_Manager) Bind(ip ipv4tps.IPaddress, protocol uint8) (chan []b
 	return nil, errors.New("IP already bound to.")
 }
 
-func (irm *IP_Read_Manager) Unbind(ip ipv4tps.IPaddress, protocol uint8) error {
+func (irm *IP_Read_Manager) Unbind(ip *ipv4tps.IPaddress, protocol uint8) error {
 	ipBuf, protoOk := irm.buffers[protocol]
 	if !protoOk {
 		return errors.New("IP not bound, cannot unbind")

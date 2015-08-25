@@ -1,18 +1,28 @@
 package ipv4tps
 
 import (
+	"encoding/binary"
 	"net"
 )
 
 type Netmask uint8
 
-type IPaddress string
+type IPhash uint32
+type IPaddress struct {
+	IP []byte
+}
 
 const IPv4_ADDRESS_LENGTH = 4
 
+var all_ip = []byte{0, 0, 0, 0}
+var IP_ALL = &IPaddress{IP: all_ip}
+
 func (ip *IPaddress) Marshal() ([]byte, error) {
-	x := net.ParseIP(string(*ip))
-	return x[12:], nil
+	return ip.IP, nil
+}
+
+func (ip *IPaddress) Hash() IPhash {
+	return IPhash(binary.BigEndian.Uint32(ip.IP))
 }
 
 func (ip *IPaddress) Len() uint8 {
@@ -20,6 +30,7 @@ func (ip *IPaddress) Len() uint8 {
 }
 
 func MakeIP(ip string) *IPaddress {
-	p := IPaddress(ip)
-	return &p
+	return &IPaddress{
+		IP: net.ParseIP(ip)[12:],
+	}
 }
