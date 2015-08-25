@@ -7,6 +7,7 @@ import (
 	"runtime"
 	"strconv"
 	"time"
+	"network/ipv4/ipv4src"
 )
 
 func testmax(x, y int) int {
@@ -18,12 +19,6 @@ func testmax(x, y int) int {
 
 func read_tester() {
 	//runtime.GOMAXPROCS(strconv.Atoi(os.Args[1]))
-
-	rm, err := NewUDP_Read_Manager()
-	if err != nil {
-		fmt.Println(err)
-		return
-	}
 
 	args := os.Args[1:]
 	if len(args) > 0 {
@@ -39,7 +34,7 @@ func read_tester() {
 		//fmt.Println("Number of Connections: ", numConns)
 		for i := 0; i < numConns; i++ {
 			go func(port int) {
-				r, err := rm.NewUDP(uint16(port), "127.0.0.1")
+				r, err := NewUDP(GlobalUDP_Read_Manager, uint16(port), ipv4src.Loopback_ip_address)
 				if err != nil {
 					fmt.Println(err)
 					return
@@ -64,7 +59,7 @@ func read_tester() {
 		time.Sleep(8 * time.Second)
 		fmt.Println(numConns, ":", maxNumRoutines)
 	} else {
-		r, err := rm.NewUDP(20102, "127.0.0.1")
+		r, err := NewUDP(GlobalUDP_Read_Manager, 20102, ipv4src.Loopback_ip_address)
 		if err != nil {
 			fmt.Println(err)
 			return

@@ -3,10 +3,11 @@ package udp
 import (
 	"fmt"
 	//"time"
+	"network/ipv4/ipv4src"
 )
 
 func write_tester() {
-	w, err := NewUDP_Writer(20000, 20102, "127.0.0.1")
+	w, err := NewUDP_Writer(20000, 20102, ipv4src.Loopback_ip_address)
 	if err != nil {
 		fmt.Println(err)
 		return

@@ -5,12 +5,13 @@ import (
 	"os/exec"
 	"testing"
 	"time"
+	"network/ipv4/ipv4src"
 )
 
 const port = 20412
 
 func TestBasic(t *testing.T) {
-	t.SkipNow()
+	t.Skip("This test doesn't work properly")
 	//fmt.Println(exec.Command("pwd").Output())
 
 	succeed := make(chan bool, 1)
@@ -28,7 +29,7 @@ func TestBasic(t *testing.T) {
 		}()
 
 		fmt.Println("Creating UDP Writer")
-		w, err := NewUDP_Writer(20000, port, "127.0.0.1")
+		w, err := NewUDP_Writer(20000, port, ipv4src.Loopback_ip_address)
 		if err != nil {
 			t.Fatal(err)
 		}

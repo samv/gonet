@@ -3,20 +3,24 @@ package udp
 import (
 	"testing"
 	"time"
+	"network/ipv4/ipv4tps"
+	"network/ipv4/ipv4src"
 )
 
 const rwport = 20102
-const rwIP = "127.0.0.1"
 
-func TestReadWrite(t *testing.T) {
+func TestReadWriteLocal(t *testing.T) {
+	read_write_test(t, ipv4src.Loopback_ip_address)
+}
+
+func TestReadWriteExternal(t *testing.T) {
+	read_write_test(t, ipv4src.External_ip_address)
+}
+
+func read_write_test(t *testing.T, ip *ipv4tps.IPaddress) {
 	success := make(chan bool, 1)
 
-	rm, err := NewUDP_Read_Manager()
-	if err != nil {
-		t.Fatal(err)
-	}
-
-	r, err := rm.NewUDP(rwport, rwIP)
+	r, err := NewUDP(GlobalUDP_Read_Manager, rwport, ip)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -25,7 +29,7 @@ func TestReadWrite(t *testing.T) {
 	data := []byte{'h', 'e', 'l', 'l', 'o'}
 
 	go func() {
-		w, err := NewUDP_Writer(20000, rwport, rwIP)
+		w, err := NewUDP_Writer(20000, rwport, ip)
 		if err != nil {
 			t.Fatal(err)
 		}
