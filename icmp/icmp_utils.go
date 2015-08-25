@@ -6,7 +6,7 @@ import (
 )
 
 const ICMP_Header_MinSize = 8
-const ICMP_QUEUE_Size = 100
+const ICMP_QUEUE_Size = 5000
 
 type ICMP_Header struct {
 	TypeF, Code uint8

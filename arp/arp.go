@@ -94,13 +94,13 @@ func (am *ARP_Manager) dealer() {
 						logs.Warn.Println("Failed to send ARP response; dropping request packet")
 						continue
 					}
-					logs.Trace.Println("Replied to ARP request")
+					//logs.Trace.Println("Replied to ARP request")
 				} else {
 					logs.Warn.Println("Ignoring ARP request with a different target protocol address")
 					continue
 				}
 			} else if packet.oper == ARP_OPER_REPLY {
-				logs.Trace.Println("Got ARP Reply")
+				//logs.Trace.Println("Got ARP Reply")
 				pd.GetReplyNotifier().Broadcast(packet.spa)
 			} else {
 				logs.Warn.Println("Dropping ARP packet for bad operation")

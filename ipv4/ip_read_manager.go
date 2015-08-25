@@ -12,7 +12,7 @@ const IP_READ_MANAGER_BUFFER_SIZE = 5000
 
 type IP_Read_Manager struct {
 	incoming chan *ethernet.Ethernet_Header
-	buffers  map[uint8](map[*ipv4tps.IPaddress](chan []byte))
+	buffers  map[uint8](map[*ipv4tps.IPaddress](chan []byte)) // TODO switch to using Hash function
 }
 
 var GlobalIPReadManager = func() *IP_Read_Manager {
@@ -65,7 +65,7 @@ func (nr *IP_Read_Manager) readAll() {
 			if c, foundIP := protoBuf[rip]; foundIP {
 				//fmt.Println("Found exact")
 				output = c
-			} else if c, foundAll := protoBuf[&ipv4tps.IPaddress{IP: ipv4tps.IP_ALL}]; foundAll {
+			} else if c, foundAll := protoBuf[ipv4tps.IP_ALL]; foundAll {
 				//fmt.Println("Found global")
 				output = c
 			} else {

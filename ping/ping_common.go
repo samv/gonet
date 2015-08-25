@@ -19,7 +19,7 @@ const (
 type Ping_Manager struct {
 	// Responding to pings
 	input  chan *icmp.ICMP_In
-	output map[*ipv4tps.IPaddress](*ipv4.IP_Writer)
+	output map[ipv4tps.IPhash](*ipv4.IP_Writer)
 
 	// Sending pings and receiving responses
 	reply             chan *icmp.ICMP_In
@@ -40,7 +40,7 @@ func NewPing_Manager(icmprm *icmp.ICMP_Read_Manager) (*Ping_Manager, error) {
 
 	pm := &Ping_Manager{
 		input:             input,
-		output:            make(map[*ipv4tps.IPaddress](*ipv4.IP_Writer)),
+		output:            make(map[ipv4tps.IPhash](*ipv4.IP_Writer), 1),
 		reply:             reply,
 		currentIdentifier: PING_START_ID,
 		identifiers:       make(map[uint16](chan *icmp.ICMP_In)),
@@ -61,12 +61,13 @@ var GlobalPingManager = func() *Ping_Manager {
 }()
 
 func (pm *Ping_Manager) getIP_Writer(ip *ipv4tps.IPaddress) (*ipv4.IP_Writer, error) {
-	if _, ok := pm.output[ip]; !ok {
-		wt, err := ipv4.NewIP_Writer(ip, ipv4.ICMP_PROTO)
-		if err != nil {
-			return nil, err
-		}
-		pm.output[ip] = wt
+	if x, ok := pm.output[ip.Hash()]; ok {
+		return x, nil
 	}
-	return pm.output[ip], nil
+	wt, err := ipv4.NewIP_Writer(ip, ipv4.ICMP_PROTO)
+	if err != nil {
+		return nil, err
+	}
+	pm.output[ip.Hash()] = wt
+	return wt, nil
 }

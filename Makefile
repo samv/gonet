@@ -55,7 +55,7 @@ test_latency:
 	sudo setcap CAP_NET_RAW=epi ./runStack
 	./runStack > /dev/null 2>&1 &
 	sleep 1
-	sudo ping -f -W 1 -c 100 -s 1471 10.0.0.3
+	sudo ping -f -W 1 -c 50000 -s 1471 10.0.0.3
 	pkill runStack
 iptables:
 	sudo iptables -I INPUT -p tcp --sport 20102 -j DROP

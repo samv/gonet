@@ -105,7 +105,8 @@ func (ipw *IP_Writer) WriteTo(p []byte) error {
 		totalLen := uint16(0)
 
 		// Payload
-		newPacket := make([]byte, 1)
+		ln := max(len(p) - maxPaySize*i, maxPaySize)
+		newPacket := make([]byte, IP_HEADER_LEN + ln)
 		if len(p) <= maxFragSize*(i+1) {
 			//logs.Trace.Println("IP Writing Entire Packet:", p[maxPaySize*i:], "i:", i)
 			totalLen = uint16(ipw.headerLen) + uint16(len(p[maxPaySize*i:]))
@@ -124,7 +125,8 @@ func (ipw *IP_Writer) WriteTo(p []byte) error {
 			header[10] = byte(checksum >> 8)
 			header[11] = byte(checksum)
 
-			newPacket = append(header, p[maxPaySize*i:]...)
+			copy(newPacket[:IP_HEADER_LEN], header)
+			copy(newPacket[IP_HEADER_LEN:], p[maxPaySize*i:])
 			//logs.Trace.Println("Full Packet to Send in IPv4 Writer:", newPacket, "(len ", len(newPacket), ")")
 			//fmt.Println("CALCULATED LEN:", i*maxFragSize+len(p[maxPaySize*i:]))
 		} else {
@@ -145,7 +147,8 @@ func (ipw *IP_Writer) WriteTo(p []byte) error {
 			header[10] = byte(checksum >> 8)
 			header[11] = byte(checksum)
 
-			newPacket = append(header, p[maxPaySize*i:maxPaySize*(i+1)]...)
+			copy(newPacket[:IP_HEADER_LEN], header)
+			copy(newPacket[IP_HEADER_LEN:], p[maxPaySize*i:maxPaySize*(i+1)])
 			//logs.Trace.Println("Full Packet Frag to Send in IPv4 Writer:", newPacket, "(len ", len(newPacket), ")")
 		}
 

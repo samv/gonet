@@ -46,7 +46,7 @@ func Checksum(data []byte) uint16 {
 		//        fmt.Println(prefix)
 		//        fmt.Println(totalSum)
 		//        fmt.Println(totalSum & 0xffff)
-		totalSum = uint64(totalSum&0xffff) + prefix
+		totalSum = totalSum&0xffff + prefix
 	}
 	//fmt.Println("Checksum after carry: ", totalSum)
 
@@ -78,4 +78,11 @@ func CalcTransportChecksum(header []byte, srcIP, dstIP ipv4tps.IPaddress, header
 func VerifyTransportChecksum(header []byte, srcIP, dstIP ipv4tps.IPaddress, headerLen uint16, proto uint8) bool {
 	// TODO: do TCP/UDP checksum verification
 	return true
+}
+
+func max(a, b int) int {
+	if a > b {
+		return a
+	}
+	return b
 }

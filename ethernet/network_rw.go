@@ -8,7 +8,7 @@ import (
 )
 
 const TAP_NAME = "tap0"
-const RX_QUEUE_SIZE = 2 * ETH_PROTOCOL_BUF_SZ
+const RX_QUEUE_SIZE = ETH_PROTOCOL_BUF_SZ
 
 type Network_Tap struct {
 	ifce    *water.Interface

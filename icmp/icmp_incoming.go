@@ -16,8 +16,7 @@ type ICMP_Read_Manager struct {
 func NewICMP_Read_Manager() (*ICMP_Read_Manager, error) {
 	irm := ipv4.GlobalIPReadManager
 
-	ip := &ipv4tps.IPaddress{IP: ipv4tps.IP_ALL}
-	ipr, err := ipv4.NewIP_Reader(irm, ip, ipv4.ICMP_PROTO)
+	ipr, err := ipv4.NewIP_Reader(irm, ipv4tps.IP_ALL, ipv4.ICMP_PROTO)
 	if err != nil {
 		return nil, err
 	}

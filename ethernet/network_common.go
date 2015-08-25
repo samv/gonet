@@ -21,19 +21,6 @@ func (m *MAC_Address) Make() [8]byte {
 	return data
 }
 
-func extract_dst(ethpacket []byte) *MAC_Address {
-	return &MAC_Address{Data: ethpacket[:ETH_MAC_ADDR_SZ]}
-}
-
-func extract_src(ethpacket []byte) *MAC_Address {
-	return &MAC_Address{Data: ethpacket[ETH_MAC_ADDR_SZ : 2*ETH_MAC_ADDR_SZ]}
-}
-
-//type Ethernet_Addr struct {
-//	MAC    *MAC_Address
-//	intind InternalIndex
-//}
-
 const (
 	// 768 = htons(ETH_P_ALL) = htons(3)
 	// see http://ideone.com/2eunQu
@@ -57,7 +44,8 @@ const (
 
 const (
 	ETH_MAC_ADDR_SZ       = 6
-	ETH_HEADER_SZ         = 14
+	ETH_ETHERTYPE_SZ = 2
+	ETH_HEADER_SZ         = ETH_ETHERTYPE_SZ + 2 * ETH_MAC_ADDR_SZ
 	MAX_ETHERNET_FRAME_SZ = 1522 // for 1500 MTU + 22 bytes
-	ETH_PROTOCOL_BUF_SZ   = 500
+	ETH_PROTOCOL_BUF_SZ   = 5000
 )

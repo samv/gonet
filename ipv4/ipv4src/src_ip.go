@@ -54,7 +54,7 @@ var GlobalSource_IP_Table = func() *Source_IP_Table {
 	}
 	str := strings.TrimSpace(string(data))
 	External_ip_address = ipv4tps.MakeIP(str)
-	logs.Info.Println("using ext ip:", External_ip_address)
+	// logs.Info.Println("using ext ip:", External_ip_address)
 
 	err = table.add(Loopback_ip_address)
 	if err != nil {

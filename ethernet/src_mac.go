@@ -5,11 +5,11 @@ import (
 	"io/ioutil"
 	"net"
 	"path"
-	"reflect"
 	"runtime"
 	"strings"
 
 	"github.com/hsheth2/logs"
+	"bytes"
 )
 
 const ETH_STATIC_MAC_LOAD_FILE = "external_mac.static"
@@ -73,7 +73,11 @@ func (smt *source_MAC_Table) add(in internal_index, mac *MAC_Address) error {
 }
 
 func getInternalIndex(rmac *MAC_Address) internal_index {
-	if reflect.DeepEqual(rmac, Loopback_mac_address) || reflect.DeepEqual(rmac, Loopback_bcast_address) {
+	if rmac == Loopback_mac_address || rmac == Loopback_bcast_address {
+		return loopback_internal_index
+	} else if rmac == External_mac_address || rmac == External_bcast_address {
+		return external_internal_index
+	} else if bytes.Equal(rmac.Data, Loopback_mac_address.Data) || bytes.Equal(rmac.Data, Loopback_bcast_address.Data) {
 		return loopback_internal_index
 	}
 	return external_internal_index

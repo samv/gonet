@@ -13,6 +13,7 @@ func (pm *Ping_Manager) ping_replier() {
 		go pm.respondTo(ping)
 	}
 }
+
 func (pm *Ping_Manager) respondTo(ping *icmp.ICMP_In) error {
 	ping.Header.TypeF = PING_ECHO_REPLY_TYPE
 
