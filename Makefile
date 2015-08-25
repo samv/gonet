@@ -16,7 +16,7 @@ clean:
 	-rm -rf *.static.orig
 	-rm -rf *.static
 	-rm *.test
-	-rm runStack
+	-rm runStack scaleTest
 	go clean ${pkgs}
 setup:
 	-./tap_setup.sh
@@ -48,7 +48,13 @@ test_ping:
 test_ethernet:
 	# for testing water
 	./run_test.sh network/ethernet
-test_latency:
+iptables:
+	sudo iptables -I INPUT -p tcp --sport 20102 -j DROP
+	sudo iptables -I INPUT -p tcp --dport 20102 -j DROP
+	sudo iptables -I INPUT -p tcp --dport 20101 -j DROP
+
+# Performance
+latency:
 	-sudo pkill runStack
 	-sudo pkill tapip
 	go build runStack.go
@@ -57,7 +63,12 @@ test_latency:
 	sleep 1
 	sudo ping -f -W 1 -c 50000 -s 1471 10.0.0.3
 	pkill runStack
-iptables:
-	sudo iptables -I INPUT -p tcp --sport 20102 -j DROP
-	sudo iptables -I INPUT -p tcp --dport 20102 -j DROP
-	sudo iptables -I INPUT -p tcp --dport 20101 -j DROP
+scale:
+	-sudo pkill scale_test
+	-sudo pkill tapip
+	go build scaleTest.go
+	sudo setcap CAP_NET_RAW=epi ./runStack
+	./runStack > /dev/null 2>&1 &
+	sleep 1
+	python tcp/tcp_client.py
+	pkill scaleTest

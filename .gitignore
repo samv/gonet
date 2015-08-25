@@ -11,3 +11,5 @@ tcp_client_tester
 *.pprof
 *.test
 *.orig
+runStack
+scaleTest
