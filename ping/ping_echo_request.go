@@ -59,9 +59,9 @@ func sendSinglePing(writer *ipv4.IP_Writer, id, seq uint16, timeout time.Duratio
 					continue
 				}
 				time2 := time.Now()
-				logs.Info.Printf("%d bytes from %s: icmp_seq=%d time=%f ms",
+				logs.Info.Printf("%d bytes from %v: icmp_seq=%d time=%f ms",
 					len(header.Data)+icmp.ICMP_Header_MinSize,
-					pingResonse.RIP,
+					pingResonse.RIP.IP,
 					uint16(header.Opt),
 					float32(time2.Sub(*time1).Nanoseconds())/1000000) // put ttl
 				return
