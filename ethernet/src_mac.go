@@ -8,8 +8,9 @@ import (
 	"runtime"
 	"strings"
 
-	"github.com/hsheth2/logs"
 	"bytes"
+
+	"github.com/hsheth2/logs"
 )
 
 const ETH_STATIC_MAC_LOAD_FILE = "external_mac.static"

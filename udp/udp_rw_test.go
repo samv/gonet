@@ -1,10 +1,10 @@
 package udp
 
 import (
+	"network/ipv4/ipv4src"
+	"network/ipv4/ipv4tps"
 	"testing"
 	"time"
-	"network/ipv4/ipv4tps"
-	"network/ipv4/ipv4src"
 )
 
 const rwport = 20102

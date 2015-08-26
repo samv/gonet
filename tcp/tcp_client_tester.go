@@ -3,8 +3,9 @@ package tcp
 import (
 	"time"
 
-	"github.com/hsheth2/logs"
 	"network/ipv4/ipv4tps"
+
+	"github.com/hsheth2/logs"
 )
 
 func client_tester() {

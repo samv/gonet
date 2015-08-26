@@ -5,8 +5,8 @@ import (
 	"testing"
 	"time"
 
-	"network/ipv4/ipv4tps"
 	"network/ipv4/ipv4src"
+	"network/ipv4/ipv4tps"
 )
 
 const server_port = 20102

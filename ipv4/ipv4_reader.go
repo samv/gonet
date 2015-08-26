@@ -144,12 +144,12 @@ func (ipr *IP_Reader) ReadFrom() (rip, lip *ipv4tps.IPaddress, b, payload []byte
 	// extract source IP and protocol
 	rip = &ipv4tps.IPaddress{IP: hdr[12:16]}
 	lip = &ipv4tps.IPaddress{IP: hdr[16:20]}
-//	proto := uint8(hdr[9])
-//	if !((bytes.Equal(ipr.ip.IP, rip.IP) || bytes.Equal(ipr.ip.IP, ipv4tps.IP_ALL)) && ipr.protocol == proto) {
-//		//Info.Println("Not interested in packet: dropping.")
-//		// TODO should this already have been done in the read manager?
-//		return ipr.ReadFrom()
-//	}
+	//	proto := uint8(hdr[9])
+	//	if !((bytes.Equal(ipr.ip.IP, rip.IP) || bytes.Equal(ipr.ip.IP, ipv4tps.IP_ALL)) && ipr.protocol == proto) {
+	//		//Info.Println("Not interested in packet: dropping.")
+	//		// TODO should this already have been done in the read manager?
+	//		return ipr.ReadFrom()
+	//	}
 
 	// verify checksum
 	if !verifyIPChecksum(hdr) {

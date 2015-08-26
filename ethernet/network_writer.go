@@ -22,12 +22,12 @@ func (nw *Network_Writer) Write(data []byte, dst_mac *MAC_Address, ethertype Eth
 		return err
 	}
 
-	packet := make([]byte, ETH_HEADER_SZ + len(data))
+	packet := make([]byte, ETH_HEADER_SZ+len(data))
 
 	//	logs.Info.Println("Finished ARP lookup stuff")
 	copy(packet, dst_mac.Data[:ETH_MAC_ADDR_SZ])
 	copy(packet[ETH_MAC_ADDR_SZ:], src_mac.Data[:ETH_MAC_ADDR_SZ])
-	packet[2*ETH_MAC_ADDR_SZ] = byte(ethertype>>8)
+	packet[2*ETH_MAC_ADDR_SZ] = byte(ethertype >> 8)
 	packet[2*ETH_MAC_ADDR_SZ+1] = byte(ethertype)
 	//fmt.Println("My header:", etherHead)
 
