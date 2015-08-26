@@ -10,7 +10,7 @@ func (c *TCB) packetDealer() {
 	for {
 		//logs.Trace.Println("Waiting for packets")
 		segment := <-c.read
-		logs.Trace.Println("packetDealer received a packet:", segment, " in state:", c.state)
+		logs.Trace.Println("packetDealer received a packet:", segment.header, " in state:", c.state)
 		c.packetDeal(segment)
 	}
 }
@@ -128,7 +128,9 @@ func (c *TCB) packetDeal(segment *TCP_Packet) {
 			defer c.pushSignal.L.Unlock()
 			c.recvBuffer = append(c.recvBuffer, segment.payload...)
 			// TODO adjust rcv.wnd, for now just multiplying by 2
-			c.curWindow *= 2
+			if uint32(c.curWindow)*2 >> 16 == 0 {
+				c.curWindow *= 2
+			}
 			pay_size := segment.getPayloadSize()
 			logs.Trace.Println("Payload Size is ", pay_size)
 
