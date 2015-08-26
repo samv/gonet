@@ -124,11 +124,10 @@ func (c *TCB) packetDeal(segment *TCP_Packet) {
 		// step 7 (?)
 		switch c.state {
 		case ESTABLISHED, FIN_WAIT_1, FIN_WAIT_2:
-			c.pushSignal.L.Lock()
-			defer c.pushSignal.L.Unlock()
+			logs.Trace.Println("Received data of len:", len(segment.payload))
 			c.recvBuffer = append(c.recvBuffer, segment.payload...)
 			// TODO adjust rcv.wnd, for now just multiplying by 2
-			if uint32(c.curWindow)*2 >> 16 == 0 {
+			if uint32(c.curWindow)*2 >= uint32(1)<<16 {
 				c.curWindow *= 2
 			}
 			pay_size := segment.getPayloadSize()
@@ -138,7 +137,8 @@ func (c *TCB) packetDeal(segment *TCP_Packet) {
 
 			if pay_size > 1 { // TODO make this correct
 				if segment.header.flags&TCP_PSH != 0 {
-					c.pushSignal.Signal()
+					logs.Trace.Println("Pushing data to client")
+					c.pushData()
 				}
 				c.ackNum += pay_size
 				err := c.sendAck(c.seqNum, c.ackNum)
@@ -173,7 +173,8 @@ func (c *TCB) packetDeal(segment *TCP_Packet) {
 			}
 
 			// FIN implies PSH
-			c.pushSignal.Signal()
+			logs.Trace.Println("Pushing data to client because of FIN")
+			c.pushData()
 
 			switch c.state {
 			case SYN_RCVD, ESTABLISHED:
@@ -186,6 +187,19 @@ func (c *TCB) packetDeal(segment *TCP_Packet) {
 			return
 		}
 	}
+}
+
+func (c *TCB) pushData() {
+	// lock data mutex
+	c.pushSignal.L.Lock()
+	defer c.pushSignal.L.Unlock()
+
+	// move data
+	c.pushBuffer = append(c.pushBuffer, c.recvBuffer...)
+	c.recvBuffer = []byte{}
+
+	// signal push
+	c.pushSignal.Signal()
 }
 
 func (c *TCB) rcvClosed(d *TCP_Packet) {

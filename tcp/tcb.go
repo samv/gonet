@@ -32,7 +32,8 @@ type TCB struct {
 	sendBufferUpdate *sync.Cond          // notifies of send buffer updates
 	stopSending      bool                // if the send function is allowed
 	sendFinished     *notifiers.Notifier // broadcast when done sending
-	recvBuffer       []byte              // bytes to pass to the application above
+	recvBuffer       []byte              // bytes to received but not yet pushed
+	pushBuffer       []byte              // bytes to push to client
 	pushSignal       *sync.Cond          // signals upon push
 	resendDelay      time.Duration       // the delay before resending
 	ISS              uint32              // the initial snd seq number
@@ -97,11 +98,19 @@ func (c *TCB) Send(data []byte) error { // a non-blocking send call
 func (c *TCB) Recv(num uint64) ([]byte, error) {
 	c.pushSignal.L.Lock()
 	defer c.pushSignal.L.Unlock()
-	c.pushSignal.Wait() // wait for a push
-	amt := min(num, uint64(len(c.recvBuffer)))
-	data := c.recvBuffer[0:amt]
-	c.recvBuffer = c.recvBuffer[amt:]
-	return data, nil // TODO: error handling
+	for {
+		logs.Trace.Println("Attempting to read off of pushBuffer")
+		logs.Trace.Println("Amt of data on pushBuffer:", len(c.pushBuffer))
+		amt := min(num, uint64(len(c.pushBuffer)))
+		if amt != 0 {
+			data := c.pushBuffer[:amt]
+			c.pushBuffer = c.pushBuffer[amt:]
+			return data, nil
+		}
+		logs.Trace.Println("Waiting for push signal")
+		c.pushSignal.Wait() // wait for a push
+	}
+	return nil, errors.New("Read failed")
 }
 
 func (c *TCB) Close() error {
