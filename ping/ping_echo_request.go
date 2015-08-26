@@ -107,6 +107,8 @@ func sequenceDealer(idInput chan *icmp.ICMP_In, seqChan map[uint16](chan *icmp.I
 	}
 }
 
+const FLOOD_INTERVAL = 0
+
 func (pm *Ping_Manager) SendPing(ip *ipv4tps.IPaddress, interval, timeout time.Duration, numPings uint16) error {
 	terminate := make(chan bool)
 	id, seqChannel, err := pm.initIdentifier(terminate)

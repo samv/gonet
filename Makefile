@@ -63,6 +63,8 @@ latency:
 	sleep 1
 	sudo ping -f -W 1 -c 50000 -s 1471 10.0.0.3
 	pkill runStack
+local_latency:
+
 scale:
 	-sudo pkill scaleTest
 	-sudo pkill tapip

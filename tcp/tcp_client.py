@@ -9,12 +9,12 @@ else:
     TCP_IP = '10.0.0.3'
 TCP_PORT = 49230
 BUFFER_SIZE = 1024
-MESSAGE = "Hello, World!"
+MESSAGE = "Der"
 
 s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
 s.connect((TCP_IP, TCP_PORT))
 s.send(MESSAGE)
 data = s.recv(BUFFER_SIZE)
-s.close()
+#s.close()
 
 print "received data:", data
