@@ -16,7 +16,7 @@ clean:
 	-rm -rf *.static.orig
 	-rm -rf *.static
 	-rm *.test
-	-rm runStack scaleTest
+	-rm runStack scaleTest local_latency
 	go clean ${pkgs}
 setup:
 	-./tap_setup.sh
@@ -68,7 +68,7 @@ local_latency:
 	-sudo pkill local_latency
 	go build local_latency.go
 	sudo setcap CAP_NET_RAW=epi ./local_latency
-	./local_latency
+	time (./local_latency)
 	pkill local_latency
 scale:
 	-sudo pkill scaleTest
