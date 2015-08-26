@@ -69,7 +69,6 @@ local_latency:
 	go build local_latency.go
 	sudo setcap CAP_NET_RAW=epi ./local_latency
 	time (./local_latency)
-	pkill local_latency
 scale:
 	-sudo pkill scaleTest
 	-sudo pkill tapip

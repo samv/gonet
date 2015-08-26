@@ -33,6 +33,7 @@ type TCB struct {
 	stopSending      bool                // if the send function is allowed
 	sendFinished     *notifiers.Notifier // broadcast when done sending
 	recvBuffer       []byte              // bytes to pass to the application above
+	pushSignal       *sync.Cond          // signals upon push
 	resendDelay      time.Duration       // the delay before resending
 	ISS              uint32              // the initial snd seq number
 	IRS              uint32              // the initial rcv seq number
@@ -67,6 +68,7 @@ func New_TCB(local, remote uint16, dstIP *ipv4tps.IPaddress, read chan *TCP_Pack
 		sendBufferUpdate: sync.NewCond(&sync.Mutex{}),
 		stopSending:      false,
 		sendFinished:     notifiers.NewNotifier(),
+		pushSignal:       sync.NewCond(&sync.Mutex{}),
 		resendDelay:      250 * time.Millisecond,
 		ISS:              seq,
 		IRS:              0,
@@ -93,6 +95,9 @@ func (c *TCB) Send(data []byte) error { // a non-blocking send call
 }
 
 func (c *TCB) Recv(num uint64) ([]byte, error) {
+	c.pushSignal.L.Lock()
+	defer c.pushSignal.L.Unlock()
+	c.pushSignal.Wait() // wait for a push
 	amt := min(num, uint64(len(c.recvBuffer)))
 	data := c.recvBuffer[0:amt]
 	c.recvBuffer = c.recvBuffer[amt:]

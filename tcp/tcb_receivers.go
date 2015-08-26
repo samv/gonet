@@ -124,8 +124,9 @@ func (c *TCB) packetDeal(segment *TCP_Packet) {
 		// step 7 (?)
 		switch c.state {
 		case ESTABLISHED, FIN_WAIT_1, FIN_WAIT_2:
+			c.pushSignal.L.Lock()
+			defer c.pushSignal.L.Unlock()
 			c.recvBuffer = append(c.recvBuffer, segment.payload...)
-			// TODO handle push flag
 			// TODO adjust rcv.wnd, for now just multiplying by 2
 			c.curWindow *= 2
 			pay_size := segment.getPayloadSize()
@@ -134,6 +135,9 @@ func (c *TCB) packetDeal(segment *TCP_Packet) {
 			// TODO piggyback this
 
 			if pay_size > 1 { // TODO make this correct
+				if segment.header.flags&TCP_PSH != 0 {
+					c.pushSignal.Signal()
+				}
 				c.ackNum += pay_size
 				err := c.sendAck(c.seqNum, c.ackNum)
 				logs.Info.Println("Sent ACK data")
@@ -165,6 +169,10 @@ func (c *TCB) packetDeal(segment *TCP_Packet) {
 				logs.Error.Println(err)
 				return
 			}
+
+			// FIN implies PSH
+			c.pushSignal.Signal()
+
 			switch c.state {
 			case SYN_RCVD, ESTABLISHED:
 				c.UpdateState(CLOSE_WAIT)
