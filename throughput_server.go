@@ -7,6 +7,7 @@ import (
 	"github.com/hsheth2/logs"
 	"network/ipv4/ipv4tps"
 	"network/tcp"
+	"time"
 )
 
 func main() {
@@ -35,6 +36,7 @@ func main() {
 		logs.Info.Println("Connection:", ip, port)
 
 		go func() {
+			time.Sleep(5 * time.Second)
 			data, err := conn.Recv(100000)
 			if err != nil {
 				logs.Error.Println(err)
@@ -46,6 +48,5 @@ func main() {
 			conn.Close()
 		}()
 	}
-	select {}
 }
 
