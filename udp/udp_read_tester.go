@@ -2,12 +2,12 @@ package udp
 
 import (
 	"fmt"
+	"network/ipv4/ipv4src"
 	"os"
 	"os/exec"
 	"runtime"
 	"strconv"
 	"time"
-	"network/ipv4/ipv4src"
 )
 
 func testmax(x, y int) int {

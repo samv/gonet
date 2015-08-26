@@ -16,7 +16,7 @@ clean:
 	-rm -rf *.static.orig
 	-rm -rf *.static
 	-rm *.test
-	-rm runStack scaleTest
+	-rm runStack scaleTest local_latency
 	go clean ${pkgs}
 setup:
 	-./tap_setup.sh
@@ -64,7 +64,12 @@ latency:
 	sudo ping -f -W 1 -c 50000 -s 1471 10.0.0.3
 	pkill runStack
 local_latency:
-
+	-sudo pkill local_latency
+	-sudo pkill local_latency
+	go build local_latency.go
+	sudo setcap CAP_NET_RAW=epi ./local_latency
+	time (./local_latency)
+	pkill local_latency
 scale:
 	-sudo pkill scaleTest
 	-sudo pkill tapip

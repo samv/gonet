@@ -1,11 +1,12 @@
 package udp
 
 import (
-	"github.com/hsheth2/logs"
+	"errors"
+	"fmt"
 	"network/ipv4"
 	"network/ipv4/ipv4tps"
-	"fmt"
-	"errors"
+
+	"github.com/hsheth2/logs"
 )
 
 type UDP_Read_Manager struct {

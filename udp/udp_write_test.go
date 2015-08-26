@@ -2,10 +2,10 @@ package udp
 
 import (
 	"fmt"
+	"network/ipv4/ipv4src"
 	"os/exec"
 	"testing"
 	"time"
-	"network/ipv4/ipv4src"
 )
 
 const port = 20412
