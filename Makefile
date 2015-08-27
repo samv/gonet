@@ -1,5 +1,7 @@
 # Makefile for Golang Network Stack
 
+SHELL = /bin/bash
+
 pkgs = network/ethernet network/arp network/ipv4/arpv4 network/ipv4/ipv4tps network/ipv4/ipv4src network/ipv4 network/udp network/tcp network/icmp network/ping
 
 install: clean setup depend build
@@ -69,6 +71,8 @@ local_latency:
 	go build local_latency.go
 	sudo setcap CAP_NET_RAW=epi ./local_latency
 	time (./local_latency)
+throughput:
+	bash throughput_test.sh
 scale:
 	-sudo pkill scaleTest
 	-sudo pkill tapip
