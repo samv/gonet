@@ -9,7 +9,7 @@ if 'tapip' in sys.argv:
 else:
     TCP_IP = '10.0.0.3'
 TCP_PORT = 49230
-MESSAGE = "Hello" * 200
+MESSAGE = "Hello" * 4000
 
 s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
 s.connect((TCP_IP, TCP_PORT))
