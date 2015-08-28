@@ -56,22 +56,22 @@ iptables:
 	sudo iptables -I INPUT -p tcp --dport 20101 -j DROP
 
 # Performance
-latency:
-	sh latency_test.sh 10
-local_latency:
-	-sudo pkill local_latency
-	-sudo pkill local_latency
-	go build local_latency.go
-	sudo setcap CAP_NET_RAW=epi ./local_latency
-	time (./local_latency)
+#latency:
+#	sh latency_test.sh 10
+#local_latency:
+#	-sudo pkill local_latency
+#	-sudo pkill local_latency
+#	go build local_latency.go
+#	sudo setcap CAP_NET_RAW=epi ./local_latency
+#	time (./local_latency)
 throughput:
 	bash throughput_test.sh
-scale:
-	-sudo pkill scaleTest
-	-sudo pkill tapip
-	go build scaleTest.go
-	sudo setcap CAP_NET_RAW=epi ./scaleTest
-	./scaleTest > /dev/null 2>&1 &
-	sleep 1
-	python tcp/tcp_client.py
-	pkill scaleTest
+#scale:
+#	-sudo pkill scaleTest
+#	-sudo pkill tapip
+#	go build scaleTest.go
+#	sudo setcap CAP_NET_RAW=epi ./scaleTest
+#	./scaleTest > /dev/null 2>&1 &
+#	sleep 1
+#	python tcp/tcp_client.py
+#	pkill scaleTest
