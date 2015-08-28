@@ -57,14 +57,7 @@ iptables:
 
 # Performance
 latency:
-	-sudo pkill runStack
-	-sudo pkill tapip
-	go build runStack.go
-	sudo setcap CAP_NET_RAW=epi ./runStack
-	./runStack > /dev/null 2>&1 &
-	sleep 1
-	sudo ping -f -W 1 -c 50000 -s 1471 10.0.0.3
-	pkill runStack
+	sh latency_test.sh 10
 local_latency:
 	-sudo pkill local_latency
 	-sudo pkill local_latency

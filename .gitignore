@@ -13,3 +13,4 @@ tcp_client_tester
 *.orig
 runStack
 scaleTest
+*.out
