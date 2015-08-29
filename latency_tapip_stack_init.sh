@@ -3,4 +3,4 @@
 pkill runStack
 pkill tapip
 cd ../../../tapip
-sudo ./tapip > /dev/null
+./tapip > /dev/null 2>&1

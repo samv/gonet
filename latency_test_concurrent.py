@@ -7,8 +7,10 @@ import time
 # argv[1] = count, argv[2] = concurrent
 
 cmd = "./latency_test_stack_init.sh"
+ip = "10.0.0.3"
 if 'tapip' in sys.argv:
 	cmd = './latency_tapip_stack_init.sh'
+	ip = "10.0.0.1"
 stack = subprocess.Popen(cmd)
 time.sleep(1)
 
@@ -18,7 +20,7 @@ r = range(0, concurrent)
 
 ps = []
 for i in r:
-	ps.append(subprocess.Popen(["./latency_test.sh", str(count / concurrent), str(concurrent)], stdout=subprocess.PIPE))
+	ps.append(subprocess.Popen(["./latency_test.sh", str(count / concurrent), str(concurrent), ip], stdout=subprocess.PIPE))
 
 for i in r:
 	ps[i].wait()

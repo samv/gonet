@@ -10,5 +10,6 @@ if 'tapip' in sys.argv:
 else:
 	place = 'golang'
 
-for i in range(2, int(sys.argv[2])+1):
+r = range(1, int(sys.argv[2])+1)
+for i in reversed(r):
 	call(["./latency_test_concurrent.py", sys.argv[1], str(i), place])
