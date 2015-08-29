@@ -2,5 +2,7 @@
 
 pkill runStack
 pkill tapip
-cd ../../../tapip
-./tapip > /dev/null 2>&1
+../../../tapip/tapip > /dev/null 2>&1 &
+sleep 0.5
+pkill tapip
+echo "stall" | ../../../tapip/tapip > /dev/null 2>&1

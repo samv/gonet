@@ -41,4 +41,8 @@ new = new[:-1] # remove mdev
 
 print '\t'.join(str(w) for w in new)
 
-stack.kill()
+try:
+	stack.kill()
+	stack.terminate()
+except:
+	pass
