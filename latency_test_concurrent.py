@@ -20,7 +20,7 @@ r = range(0, concurrent)
 
 ps = []
 for i in r:
-	ps.append(subprocess.Popen(["./latency_test.sh", str(count / concurrent), str(concurrent), ip], stdout=subprocess.PIPE))
+	ps.append(subprocess.Popen(["./latency_test.sh", str(count), str(concurrent), ip], stdout=subprocess.PIPE))
 
 for i in r:
 	ps[i].wait()
