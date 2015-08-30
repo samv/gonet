@@ -11,6 +11,8 @@ import (
 )
 
 func main() {
+	numConn := 100
+
 	//	go func() {
 	//		log.Println(http.ListenAndServe("localhost:6060", nil))
 	//	}()
@@ -27,7 +29,10 @@ func main() {
 		return
 	}
 
-	for {
+	count := make(chan bool, numConn)
+	done := make(chan bool)
+
+	for i := 0; i < numConn; i++ {
 		conn, ip, port, err := s.Accept()
 		if err != nil {
 			logs.Error.Println(err)
@@ -35,23 +40,24 @@ func main() {
 		}
 		logs.Info.Println("Connection:", ip, port)
 
-		go func() {
-			err = conn.Send([]byte{'H', 'e', 'l', 'l', 'o', ' ', 'W', 'o', 'r', 'l', 'd', '!'})
+		go func(count chan bool) {
+			data, err := conn.Recv(20000)
 			if err != nil {
 				logs.Error.Println(err)
 				return
 			}
 
-			data, err := conn.Recv(20)
-			if err != nil {
-				logs.Error.Println(err)
-				return
-			}
-
-			logs.Info.Println("received data:", data)
+			logs.Info.Println("first 50 bytes of received data:", data[:50])
 
 			conn.Close()
-		}()
+			logs.Info.Println("connection finished")
+
+			count <- true
+			if len(count) >= numConn {
+				done <- true
+			}
+		}(count)
 	}
-	select {}
+	logs.Info.Println("Exited loop")
+	<-done
 }
