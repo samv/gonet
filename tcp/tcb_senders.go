@@ -58,7 +58,7 @@ func (c *TCB) sendWithRetransmit(data *TCP_Packet) error {
 	resendTimerChan := make(chan bool, TCP_RESEND_LIMIT)
 	timeout := make(chan bool, 1)
 	killTimer := make(chan bool, 1)
-	go resendTimer(resendTimerChan, timeout, killTimer, c.resendDelay)
+	resendTimer(resendTimerChan, timeout, killTimer, c.resendDelay)
 
 	// resend if needed
 	for {
@@ -80,20 +80,22 @@ func (c *TCB) sendWithRetransmit(data *TCP_Packet) error {
 func (c *TCB) listenForAck(successOut chan<- bool, end <-chan bool, targetAck uint32) {
 	logs.Trace.Println("Listening for ack:", targetAck)
 	in := c.recentAckUpdate.Register(ACK_BUF_SZ)
-	defer c.recentAckUpdate.Unregister(in)
-	for {
-		select {
-		case v := <-in:
-			logs.Trace.Println("Ack listener got ack: ", v.(uint32))
-			if v.(uint32) == targetAck {
-				logs.Trace.Println("Killing the resender for ack:", v.(uint32))
-				successOut <- true
+	go func(in chan interface{}, successOut chan<- bool, end <-chan bool, targetAck uint32) {
+		defer c.recentAckUpdate.Unregister(in)
+		for {
+			select {
+			case v := <-in:
+				logs.Trace.Println("Ack listener got ack: ", v.(uint32))
+				if v.(uint32) == targetAck {
+					logs.Trace.Println("Killing the resender for ack:", v.(uint32))
+					successOut <- true
+					return
+				}
+			case <-end:
 				return
 			}
-		case <-end:
-			return
 		}
-	}
+	}(in, successOut, end, targetAck)
 }
 
 func resendTimer(timerOutput, timeout chan<- bool, finished <-chan bool, delay time.Duration) {
