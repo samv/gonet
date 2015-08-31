@@ -54,32 +54,36 @@ func (c *TCB) sendWithRetransmit(data *TCP_Packet) error {
 	// send the first packet
 	c.sendPacket(data)
 
-	// ack listeners
-	ackFound := make(chan bool, 1)
-	killAckListen := make(chan bool, 1)
-	c.listenForAck(ackFound, killAckListen, data.header.seq+data.getPayloadSize())
+	go func() error {
+		// ack listeners
+		ackFound := make(chan bool, 1)
+		killAckListen := make(chan bool, 1)
+		c.listenForAck(ackFound, killAckListen, data.header.seq+data.getPayloadSize())
 
-	// timers and timeouts
-	resendTimerChan := make(chan bool, TCP_RESEND_LIMIT)
-	timeout := make(chan bool, 1)
-	killTimer := make(chan bool, 1)
-	resendTimer(resendTimerChan, timeout, killTimer, c.resendDelay)
+		// timers and timeouts
+		resendTimerChan := make(chan bool, TCP_RESEND_LIMIT)
+		timeout := make(chan bool, 1)
+		killTimer := make(chan bool, 1)
+		resendTimer(resendTimerChan, timeout, killTimer, c.resendDelay)
 
-	// resend if needed
-	for {
-		select {
-		case <-ackFound:
-			killTimer <- true
-			return nil
-		case <-resendTimerChan:
-			c.sendPacket(data)
-		case <-timeout:
-			// TODO deal with a resend timeout fully
-			killAckListen <- true
-			logs.Error.Println("Resend of packet seq", data.header.seq, "timed out")
-			return errors.New("Resend timed out")
+		// resend if needed
+		for {
+			select {
+			case <-ackFound:
+				killTimer <- true
+				return nil
+			case <-resendTimerChan:
+				c.sendPacket(data)
+			case <-timeout:
+				// TODO deal with a resend timeout fully
+				killAckListen <- true
+				logs.Error.Println("Resend of packet seq", data.header.seq, "timed out")
+				return errors.New("Resend timed out")
+			}
 		}
-	}
+	}()
+
+	return nil
 }
 
 func (c *TCB) listenForAck(successOut chan<- bool, end <-chan bool, targetAck uint32) {
