@@ -89,10 +89,12 @@ func (c *TCB) Send(data []byte) error { // a non-blocking send call
 	if c.stopSending {
 		return errors.New("Sending is not allowed anymore")
 	}
+	c.sendBufferUpdate.L.Lock()
+	defer c.sendBufferUpdate.L.Unlock()
 
 	c.sendBuffer = append(c.sendBuffer, data...)
-	go SendUpdate(c.sendBufferUpdate)
-	return nil // TODO: read and send from the send buffer
+	c.sendBufferUpdate.Broadcast()
+	return nil
 }
 
 func (c *TCB) Recv(num uint64) ([]byte, error) {
@@ -117,6 +119,7 @@ func (c *TCB) Close() error {
 	logs.Trace.Println("Closing TCB with lport:", c.lport)
 	c.stopSending = true // block all future sends
 	if len(c.sendBuffer) != 0 {
+		logs.Trace.Println("Blocking until all pending writes complete")
 		<-c.sendFinished.Register(1) // wait for send to finish
 	}
 

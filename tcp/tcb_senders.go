@@ -13,6 +13,7 @@ func (c *TCB) packetSender() {
 	defer c.sendBufferUpdate.L.Lock()
 
 	for {
+		logs.Trace.Println("Beginning send with sendBuffer len:", len(c.sendBuffer))
 		if len(c.sendBuffer) > 0 {
 			sz := uint16(min(uint64(len(c.sendBuffer)), uint64(c.maxSegSize)))
 			data := c.sendBuffer[:sz]
@@ -21,6 +22,10 @@ func (c *TCB) packetSender() {
 			continue
 		}
 		c.sendFinished.Broadcast(true)
+		if c.stopSending {
+			logs.Trace.Println("Stopping packet sender; all pending sends have completed")
+			return
+		}
 		c.sendBufferUpdate.Wait()
 	}
 }
