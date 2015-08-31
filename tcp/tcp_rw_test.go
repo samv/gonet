@@ -74,7 +74,6 @@ func read_write_test(t *testing.T, ip *ipv4tps.IPaddress) {
 			return
 		}
 		fmt.Println("Client connected")
-		defer client.Close()
 
 		time.Sleep(3 * time.Second)
 		fmt.Println("Beginning the read")
@@ -84,6 +83,8 @@ func read_write_test(t *testing.T, ip *ipv4tps.IPaddress) {
 			return
 		}
 		fmt.Println("got data:", out)
+
+		client.Close()
 
 		if string(data) == string(out) {
 			fmt.Println("Correct output")
