@@ -332,12 +332,12 @@ func (c *TCB) dealSynSent(d *TCP_Packet) {
 			logs.Trace.Println("rcvd a SYN-ACK")
 			// the syn has been ACKed
 			// reply with an ACK
+			c.UpdateState(ESTABLISHED)
 			err := c.sendAck(c.seqNum, c.ackNum)
 			if err != nil {
 				logs.Error.Println(err)
 			}
 
-			c.UpdateState(ESTABLISHED)
 			logs.Info.Println("Connection established")
 			return
 		} else {
