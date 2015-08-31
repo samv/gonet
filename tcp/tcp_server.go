@@ -87,6 +87,9 @@ func (s *Server_TCB) LongListener() {
 			}
 			c.serverParent = s
 
+			// update state
+			c.UpdateState(SYN_RCVD)
+
 			// send syn-ack
 			c.ackNum = in.header.seq + 1
 			logs.Trace.Printf("Server/TCB seq: %d, ack: %d, to rip: %v\n", c.seqNum, c.ackNum, c.ipAddress.IP)
@@ -110,8 +113,6 @@ func (s *Server_TCB) LongListener() {
 				return
 			}
 			//logs.Trace.Println("Server/TCB about to responded with SYN-ACK")
-
-			c.UpdateState(SYN_RCVD)
 
 			select {
 			case s.connQueue <- c:

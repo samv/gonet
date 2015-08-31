@@ -1,6 +1,6 @@
 package main
 
-import (
+import  (
 	//	"log"
 	//	"net/http"
 	//	_ "net/http/pprof"
@@ -44,7 +44,7 @@ func main() {
 		//logs.Info.Println("Connection:", ip, port)
 
 		go func(conn *tcp.TCB, count chan bool) {
-			data, err := conn.Recv(2000)
+			data, err := conn.Recv(1000)
 			if err != nil {
 				logs.Error.Println(err)
 				return
@@ -54,7 +54,7 @@ func main() {
 
 			time.Sleep(500 * time.Millisecond)
 			conn.Close()
-			logs.Info.Println("connection finished")
+			logs.Trace.Println("connection finished")
 
 			count <- true
 			if len(count) >= numConn {
@@ -62,6 +62,7 @@ func main() {
 			}
 			logs.Info.Println("Chan len", len(count))
 		}(conn, count)
+		logs.Info.Println("Loop num", i)
 	}
 	logs.Info.Println("Exited loop")
 	<-done
