@@ -8,10 +8,12 @@ import (
 	"network/tcp"
 
 	"github.com/hsheth2/logs"
+	"os"
+	"strconv"
 )
 
 func main() {
-	numConn := 100
+	numConn, _ := strconv.Atoi(os.Args[1])
 
 	//	go func() {
 	//		log.Println(http.ListenAndServe("localhost:6060", nil))
