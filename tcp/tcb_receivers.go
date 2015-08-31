@@ -255,6 +255,10 @@ func (c *TCB) rcvListen(d *TCP_Packet) {
 		c.IRS = d.header.seq
 		// TODO queue other controls
 
+		// update state
+		c.UpdateState(SYN_RCVD)
+
+		// send syn-ack response
 		syn_ack_packet := &TCP_Packet{
 			header: &TCP_Header{
 				seq:     c.seqNum,
@@ -275,7 +279,6 @@ func (c *TCB) rcvListen(d *TCP_Packet) {
 
 		c.seqNum += 1
 		c.recentAckNum = c.ISS
-		c.UpdateState(SYN_RCVD)
 		return
 	}
 }

@@ -120,12 +120,7 @@ func (c *TCB) Close() error {
 		<-c.sendFinished.Register(1) // wait for send to finish
 	}
 
-	// send FIN
-	logs.Info.Println("Sending FIN within close")
-	c.sendFin(c.seqNum, c.ackNum)
-	c.seqNum += 1 // TODO make this not dumb
-
-	// update state accordingly
+	// update state for sending FIN packet
 	if c.state == ESTABLISHED {
 		logs.Trace.Println("Entering fin-wait-1")
 		c.UpdateState(FIN_WAIT_1)
@@ -133,6 +128,11 @@ func (c *TCB) Close() error {
 		logs.Trace.Println("Entering last ack")
 		c.UpdateState(LAST_ACK)
 	}
+
+	// send FIN
+	logs.Info.Println("Sending FIN within close")
+	c.sendFin(c.seqNum, c.ackNum)
+	c.seqNum += 1 // TODO make this not dumb
 
 	// wait until state becomes CLOSED
 	c.stateUpdate.L.Lock()
