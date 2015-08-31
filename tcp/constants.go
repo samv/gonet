@@ -19,7 +19,7 @@ const ( // TODO use iota
 
 // TCB Types
 const (
-	TCP_SERVER = 1
+	TCP_SERVER = iota
 	TCP_CLIENT
 )
 
