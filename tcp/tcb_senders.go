@@ -57,7 +57,7 @@ func (c *TCB) sendWithRetransmit(data *TCP_Packet) error {
 	// ack listeners
 	ackFound := make(chan bool, 1)
 	killAckListen := make(chan bool, 1)
-	go c.listenForAck(ackFound, killAckListen, data.header.seq+data.getPayloadSize())
+	c.listenForAck(ackFound, killAckListen, data.header.seq+data.getPayloadSize())
 
 	// timers and timeouts
 	resendTimerChan := make(chan bool, TCP_RESEND_LIMIT)
