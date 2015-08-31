@@ -135,11 +135,12 @@ func (c *TCB) packetDeal(segment *TCP_Packet) {
 
 			// TODO piggyback this
 
+			if segment.header.flags&TCP_PSH != 0 {
+				logs.Trace.Println("Pushing new data to client")
+				c.pushData()
+			}
+
 			if pay_size > 1 { // TODO make this correct
-				if segment.header.flags&TCP_PSH != 0 {
-					//logs.Trace.Println("Pushing data to client")
-					c.pushData()
-				}
 				c.ackNum += pay_size
 				err := c.sendAck(c.seqNum, c.ackNum)
 				//logs.Info.Println("Sent ACK data")
@@ -197,6 +198,7 @@ func (c *TCB) pushData() {
 	// move data
 	c.pushBuffer = append(c.pushBuffer, c.recvBuffer...)
 	c.recvBuffer = []byte{}
+	logs.Trace.Println("Pushing: new pushBuffer len:", len(c.pushBuffer))
 
 	// signal push
 	c.pushSignal.Signal()

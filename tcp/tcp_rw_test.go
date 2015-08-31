@@ -75,7 +75,6 @@ func read_write_test(t *testing.T, ip *ipv4tps.IPaddress) {
 		}
 		fmt.Println("Client connected")
 
-		time.Sleep(3 * time.Second)
 		fmt.Println("Beginning the read")
 		out, err := client.Recv(20)
 		if err != nil {
