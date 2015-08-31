@@ -10,7 +10,7 @@ func (c *TCB) packetDealer() {
 	for {
 		//logs.Trace.Println("Waiting for packets")
 		segment := <-c.read
-		logs.Trace.Println("packetDealer received a packet:", segment.header, " in state:", c.state)
+		//logs.Trace.Println("packetDealer received a packet:", segment.header, " in state:", c.state)
 		c.packetDeal(segment)
 	}
 }
@@ -124,25 +124,25 @@ func (c *TCB) packetDeal(segment *TCP_Packet) {
 		// step 7 (?)
 		switch c.state {
 		case ESTABLISHED, FIN_WAIT_1, FIN_WAIT_2:
-			logs.Trace.Println("Received data of len:", len(segment.payload))
+			//logs.Trace.Println("Received data of len:", len(segment.payload))
 			c.recvBuffer = append(c.recvBuffer, segment.payload...)
 			// TODO adjust rcv.wnd, for now just multiplying by 2
 			if uint32(c.curWindow)*2 >= uint32(1)<<16 {
 				c.curWindow *= 2
 			}
 			pay_size := segment.getPayloadSize()
-			logs.Trace.Println("Payload Size is ", pay_size)
+			//logs.Trace.Println("Payload Size is ", pay_size)
 
 			// TODO piggyback this
 
 			if pay_size > 1 { // TODO make this correct
 				if segment.header.flags&TCP_PSH != 0 {
-					logs.Trace.Println("Pushing data to client")
+					//logs.Trace.Println("Pushing data to client")
 					c.pushData()
 				}
 				c.ackNum += pay_size
 				err := c.sendAck(c.seqNum, c.ackNum)
-				logs.Info.Println("Sent ACK data")
+				//logs.Info.Println("Sent ACK data")
 				if err != nil {
 					logs.Error.Println(err)
 					return
@@ -166,14 +166,14 @@ func (c *TCB) packetDeal(segment *TCP_Packet) {
 			c.ackNum += segment.getPayloadSize()
 
 			err := c.sendAck(c.seqNum, c.ackNum)
-			logs.Info.Println("Sent ACK data in response to FIN")
+			//logs.Info.Println("Sent ACK data in response to FIN")
 			if err != nil {
 				logs.Error.Println(err)
 				return
 			}
 
 			// FIN implies PSH
-			logs.Trace.Println("Pushing data to client because of FIN")
+			//logs.Trace.Println("Pushing data to client because of FIN")
 			c.pushData()
 
 			switch c.state {

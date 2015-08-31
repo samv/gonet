@@ -10,6 +10,7 @@ import (
 	"github.com/hsheth2/logs"
 	"os"
 	"strconv"
+	"time"
 )
 
 func main() {
@@ -35,15 +36,15 @@ func main() {
 	done := make(chan bool)
 
 	for i := 0; i < numConn; i++ {
-		conn, ip, port, err := s.Accept()
+		conn, _, _, err := s.Accept()
 		if err != nil {
 			logs.Error.Println(err)
 			return
 		}
-		logs.Info.Println("Connection:", ip, port)
+		//logs.Info.Println("Connection:", ip, port)
 
-		go func(count chan bool) {
-			data, err := conn.Recv(20000)
+		go func(conn *tcp.TCB, count chan bool) {
+			data, err := conn.Recv(2000)
 			if err != nil {
 				logs.Error.Println(err)
 				return
@@ -51,6 +52,7 @@ func main() {
 
 			logs.Info.Println("first 50 bytes of received data:", data[:50])
 
+			time.Sleep(500 * time.Millisecond)
 			conn.Close()
 			logs.Info.Println("connection finished")
 
@@ -58,7 +60,8 @@ func main() {
 			if len(count) >= numConn {
 				done <- true
 			}
-		}(count)
+			logs.Info.Println("Chan len", len(count))
+		}(conn, count)
 	}
 	logs.Info.Println("Exited loop")
 	<-done

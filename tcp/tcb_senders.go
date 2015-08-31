@@ -156,7 +156,7 @@ func (c *TCB) sendReset(seq, ack uint32) error {
 }
 
 func (c *TCB) sendAck(seq, ack uint32) error {
-	logs.Trace.Println("Sending ACK with seq: ", seq, " and ack: ", ack)
+	//logs.Trace.Println("Sending ACK with seq: ", seq, " and ack: ", ack)
 	ack_packet := &TCP_Packet{
 		header: &TCP_Header{
 			seq:     seq,
