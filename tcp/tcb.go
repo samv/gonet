@@ -127,10 +127,10 @@ func (c *TCB) Close() error {
 
 	// update state accordingly
 	if c.state == ESTABLISHED {
-		logs.Info.Println("Entering fin-wait-1")
+		logs.Trace.Println("Entering fin-wait-1")
 		c.UpdateState(FIN_WAIT_1)
 	} else if c.state == CLOSE_WAIT {
-		logs.Info.Println("Entering last ack")
+		logs.Trace.Println("Entering last ack")
 		c.UpdateState(LAST_ACK)
 	}
 

@@ -50,6 +50,7 @@ func (table *ARPv4_Table) Add(ip arp.ARP_Protocol_Address, addr *ethernet.MAC_Ad
 	d := ip.(*ipv4tps.IPaddress)
 	// logs.Trace.Printf("ARPv4 table: add: %v (%v)\n", addr.Data, *d)
 	table.table[d.Hash()] = addr
+	table.GetReplyNotifier().Broadcast(ip)
 	return nil
 }
 

@@ -101,7 +101,7 @@ func (am *ARP_Manager) dealer() {
 				}
 			} else if packet.oper == ARP_OPER_REPLY {
 				//logs.Trace.Println("Got ARP Reply")
-				pd.GetReplyNotifier().Broadcast(packet.spa)
+				// signal is sent in the Add function
 			} else {
 				logs.Warn.Println("Dropping ARP packet for bad operation")
 			}
@@ -133,7 +133,7 @@ func (am *ARP_Manager) Request(tp ethernet.EtherType, raddr ARP_Protocol_Address
 		}
 
 		// register for reply
-		reply := pd.GetReplyNotifier().Register(1)
+		reply := pd.GetReplyNotifier().Register(2)
 		defer pd.GetReplyNotifier().Unregister(reply)
 
 		// wait for reply
