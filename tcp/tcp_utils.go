@@ -14,8 +14,10 @@ import (
 
 func (c *TCB) UpdateState(newState uint) {
 	logs.Trace.Println("The New State is", newState)
+	c.stateUpdate.L.Lock()
+	defer c.stateUpdate.L.Unlock()
 	c.state = newState
-	go SendUpdate(c.stateUpdate)
+	c.stateUpdate.Broadcast()
 	if c.serverParent != nil {
 		go SendUpdate(c.serverParent.connQueueUpdate)
 	}
