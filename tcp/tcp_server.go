@@ -118,7 +118,7 @@ func (s *Server_TCB) LongListener() {
 				logs.Error.Println(err)
 				return
 			}
-			logs.Trace.Println(c.Hash(), "Server/TCB about to responded with SYN-ACK")
+			logs.Trace.Println(c.Hash(), "Server/TCB responded with SYN-ACK")
 
 			select {
 			case s.connQueue <- c:
