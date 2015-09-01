@@ -19,14 +19,14 @@ func (c *TCB) packetDeal(segment *TCP_Packet) {
 	defer Recover()
 
 	// If the state is CLOSED (i.e., TCB does not exist) then
-	if c.state == CLOSED {
+	if c.getState() == CLOSED {
 		c.rcvClosed(segment)
 		return
 	}
-	Assert(c.state != CLOSED, "state is closed")
+	Assert(c.getState() != CLOSED, "state is closed")
 
 	// Check if listen, or syn-sent state
-	switch c.state {
+	switch c.getState() {
 	case LISTEN:
 		c.rcvListen(segment)
 		return
@@ -40,7 +40,7 @@ func (c *TCB) packetDeal(segment *TCP_Packet) {
 
 	if segment.header.flags&TCP_RST != 0 {
 		// TODO finish: page 70
-		switch c.state {
+		switch c.getState() {
 		case SYN_RCVD:
 			// TODO not done
 			return
@@ -65,7 +65,7 @@ func (c *TCB) packetDeal(segment *TCP_Packet) {
 	} else {
 		Assert(segment.header.flags&TCP_ACK != 0, "segment missing ACK flag after verification")
 
-		switch c.state {
+		switch c.getState() {
 		case SYN_RCVD:
 			c.dealSynRcvd(segment)
 		case ESTABLISHED:
@@ -112,7 +112,7 @@ func (c *TCB) packetDeal(segment *TCP_Packet) {
 		}
 
 		if segment.header.flags&TCP_URG != 0 {
-			switch c.state {
+			switch c.getState() {
 			case ESTABLISHED, FIN_WAIT_1, FIN_WAIT_2:
 				// TODO handle urg
 			}
@@ -122,7 +122,7 @@ func (c *TCB) packetDeal(segment *TCP_Packet) {
 		// TODO step 6, check URG bit
 
 		// step 7 (?)
-		switch c.state {
+		switch c.getState() {
 		case ESTABLISHED, FIN_WAIT_1, FIN_WAIT_2:
 			//logs.Trace.Println("Received data of len:", len(segment.payload))
 			c.recvBuffer = append(c.recvBuffer, segment.payload...)
@@ -159,7 +159,7 @@ func (c *TCB) packetDeal(segment *TCP_Packet) {
 
 		// eighth, check the FIN bit,
 		if segment.header.flags&TCP_FIN != 0 {
-			switch c.state {
+			switch c.getState() {
 			case CLOSED, LISTEN, SYN_SENT:
 				// drop segment
 				return
@@ -179,7 +179,7 @@ func (c *TCB) packetDeal(segment *TCP_Packet) {
 			//logs.Trace.Println("Pushing data to client because of FIN")
 			c.pushData()
 
-			switch c.state {
+			switch c.getState() {
 			case SYN_RCVD, ESTABLISHED:
 				c.UpdateState(CLOSE_WAIT)
 			case FIN_WAIT_1:
