@@ -15,14 +15,14 @@ import (
 )
 
 type TCB struct {
-	read             chan *TCP_Packet   // input
-	writer           *ipv4.IP_Writer    // output
-	ipAddress        *ipv4tps.IPaddress // destination ip address
-	srcIP            *ipv4tps.IPaddress // src ip address
-	lport, rport     uint16             // ports
-	seqNum           uint32             // seq number (SND.NXT)
-	ackNum           uint32             // ack number (RCV.NXT)
-	seqAckMutex      *sync.RWMutex      // protects the seqNum and ackNum
+	read             chan *TCP_Packet    // input
+	writer           *ipv4.IP_Writer     // output
+	ipAddress        *ipv4tps.IPaddress  // destination ip address
+	srcIP            *ipv4tps.IPaddress  // src ip address
+	lport, rport     uint16              // ports
+	seqNum           uint32              // seq number (SND.NXT)
+	ackNum           uint32              // ack number (RCV.NXT)
+	seqAckMutex      *sync.RWMutex       // protects the seqNum and ackNum
 	state            uint                // from the FSM
 	timeWaitRestart  chan bool           // signals when the time_wait timer should restart
 	stateUpdate      *sync.Cond          // signals when the state is changed

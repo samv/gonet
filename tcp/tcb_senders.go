@@ -52,7 +52,10 @@ func (c *TCB) sendData(data []byte) (err error) {
 
 func (c *TCB) sendWithRetransmit(data *TCP_Packet) error {
 	// send the first packet
-	c.sendPacket(data)
+	err := c.sendPacket(data)
+	if err != nil { // try at least twice
+		c.sendPacket(data)
+	}
 
 	go func() error {
 		// ack listeners
