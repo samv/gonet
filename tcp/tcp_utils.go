@@ -12,6 +12,7 @@ import (
 
 	"github.com/hsheth2/logs"
 	"github.com/hsheth2/notifiers"
+	"time"
 )
 
 func (c *TCB) Hash() string {
@@ -26,6 +27,13 @@ func (c *TCB) UpdateState(newState uint) {
 
 func (c *TCB) updateStateReal(newState uint) {
 	logs.Trace.Println("The New State is", newState)
+	if c.state == TIME_WAIT && newState == TIME_WAIT {
+		c.timeWaitRestart <- true
+		return
+	} else {
+		// start timer
+		go c.timeWaitTimer(c.timeWaitRestart)
+	}
 	c.state = newState
 	c.stateUpdate.Broadcast()
 	if c.serverParent != nil {
@@ -50,6 +58,17 @@ func SendUpdate(update *sync.Cond) {
 	update.L.Lock()
 	update.Broadcast()
 	update.L.Unlock()
+}
+
+func (c *TCB) timeWaitTimer(restart chan bool) error {
+	select {
+	case <-time.After(2 * time.Millisecond):
+		c.UpdateState(CLOSED)
+		return nil
+	case <-restart:
+		logs.Trace.Println("Restarting timeWaitTimer")
+		return c.timeWaitTimer(restart)
+	}
 }
 
 type TCP_Packet struct {

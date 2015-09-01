@@ -198,9 +198,9 @@ func (c *TCB) packetDeal(segment *TCP_Packet) {
 			case SYN_RCVD, ESTABLISHED:
 				c.UpdateState(CLOSE_WAIT)
 			case FIN_WAIT_1:
-				c.UpdateState(CLOSED)
+				c.UpdateState(TIME_WAIT)
 			case FIN_WAIT_2:
-				c.UpdateState(CLOSED)
+				c.UpdateState(TIME_WAIT)
 			}
 			return
 		}
