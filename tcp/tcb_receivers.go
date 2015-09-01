@@ -141,7 +141,9 @@ func (c *TCB) packetDeal(segment *TCP_Packet) {
 			}
 
 			if pay_size > 1 { // TODO make this correct
+				c.seqAckMutex.Lock()
 				c.ackNum += pay_size
+				c.seqAckMutex.Unlock()
 				err := c.sendAck(c.seqNum, c.ackNum)
 				//logs.Info.Println("Sent ACK data")
 				if err != nil {

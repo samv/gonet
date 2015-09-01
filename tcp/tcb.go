@@ -15,13 +15,14 @@ import (
 )
 
 type TCB struct {
-	read             chan *TCP_Packet    // input
-	writer           *ipv4.IP_Writer     // output
-	ipAddress        *ipv4tps.IPaddress  // destination ip address
-	srcIP            *ipv4tps.IPaddress  // src ip address
-	lport, rport     uint16              // ports
-	seqNum           uint32              // seq number (SND.NXT)
-	ackNum           uint32              // ack number (RCV.NXT)
+	read             chan *TCP_Packet   // input
+	writer           *ipv4.IP_Writer    // output
+	ipAddress        *ipv4tps.IPaddress // destination ip address
+	srcIP            *ipv4tps.IPaddress // src ip address
+	lport, rport     uint16             // ports
+	seqNum           uint32             // seq number (SND.NXT)
+	ackNum           uint32             // ack number (RCV.NXT)
+	seqAckMutex      *sync.RWMutex
 	state            uint                // from the FSM
 	stateUpdate      *sync.Cond          // signals when the state is changed
 	kind             uint                // type (server or client)
@@ -61,6 +62,7 @@ func New_TCB(local, remote uint16, dstIP *ipv4tps.IPaddress, read chan *TCP_Pack
 		writer:           write,
 		seqNum:           seq,
 		ackNum:           uint32(0), // Always 0 at start
+		seqAckMutex:      &sync.RWMutex{},
 		state:            CLOSED,
 		stateUpdate:      sync.NewCond(&sync.Mutex{}),
 		kind:             kind,
@@ -139,7 +141,9 @@ func (c *TCB) Close() error {
 
 	// send FIN
 	logs.Info.Println("Sending FIN within close")
+	c.seqAckMutex.RLock()
 	c.sendFin(c.seqNum, c.ackNum)
+	c.seqAckMutex.RUnlock()
 	c.seqNum += 1 // TODO make this not dumb
 
 	// wait until state becomes CLOSED
