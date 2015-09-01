@@ -10,7 +10,7 @@ func (c *TCB) packetDealer() {
 	for {
 		//logs.Trace.Println(c.Hash(), "Waiting for packets")
 		segment := <-c.read
-		//logs.Trace.Println(c.Hash(), "packetDealer received a packet:", segment.header, " in state:", c.state)
+		logs.Trace.Println(c.Hash(), "packetDealer received a packet:", segment.header, " in state:", c.state)
 		c.packetDeal(segment)
 	}
 }
@@ -124,14 +124,14 @@ func (c *TCB) packetDeal(segment *TCP_Packet) {
 		// step 7 (?)
 		switch c.getState() {
 		case ESTABLISHED, FIN_WAIT_1, FIN_WAIT_2:
-			//logs.Trace.Println(c.Hash(), "Received data of len:", len(segment.payload))
+			logs.Trace.Println(c.Hash(), "Received data of len:", len(segment.payload))
 			c.recvBuffer = append(c.recvBuffer, segment.payload...)
 			// TODO adjust rcv.wnd, for now just multiplying by 2
 			if uint32(c.curWindow)*2 >= uint32(1)<<16 {
 				c.curWindow *= 2
 			}
 			pay_size := segment.getPayloadSize()
-			//logs.Trace.Println(c.Hash(), "Payload Size is ", pay_size)
+			logs.Trace.Println(c.Hash(), "Payload Size is ", pay_size)
 
 			// TODO piggyback this
 
@@ -147,7 +147,7 @@ func (c *TCB) packetDeal(segment *TCP_Packet) {
 				c.seqAckMutex.RLock()
 				err := c.sendAck(c.seqNum, c.ackNum)
 				c.seqAckMutex.RUnlock()
-				//logs.Info.Println(c.Hash(), "Sent ACK data")
+				logs.Info.Println(c.Hash(), "Sent ACK data")
 				if err != nil {
 					logs.Error.Println(c.Hash(), err)
 					return
@@ -171,14 +171,14 @@ func (c *TCB) packetDeal(segment *TCP_Packet) {
 			c.ackNum += segment.getPayloadSize()
 
 			err := c.sendAck(c.seqNum, c.ackNum)
-			//logs.Info.Println(c.Hash(), "Sent ACK data in response to FIN")
+			logs.Info.Println(c.Hash(), "Sent ACK data in response to FIN")
 			if err != nil {
 				logs.Error.Println(c.Hash(), err)
 				return
 			}
 
 			// FIN implies PSH
-			//logs.Trace.Println(c.Hash(), "Pushing data to client because of FIN")
+			logs.Trace.Println(c.Hash(), "Pushing data to client because of FIN")
 			c.pushData()
 
 			switch c.getState() {
