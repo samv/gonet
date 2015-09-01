@@ -10,7 +10,12 @@ import (
 
 	"github.com/hsheth2/logs"
 	"github.com/hsheth2/notifiers"
+	"fmt"
 )
+
+func (c *TCB) Hash() string {
+	return fmt.Sprintf("%d%d", c.lport, c.rport)
+}
 
 func (c *TCB) UpdateState(newState uint) {
 	c.stateUpdate.L.Lock()

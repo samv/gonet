@@ -6,11 +6,11 @@ import (
 
 func (c *TCB) packetDealer() {
 	// read each tcp packet and deal with it
-	logs.Trace.Println("Packet Dealer starting")
+	logs.Trace.Println(c.Hash(), "Packet Dealer starting")
 	for {
-		//logs.Trace.Println("Waiting for packets")
+		//logs.Trace.Println(c.Hash(), "Waiting for packets")
 		segment := <-c.read
-		//logs.Trace.Println("packetDealer received a packet:", segment.header, " in state:", c.state)
+		//logs.Trace.Println(c.Hash(), "packetDealer received a packet:", segment.header, " in state:", c.state)
 		c.packetDeal(segment)
 	}
 }
@@ -60,7 +60,7 @@ func (c *TCB) packetDeal(segment *TCP_Packet) {
 
 	// fifth, check the ACK field
 	if segment.header.flags&TCP_ACK == 0 {
-		logs.Info.Println("Dropping a packet without an ACK flag")
+		logs.Info.Println(c.Hash(), "Dropping a packet without an ACK flag")
 		return
 	} else {
 		Assert(segment.header.flags&TCP_ACK != 0, "segment missing ACK flag after verification")
@@ -75,11 +75,11 @@ func (c *TCB) packetDeal(segment *TCP_Packet) {
 				// TODO update send window
 			} else if c.recentAckNum > segment.header.ack {
 				// ignore
-				logs.Info.Println("Dropping packet: ACK validation failed")
+				logs.Info.Println(c.Hash(), "Dropping packet: ACK validation failed")
 				return
 			} else if segment.header.ack > c.seqNum {
 				// TODO send ack, drop segment, return
-				logs.Info.Println("Dropping packet with bad ACK field")
+				logs.Info.Println(c.Hash(), "Dropping packet with bad ACK field")
 				return
 			}
 		case FIN_WAIT_1:
@@ -124,19 +124,19 @@ func (c *TCB) packetDeal(segment *TCP_Packet) {
 		// step 7 (?)
 		switch c.getState() {
 		case ESTABLISHED, FIN_WAIT_1, FIN_WAIT_2:
-			//logs.Trace.Println("Received data of len:", len(segment.payload))
+			//logs.Trace.Println(c.Hash(), "Received data of len:", len(segment.payload))
 			c.recvBuffer = append(c.recvBuffer, segment.payload...)
 			// TODO adjust rcv.wnd, for now just multiplying by 2
 			if uint32(c.curWindow)*2 >= uint32(1)<<16 {
 				c.curWindow *= 2
 			}
 			pay_size := segment.getPayloadSize()
-			//logs.Trace.Println("Payload Size is ", pay_size)
+			//logs.Trace.Println(c.Hash(), "Payload Size is ", pay_size)
 
 			// TODO piggyback this
 
 			if segment.header.flags&TCP_PSH != 0 {
-				logs.Trace.Println("Pushing new data to client")
+				logs.Trace.Println(c.Hash(), "Pushing new data to client")
 				c.pushData()
 			}
 
@@ -147,9 +147,9 @@ func (c *TCB) packetDeal(segment *TCP_Packet) {
 				c.seqAckMutex.RLock()
 				err := c.sendAck(c.seqNum, c.ackNum)
 				c.seqAckMutex.RUnlock()
-				//logs.Info.Println("Sent ACK data")
+				//logs.Info.Println(c.Hash(), "Sent ACK data")
 				if err != nil {
-					logs.Error.Println(err)
+					logs.Error.Println(c.Hash(), err)
 					return
 				}
 			}
@@ -171,14 +171,14 @@ func (c *TCB) packetDeal(segment *TCP_Packet) {
 			c.ackNum += segment.getPayloadSize()
 
 			err := c.sendAck(c.seqNum, c.ackNum)
-			//logs.Info.Println("Sent ACK data in response to FIN")
+			//logs.Info.Println(c.Hash(), "Sent ACK data in response to FIN")
 			if err != nil {
-				logs.Error.Println(err)
+				logs.Error.Println(c.Hash(), err)
 				return
 			}
 
 			// FIN implies PSH
-			//logs.Trace.Println("Pushing data to client because of FIN")
+			//logs.Trace.Println(c.Hash(), "Pushing data to client because of FIN")
 			c.pushData()
 
 			switch c.getState() {
@@ -202,14 +202,14 @@ func (c *TCB) pushData() {
 	// move data
 	c.pushBuffer = append(c.pushBuffer, c.recvBuffer...)
 	c.recvBuffer = []byte{}
-	logs.Trace.Println("Pushing: new pushBuffer len:", len(c.pushBuffer))
+	logs.Trace.Println(c.Hash(), "Pushing: new pushBuffer len:", len(c.pushBuffer))
 
 	// signal push
 	c.pushSignal.Signal()
 }
 
 func (c *TCB) rcvClosed(d *TCP_Packet) {
-	logs.Trace.Println("Dealing closed")
+	logs.Trace.Println(c.Hash(), "Dealing closed")
 	if d.header.flags&TCP_RST != 0 {
 		// drop incoming RSTs
 		return
@@ -231,13 +231,13 @@ func (c *TCB) rcvClosed(d *TCP_Packet) {
 	logs.Info.Printf("Sending RST data with seq %d and ack %d", seqNum, ackNum)
 	err := c.sendResetFlag(seqNum, ackNum, rstFlags)
 	if err != nil {
-		logs.Error.Println(err)
+		logs.Error.Println(c.Hash(), err)
 		return
 	}
 }
 
 func (c *TCB) rcvListen(d *TCP_Packet) {
-	logs.Trace.Println("Dealing listen")
+	logs.Trace.Println(c.Hash(), "Dealing listen")
 
 	if d.header.flags&TCP_RST != 0 {
 		// drop incoming RSTs
@@ -246,9 +246,9 @@ func (c *TCB) rcvListen(d *TCP_Packet) {
 
 	if d.header.flags&TCP_ACK != 0 {
 		err := c.sendReset(d.header.ack, 0)
-		logs.Trace.Println("Sent ACK data")
+		logs.Trace.Println(c.Hash(), "Sent ACK data")
 		if err != nil {
-			logs.Error.Println(err)
+			logs.Error.Println(c.Hash(), err)
 			return
 		}
 	}
@@ -278,10 +278,10 @@ func (c *TCB) rcvListen(d *TCP_Packet) {
 
 		err := c.sendPacket(syn_ack_packet)
 		if err != nil {
-			logs.Error.Println(err)
+			logs.Error.Println(c.Hash(), err)
 			return
 		}
-		logs.Trace.Println("Sent ACK data")
+		logs.Trace.Println(c.Hash(), "Sent ACK data")
 
 		c.seqNum += 1
 		c.recentAckNum = c.ISS
@@ -290,36 +290,36 @@ func (c *TCB) rcvListen(d *TCP_Packet) {
 }
 
 func (c *TCB) dealSynSent(d *TCP_Packet) {
-	logs.Trace.Println("Dealing state syn-sent")
+	logs.Trace.Println(c.Hash(), "Dealing state syn-sent")
 	if d.header.flags&TCP_ACK != 0 {
-		logs.Trace.Println("verifing the ack")
+		logs.Trace.Println(c.Hash(), "verifing the ack")
 		if d.header.flags&TCP_RST != 0 {
 			return
 		}
 		if d.header.ack <= c.ISS || d.header.ack > c.seqNum {
-			logs.Info.Println("Sending reset")
+			logs.Info.Println(c.Hash(), "Sending reset")
 			err := c.sendReset(d.header.ack, 0)
 			if err != nil {
-				logs.Error.Println(err)
+				logs.Error.Println(c.Hash(), err)
 				return
 			}
 			return
 		}
 		if !(c.recentAckNum <= d.header.ack && d.header.ack <= c.seqNum) {
-			logs.Error.Println("Incoming packet's ack is bad")
+			logs.Error.Println(c.Hash(), "Incoming packet's ack is bad")
 			return
 		}
 
 		// kill the retransmission
 		err := c.UpdateLastAck(d.header.ack)
 		if err != nil {
-			logs.Error.Println(err)
+			logs.Error.Println(c.Hash(), err)
 			return
 		}
 	}
 
 	if d.header.flags&TCP_RST != 0 {
-		logs.Error.Println("error: connection reset")
+		logs.Error.Println(c.Hash(), "error: connection reset")
 		c.UpdateState(CLOSED)
 		return
 	}
@@ -327,27 +327,27 @@ func (c *TCB) dealSynSent(d *TCP_Packet) {
 	// TODO verify security/precedence
 
 	if d.header.flags&TCP_SYN != 0 {
-		logs.Trace.Println("rcvd a SYN")
+		logs.Trace.Println(c.Hash(), "rcvd a SYN")
 		c.ackNum = d.header.seq + 1
 		c.IRS = d.header.seq
 
 		if d.header.flags&TCP_ACK != 0 {
 			c.UpdateLastAck(d.header.ack)
-			logs.Trace.Println("recentAckNum:", c.recentAckNum)
-			logs.Trace.Println("ISS:", c.ISS)
+			logs.Trace.Println(c.Hash(), "recentAckNum:", c.recentAckNum)
+			logs.Trace.Println(c.Hash(), "ISS:", c.ISS)
 		}
 
 		if c.recentAckNum > c.ISS {
-			logs.Trace.Println("rcvd a SYN-ACK")
+			logs.Trace.Println(c.Hash(), "rcvd a SYN-ACK")
 			// the syn has been ACKed
 			// reply with an ACK
 			c.UpdateState(ESTABLISHED)
 			err := c.sendAck(c.seqNum, c.ackNum)
 			if err != nil {
-				logs.Error.Println(err)
+				logs.Error.Println(c.Hash(), err)
 			}
 
-			logs.Info.Println("Connection established")
+			logs.Info.Println(c.Hash(), "Connection established")
 			return
 		} else {
 			// special case... TODO deal with this case later
@@ -361,22 +361,22 @@ func (c *TCB) dealSynSent(d *TCP_Packet) {
 	}
 
 	// Neither syn nor rst set
-	logs.Info.Println("Dropping packet with seq: ", d.header.seq, "ack: ", d.header.ack)
+	logs.Info.Println(c.Hash(), "Dropping packet with seq: ", d.header.seq, "ack: ", d.header.ack)
 }
 
 func (c *TCB) dealSynRcvd(d *TCP_Packet) {
-	logs.Trace.Println("dealing Syn Rcvd")
+	logs.Trace.Println(c.Hash(), "dealing Syn Rcvd")
 	c.seqAckMutex.RLock()
 	defer c.seqAckMutex.RUnlock()
 	logs.Trace.Printf("recentAck: %d, header ack: %d, seqNum: %d", c.recentAckNum, d.header.ack, c.seqNum)
 	if c.recentAckNum <= d.header.ack && d.header.ack <= c.seqNum {
-		logs.Trace.Println("SynRcvd -> Established")
+		logs.Trace.Println(c.Hash(), "SynRcvd -> Established")
 		c.UpdateState(ESTABLISHED)
 	} else {
 		err := c.sendReset(d.header.ack, 0)
-		logs.Info.Println("Sent RST data")
+		logs.Info.Println(c.Hash(), "Sent RST data")
 		if err != nil {
-			logs.Error.Println(err)
+			logs.Error.Println(c.Hash(), err)
 			return
 		}
 	}

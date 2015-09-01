@@ -13,7 +13,7 @@ func (c *TCB) packetSender() {
 	defer c.sendBufferUpdate.L.Lock()
 
 	for {
-		logs.Trace.Println("Beginning send with sendBuffer len:", len(c.sendBuffer))
+		logs.Trace.Println(c.Hash(), "Beginning send with sendBuffer len:", len(c.sendBuffer))
 		if len(c.sendBuffer) > 0 {
 			sz := uint16(min(uint64(len(c.sendBuffer)), uint64(c.maxSegSize)))
 			data := c.sendBuffer[:sz]
@@ -23,7 +23,7 @@ func (c *TCB) packetSender() {
 		}
 		c.sendFinished.Broadcast(true)
 		if c.stopSending {
-			logs.Trace.Println("Stopping packet sender; all pending sends have completed")
+			logs.Trace.Println(c.Hash(), "Stopping packet sender; all pending sends have completed")
 			return
 		}
 		c.sendBufferUpdate.Wait()
@@ -31,7 +31,7 @@ func (c *TCB) packetSender() {
 }
 
 func (c *TCB) sendData(data []byte) (err error) {
-	logs.Info.Println("Sending Data:", data)
+	logs.Info.Println(c.Hash(), "Sending Data:", data)
 	psh_packet := &TCP_Packet{
 		header: &TCP_Header{
 			seq:     c.seqNum,
@@ -45,7 +45,7 @@ func (c *TCB) sendData(data []byte) (err error) {
 	c.seqNum += uint32(len(data))
 	err = c.sendWithRetransmit(psh_packet)
 	if err != nil {
-		logs.Error.Println(err)
+		logs.Error.Println(c.Hash(), err)
 	}
 	return err
 }
@@ -77,7 +77,7 @@ func (c *TCB) sendWithRetransmit(data *TCP_Packet) error {
 			case <-timeout:
 				// TODO deal with a resend timeout fully
 				killAckListen <- true
-				logs.Error.Println("Resend of packet seq", data.header.seq, "timed out")
+				logs.Error.Println(c.Hash(), "Resend of packet seq", data.header.seq, "timed out")
 				return errors.New("Resend timed out")
 			}
 		}
@@ -87,16 +87,16 @@ func (c *TCB) sendWithRetransmit(data *TCP_Packet) error {
 }
 
 func (c *TCB) listenForAck(successOut chan<- bool, end <-chan bool, targetAck uint32) {
-	logs.Trace.Println("Listening for ack:", targetAck)
+	logs.Trace.Println(c.Hash(), "Listening for ack:", targetAck)
 	in := c.recentAckUpdate.Register(ACK_BUF_SZ)
 	go func(in chan interface{}, successOut chan<- bool, end <-chan bool, targetAck uint32) {
 		defer c.recentAckUpdate.Unregister(in)
 		for {
 			select {
 			case v := <-in:
-				logs.Trace.Println("Ack listener got ack: ", v.(uint32))
+				logs.Trace.Println(c.Hash(), "Ack listener got ack: ", v.(uint32))
 				if v.(uint32) == targetAck {
-					logs.Trace.Println("Killing the resender for ack:", v.(uint32))
+					logs.Trace.Println(c.Hash(), "Killing the resender for ack:", v.(uint32))
 					successOut <- true
 					return
 				}
@@ -132,14 +132,14 @@ func (c *TCB) sendPacket(d *TCP_Packet) error {
 
 	pay, err := d.Marshal_TCP_Packet()
 	if err != nil {
-		logs.Error.Println(err)
+		logs.Error.Println(c.Hash(), err)
 		return err
 	}
 
 	err = c.writer.WriteTo(pay)
 
 	if err != nil {
-		logs.Error.Println(err)
+		logs.Error.Println(c.Hash(), err)
 		return err
 	}
 
@@ -147,7 +147,7 @@ func (c *TCB) sendPacket(d *TCP_Packet) error {
 }
 
 func (c *TCB) sendResetFlag(seq, ack uint32, flag uint8) error {
-	logs.Trace.Println("Sending RST with seq: ", seq, " and ack: ", ack)
+	logs.Trace.Println(c.Hash(), "Sending RST with seq: ", seq, " and ack: ", ack)
 	rst := &TCP_Packet{
 		header: &TCP_Header{
 			seq:     seq,
@@ -167,7 +167,7 @@ func (c *TCB) sendReset(seq, ack uint32) error {
 }
 
 func (c *TCB) sendAck(seq, ack uint32) error {
-	//logs.Trace.Println("Sending ACK with seq: ", seq, " and ack: ", ack)
+	//logs.Trace.Println(c.Hash(), "Sending ACK with seq: ", seq, " and ack: ", ack)
 	ack_packet := &TCP_Packet{
 		header: &TCP_Header{
 			seq:     seq,
@@ -182,7 +182,7 @@ func (c *TCB) sendAck(seq, ack uint32) error {
 }
 
 func (c *TCB) sendFin(seq, ack uint32) error {
-	logs.Trace.Println("Sending FIN with seq: ", seq, " and ack: ", ack)
+	logs.Trace.Println(c.Hash(), "Sending FIN with seq: ", seq, " and ack: ", ack)
 	fin_packet := &TCP_Packet{
 		header: &TCP_Header{
 			seq:     seq,
