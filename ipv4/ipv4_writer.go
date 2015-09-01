@@ -54,6 +54,12 @@ func NewIP_Writer(dst *ipv4tps.IPaddress, protocol uint8) (*IP_Writer, error) {
 	}, nil
 }
 
+func (ipw *IP_Writer) getID() uint16 {
+	id := ipw.identifier
+	ipw.identifier++
+	return id
+}
+
 func (ipw *IP_Writer) WriteTo(p []byte) error {
 	//logs.Trace.Println("IP Preparing to Write:", p)
 	//	logs.Info.Println("IPv4 WriteTo request")
@@ -61,10 +67,9 @@ func (ipw *IP_Writer) WriteTo(p []byte) error {
 	header := make([]byte, ipw.headerLen)
 	header[0] = (byte)((ipw.version << 4) + (uint8)(ipw.headerLen/4)) // Version, IHL
 	header[1] = 0
-	id := ipw.identifier
+	id := ipw.getID()
 	header[4] = byte(id >> 8) // Identification
 	header[5] = byte(id)
-	ipw.identifier++
 	header[8] = (byte)(ipw.ttl)      // Time to Live
 	header[9] = (byte)(ipw.protocol) // Protocol
 
