@@ -27,7 +27,7 @@ func main() {
 		return
 	}
 
-	err = s.BindListen(49230, ipv4tps.IP_ALL)
+	err = s.BindListenWithQueueSize(49230, ipv4tps.IP_ALL, 10+numConn)
 	if err != nil {
 		logs.Error.Println(err)
 		return
@@ -36,7 +36,7 @@ func main() {
 	count := make(chan bool, numConn)
 	done := make(chan bool)
 
-	for i := 0; i < numConn; i++ {
+	for i := 1; i <= numConn; i++ {
 		conn, _, _, err := s.Accept()
 		if err != nil {
 			logs.Error.Println(err)

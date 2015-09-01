@@ -38,11 +38,12 @@ func (c *TCB) packetDeal(segment *TCP_Packet) {
 	// first check sequence number pg 69 txt
 	// TODO check sequence number
 
+	// second, check the RST bit
 	if segment.header.flags&TCP_RST != 0 {
 		// TODO finish: page 70
 		switch c.getState() {
 		case SYN_RCVD:
-			// TODO not done
+			// TODO connection refused
 			return
 		case ESTABLISHED, FIN_WAIT_1, FIN_WAIT_2, CLOSE_WAIT:
 			// TODO not done
@@ -53,8 +54,22 @@ func (c *TCB) packetDeal(segment *TCP_Packet) {
 		}
 	}
 
-	// TODO check security/precedence
+	// TODO third, check security/precedence
+	// page 71
+
 	// TODO check SYN (SYN bit shouldn't be there)
+	if segment.header.flags&TCP_SYN != 0 {
+		switch c.getState() {
+		case SYN_RCVD:
+			if c.recentAckNum <= segment.header.ack && segment.header.ack <= c.seqNum {
+				// in window, so it is an error
+				// TODO send a reset
+			} else {
+				// TODO resend SYN-ACK
+			}
+		}
+		return
+	}
 
 	// fifth, check the ACK field
 	if segment.header.flags&TCP_ACK == 0 {
@@ -226,7 +241,7 @@ func (c *TCB) rcvClosed(d *TCP_Packet) {
 		ackNum = 0
 	}
 
-	logs.Info.Printf("Sending RST data with seq %d and ack %d", seqNum, ackNum)
+	logs.Info.Printf("%s Sending RST data with seq %d and ack %d because packet received in CLOSED state", c.Hash(), seqNum, ackNum)
 	err := c.sendResetFlag(seqNum, ackNum, rstFlags)
 	if err != nil {
 		logs.Error.Println(c.Hash(), err)
@@ -366,7 +381,7 @@ func (c *TCB) dealSynRcvd(d *TCP_Packet) {
 	logs.Trace.Println(c.Hash(), "dealing Syn Rcvd")
 	c.seqAckMutex.RLock()
 	defer c.seqAckMutex.RUnlock()
-	logs.Trace.Printf("recentAck: %d, header ack: %d, seqNum: %d", c.recentAckNum, d.header.ack, c.seqNum)
+	logs.Trace.Printf("%s recentAck: %d, header ack: %d, seqNum: %d", c.Hash(), c.recentAckNum, d.header.ack, c.seqNum)
 	if c.recentAckNum <= d.header.ack && d.header.ack <= c.seqNum {
 		logs.Trace.Println(c.Hash(), "SynRcvd -> Established")
 		c.UpdateState(ESTABLISHED)

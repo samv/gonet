@@ -1,7 +1,7 @@
 #! /bin/bash
 
 make build
-go build scaleTest.go
+go build -race scaleTest.go
 for i in `seq 1 $1`;
 do
 	echo "starting $i"
