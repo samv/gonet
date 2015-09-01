@@ -6,6 +6,8 @@ import (
 
 	"network/ipv4/ipv4tps"
 
+	"sync"
+
 	"github.com/hsheth2/logs"
 )
 
@@ -13,10 +15,15 @@ import (
 type TCP_Port_Manager_Type struct {
 	tcp_reader *ipv4.IP_Reader
 	incoming   map[uint16](map[uint16](map[ipv4tps.IPhash](chan *TCP_Packet))) // dst, src port, remote ip
+	lock       *sync.RWMutex
 }
 
 // TODO TCP_Port_Manager_Type should have an unbind function
 func (m *TCP_Port_Manager_Type) bind(rport, lport uint16, ip *ipv4tps.IPaddress) (chan *TCP_Packet, error) {
+	// race prevention
+	m.lock.Lock()
+	defer m.lock.Unlock()
+
 	// lport is the local one here, rport is the remote
 	if _, ok := m.incoming[lport]; !ok {
 		m.incoming[lport] = make(map[uint16](map[ipv4tps.IPhash](chan *TCP_Packet)))
@@ -44,44 +51,60 @@ func (m *TCP_Port_Manager_Type) readAll() {
 			continue
 		}
 
-		p, err := Extract_TCP_Packet(payload, rip, lip)
+		err = m.readDeal(rip, lip, payload)
 		if err != nil {
 			logs.Error.Println(err)
 			continue
 		}
+	}
+}
 
-		rport := p.header.srcport
-		lport := p.header.dstport
+func (m *TCP_Port_Manager_Type) readDeal(rip, lip *ipv4tps.IPaddress, payload []byte) error {
+	p, err := Extract_TCP_Packet(payload, rip, lip)
+	if err != nil {
+		logs.Error.Println(err)
+		return err
+	}
 
-		var output chan *TCP_Packet = nil
+	rport := p.header.srcport
+	lport := p.header.dstport
 
-		//logs.Trace.Printf("readAll tcp packet manager dealing with packet or rport: %d and lport %d", rport, lport)
-		if _, ok := m.incoming[lport]; ok {
-			//logs.Trace.Printf("readAll: promising packet rport: %d and lport %d", rport, lport)
-			if p, ok := m.incoming[lport][rport]; ok {
-				//logs.Trace.Println("readAll: exact port number match")
-				if x, ok := p[rip.Hash()]; ok {
-					output = x
-				} else if x, ok := p[ipv4tps.IP_ALL_HASH]; ok {
-					output = x
-				}
-			} else if p, ok := m.incoming[lport][0]; ok {
-				//logs.Trace.Println("readAll: forwarding to a listening server")
-				if x, ok := p[ipv4tps.IP_ALL_HASH]; ok {
-					output = x
-				} else if x, ok := p[rip.Hash()]; ok {
-					output = x
-				}
+	var output chan *TCP_Packet = nil
+
+	m.lock.RLock()
+	defer m.lock.RUnlock()
+	//logs.Trace.Printf("readAll tcp packet manager dealing with packet or rport: %d and lport %d", rport, lport)
+	if _, ok := m.incoming[lport]; ok {
+		//logs.Trace.Printf("readAll: promising packet rport: %d and lport %d", rport, lport)
+		if p, ok := m.incoming[lport][rport]; ok {
+			//logs.Trace.Println("readAll: exact port number match")
+			if x, ok := p[rip.Hash()]; ok {
+				output = x
+			} else if x, ok := p[ipv4tps.IP_ALL_HASH]; ok {
+				output = x
+			}
+		} else if p, ok := m.incoming[lport][0]; ok {
+			//logs.Trace.Println("readAll: forwarding to a listening server")
+			if x, ok := p[ipv4tps.IP_ALL_HASH]; ok {
+				output = x
+			} else if x, ok := p[rip.Hash()]; ok {
+				output = x
 			}
 		}
-
-		if output != nil {
-			go func() { output <- p }()
-		} else {
-			// TODO send a rst to sender if nothing is binded to the dst port, src port, and remote ip
-			//fmt.Println(errors.New("Dst/Src port + ip not binded to"))
-		}
 	}
+
+	if output != nil {
+		select {
+		case output <- p:
+		default:
+			logs.Warn.Println("Dropping TCP packet: no space in buffer")
+		}
+	} else {
+		// TODO send a rst to sender if nothing is binded to the dst port, src port, and remote ip
+		//fmt.Println(errors.New("Dst/Src port + ip not binded to"))
+	}
+
+	return nil
 }
 
 var TCP_Port_Manager = func() *TCP_Port_Manager_Type {
@@ -96,6 +119,7 @@ var TCP_Port_Manager = func() *TCP_Port_Manager_Type {
 	m := &TCP_Port_Manager_Type{
 		tcp_reader: ipr,
 		incoming:   make(map[uint16](map[uint16](map[ipv4tps.IPhash](chan *TCP_Packet)))),
+		lock:       &sync.RWMutex{},
 	}
 	go m.readAll()
 	return m
