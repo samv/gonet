@@ -43,6 +43,10 @@ func (m *TCP_Port_Manager_Type) bind(rport, lport uint16, ip *ipv4tps.IPaddress)
 }
 
 func (m *TCP_Port_Manager_Type) unbind(rport, lport uint16, ip *ipv4tps.IPaddress) error {
+	// race prevention
+	m.lock.Lock()
+	defer m.lock.Unlock()
+
 	// TODO verify that it actually won't crash
 	delete(m.incoming[lport][rport], ip.Hash())
 	return nil
