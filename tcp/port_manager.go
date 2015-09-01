@@ -18,7 +18,6 @@ type TCP_Port_Manager_Type struct {
 	lock       *sync.RWMutex
 }
 
-// TODO TCP_Port_Manager_Type should have an unbind function
 func (m *TCP_Port_Manager_Type) bind(rport, lport uint16, ip *ipv4tps.IPaddress) (chan *TCP_Packet, error) {
 	// race prevention
 	m.lock.Lock()
@@ -41,6 +40,12 @@ func (m *TCP_Port_Manager_Type) bind(rport, lport uint16, ip *ipv4tps.IPaddress)
 	ans := make(chan *TCP_Packet, TCP_INCOMING_BUFF_SZ)
 	m.incoming[lport][rport][ip.Hash()] = ans
 	return ans, nil
+}
+
+func (m *TCP_Port_Manager_Type) unbind(rport, lport uint16, ip *ipv4tps.IPaddress) error {
+	// TODO verify that it actually won't crash
+	delete(m.incoming[lport][rport], ip.Hash())
+	return nil
 }
 
 func (m *TCP_Port_Manager_Type) readAll() {
