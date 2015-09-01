@@ -26,7 +26,7 @@ func (c *TCB) UpdateState(newState uint) {
 }
 
 func (c *TCB) updateStateReal(newState uint) {
-	logs.Trace.Println("The New State is", newState)
+	logs.Trace.Println(c.Hash(), "The New State is", newState)
 	if c.state == TIME_WAIT && newState == TIME_WAIT {
 		c.timeWaitRestart <- true
 		return
@@ -48,7 +48,7 @@ func (c *TCB) getState() uint {
 }
 
 func (c *TCB) UpdateLastAck(newAck uint32) error {
-	logs.Trace.Println("New ack number:", newAck)
+	logs.Trace.Println(c.Hash(), "New ack number:", newAck)
 	c.recentAckNum = newAck
 	go notifiers.SendNotifierBroadcast(c.recentAckUpdate, c.recentAckNum)
 	return nil
@@ -66,7 +66,7 @@ func (c *TCB) timeWaitTimer(restart chan bool) error {
 		c.UpdateState(CLOSED)
 		return nil
 	case <-restart:
-		logs.Trace.Println("Restarting timeWaitTimer")
+		logs.Trace.Println(c.Hash(), "Restarting timeWaitTimer")
 		return c.timeWaitTimer(restart)
 	}
 }

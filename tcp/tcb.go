@@ -105,22 +105,22 @@ func (c *TCB) Recv(num uint64) ([]byte, error) { // blocking recv call
 	c.pushSignal.L.Lock()
 	defer c.pushSignal.L.Unlock()
 	for {
-		logs.Trace.Println("Attempting to read off of pushBuffer")
-		logs.Trace.Println("Amt of data on pushBuffer:", len(c.pushBuffer))
+		logs.Trace.Println(c.Hash(), "Attempting to read off of pushBuffer")
+		logs.Trace.Println(c.Hash(), "Amt of data on pushBuffer:", len(c.pushBuffer))
 		amt := min(num, uint64(len(c.pushBuffer)))
 		if amt != 0 {
 			data := c.pushBuffer[:amt]
 			c.pushBuffer = c.pushBuffer[amt:]
 			return data, nil
 		}
-		logs.Trace.Println("Waiting for push signal")
+		logs.Trace.Println(c.Hash(), "Waiting for push signal")
 		c.pushSignal.Wait() // wait for a push
 	}
 	return nil, errors.New("Read failed")
 }
 
 func (c *TCB) Close() error {
-	logs.Trace.Println("Closing TCB with lport:", c.lport)
+	logs.Trace.Println(c.Hash(), "Closing TCB with lport:", c.lport)
 
 	// block all future sends
 	c.sendBufferUpdate.L.Lock()
@@ -128,23 +128,23 @@ func (c *TCB) Close() error {
 	c.sendBufferUpdate.L.Unlock()
 
 	if len(c.sendBuffer) != 0 {
-		logs.Trace.Println("Blocking until all pending writes complete")
+		logs.Trace.Println(c.Hash(), "Blocking until all pending writes complete")
 		<-c.sendFinished.Register(1) // wait for send to finish TODO unregister
 	}
 
 	// update state for sending FIN packet
 	c.stateUpdate.L.Lock()
 	if c.state == ESTABLISHED {
-		logs.Trace.Println("Entering fin-wait-1")
+		logs.Trace.Println(c.Hash(), "Entering fin-wait-1")
 		c.updateStateReal(FIN_WAIT_1)
 	} else if c.state == CLOSE_WAIT {
-		logs.Trace.Println("Entering last ack")
+		logs.Trace.Println(c.Hash(), "Entering last ack")
 		c.updateStateReal(LAST_ACK)
 	}
 	c.stateUpdate.L.Unlock()
 
 	// send FIN
-	logs.Info.Println("Sending FIN within close")
+	logs.Info.Println(c.Hash(), "Sending FIN within close")
 	c.seqAckMutex.RLock()
 	c.sendFin(c.seqNum, c.ackNum)
 	c.seqAckMutex.RUnlock()

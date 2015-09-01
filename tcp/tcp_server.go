@@ -112,13 +112,13 @@ func (s *Server_TCB) LongListener() {
 			c.seqAckMutex.Lock()
 			c.seqNum += 1
 			c.seqAckMutex.Unlock()
-			logs.Trace.Println("Server/TCB about to respond with SYN-ACK")
+			logs.Trace.Println(c.Hash(), "Server/TCB about to respond with SYN-ACK")
 			err = c.sendWithRetransmit(synack)
 			if err != nil {
 				logs.Error.Println(err)
 				return
 			}
-			logs.Trace.Println("Server/TCB about to responded with SYN-ACK")
+			logs.Trace.Println(c.Hash(), "Server/TCB about to responded with SYN-ACK")
 
 			select {
 			case s.connQueue <- c:
