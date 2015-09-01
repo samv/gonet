@@ -45,7 +45,7 @@ func main() {
 		//logs.Info.Println("Connection:", ip, port)
 
 		go func(conn *tcp.TCB, count chan bool) {
-			data, err := conn.Recv(1000)
+			data, err := conn.Recv(10000)
 			if err != nil {
 				logs.Error.Println(err)
 				return
