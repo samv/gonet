@@ -14,6 +14,6 @@ MESSAGE = "Hello" * 2000
 s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
 s.connect((TCP_IP, TCP_PORT))
 s.send(MESSAGE)
-time.sleep(3)
+time.sleep(0.2)
 s.close()
 print "finished"

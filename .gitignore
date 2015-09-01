@@ -14,3 +14,7 @@ tcp_client_tester
 runStack
 scaleTest
 *.out
+ifaddrs
+sys
+*.log
+throughput_server

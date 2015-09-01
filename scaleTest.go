@@ -9,7 +9,7 @@ import (
 
 	"os"
 	"strconv"
-	"time"
+	//"time"
 
 	"github.com/hsheth2/logs"
 )
@@ -53,7 +53,7 @@ func main() {
 
 			logs.Info.Println("first 50 bytes of received data:", data[:50])
 
-			time.Sleep(500 * time.Millisecond)
+			//time.Sleep(500 * time.Millisecond)
 			conn.Close()
 			logs.Trace.Println("connection finished")
 
