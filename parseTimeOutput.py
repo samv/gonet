@@ -17,4 +17,5 @@ def parseLine(s):
 for i, l in enumerate(lines):
     lines[i] = parseLine(l)
 
+lines.insert(0, sys.argv[1])
 print "\t".join(str(l) for l in lines)

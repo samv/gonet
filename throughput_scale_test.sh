@@ -8,4 +8,4 @@ do
 	(./throughput_client.py > /dev/null 2>&1) &
 done
 sudo setcap CAP_NET_RAW=epi ./scaleTest
-(time ./scaleTest $1 > throughputTest.out) 2>&1 | ./parseTimeOutput.py
+(time ./scaleTest $1 > throughputTest.out) 2>&1 | ./parseTimeOutput.py $1
