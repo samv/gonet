@@ -27,7 +27,7 @@ func read_write_test(t *testing.T, ip *ipv4tps.IPaddress) {
 
 	data := []byte{'H', 'e', 'l', 'l', 'o', ' ', 'W', 'o', 'r', 'l', 'd', '!'}
 
-	// server (writes data)
+	// server (reads data)
 	go func() {
 		s, err := New_Server_TCB()
 		if err != nil {
@@ -48,18 +48,29 @@ func read_write_test(t *testing.T, ip *ipv4tps.IPaddress) {
 			t.Error(err)
 			return
 		}
-		defer conn.Close()
 		fmt.Println("Server Connection:", ip, port)
 
-		fmt.Println("Tester sending data:", data)
-		err = conn.Send(data)
+		fmt.Println("Beginning the read")
+		out, err := conn.Recv(20)
 		if err != nil {
 			t.Error(err)
 			return
 		}
+		fmt.Println("got data:", out)
+
+		fmt.Println("Server close")
+		conn.Close()
+		fmt.Println("Server close finished")
+
+		if string(data) == string(out) {
+			fmt.Println("Correct output")
+			success <- true
+		} else {
+			t.Error("Wrong output")
+		}
 	}()
 
-	// client (reads data)
+	// client (sends data)
 	go func() {
 		client, err := New_TCB_From_Client(client_port, server_port, ip)
 		if err != nil {
@@ -75,22 +86,18 @@ func read_write_test(t *testing.T, ip *ipv4tps.IPaddress) {
 		}
 		fmt.Println("Client connected")
 
-		fmt.Println("Beginning the read")
-		out, err := client.Recv(20)
+		time.Sleep(1 * time.Second)
+		fmt.Println("Client sending data:", data)
+		err = client.Send(data)
 		if err != nil {
 			t.Error(err)
 			return
 		}
-		fmt.Println("got data:", out)
 
+		time.Sleep(1 * time.Second)
+		fmt.Println("Client Closing")
 		client.Close()
-
-		if string(data) == string(out) {
-			fmt.Println("Correct output")
-			success <- true
-		} else {
-			t.Error("Wrong output")
-		}
+		fmt.Println("Client Close finished")
 	}()
 
 	select {
