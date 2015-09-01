@@ -364,6 +364,8 @@ func (c *TCB) dealSynSent(d *TCP_Packet) {
 
 func (c *TCB) dealSynRcvd(d *TCP_Packet) {
 	logs.Trace.Println("dealing Syn Rcvd")
+	c.seqAckMutex.RLock()
+	defer c.seqAckMutex.RUnlock()
 	logs.Trace.Printf("recentAck: %d, header ack: %d, seqNum: %d", c.recentAckNum, d.header.ack, c.seqNum)
 	if c.recentAckNum <= d.header.ack && d.header.ack <= c.seqNum {
 		logs.Trace.Println("SynRcvd -> Established")

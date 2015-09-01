@@ -107,7 +107,9 @@ func (s *Server_TCB) LongListener() {
 			//logs.Trace.Println("Server/TCB about to respond with SYN-ACK")
 			err = c.sendPacket(synack)
 			// TODO make sure that the seq and ack numbers are set properly
+			c.seqAckMutex.Lock()
 			c.seqNum += 1
+			c.seqAckMutex.Unlock()
 			if err != nil {
 				logs.Error.Println(err)
 				return

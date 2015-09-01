@@ -146,7 +146,9 @@ func (c *TCB) Close() error {
 	c.seqAckMutex.RLock()
 	c.sendFin(c.seqNum, c.ackNum)
 	c.seqAckMutex.RUnlock()
+	c.seqAckMutex.Lock()
 	c.seqNum += 1 // TODO make this not dumb
+	c.seqAckMutex.Unlock()
 
 	// wait until state becomes CLOSED
 	c.stateUpdate.L.Lock()
