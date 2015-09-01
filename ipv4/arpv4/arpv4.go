@@ -7,13 +7,14 @@ import (
 	"network/ipv4/ipv4src"
 	"network/ipv4/ipv4tps"
 
-	"github.com/hsheth2/notifiers"
 	"sync"
+
+	"github.com/hsheth2/notifiers"
 )
 
 type ARPv4_Table struct {
 	table         map[ipv4tps.IPhash](*ethernet.MAC_Address)
-	tableMutex *sync.RWMutex
+	tableMutex    *sync.RWMutex
 	replyNotifier *notifiers.Notifier
 }
 
@@ -21,7 +22,7 @@ func NewARP_Table() (*ARPv4_Table, error) {
 	return &ARPv4_Table{
 		table:         make(map[ipv4tps.IPhash](*ethernet.MAC_Address)),
 		replyNotifier: notifiers.NewNotifier(),
-		tableMutex: &sync.RWMutex{},
+		tableMutex:    &sync.RWMutex{},
 	}, nil
 }
 
