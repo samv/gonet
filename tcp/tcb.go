@@ -163,7 +163,7 @@ func (c *TCB) Close() error {
 	}
 	logs.Trace.Printf("%s Close of TCB with lport %d finished", c.Hash(), c.lport)
 
-	logs.Trace.Println("Unbinding TCB")
+	logs.Trace.Println(c.Hash(), "Unbinding TCB")
 	err := TCP_Port_Manager.unbind(c.rport, c.lport, c.ipAddress)
 	if err != nil {
 		return err
