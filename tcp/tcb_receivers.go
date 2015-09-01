@@ -10,7 +10,7 @@ func (c *TCB) packetDealer() {
 	for {
 		//logs.Trace.Println(c.Hash(), "Waiting for packets")
 		segment := <-c.read
-		logs.Trace.Println(c.Hash(), "packetDealer received a packet:", segment.header, " in state:", c.state)
+		logs.Trace.Println(c.Hash(), "packetDealer received a packet:", segment.header, " in state:", c.getState())
 		c.packetDeal(segment)
 	}
 }
