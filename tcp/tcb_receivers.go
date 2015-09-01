@@ -48,9 +48,7 @@ func (c *TCB) packetDeal(segment *TCP_Packet) {
 			// TODO not done
 			return
 		case CLOSING, LAST_ACK, TIME_WAIT:
-			if segment.header.flags&TCP_RST != 0 { // TODO why another if statement?
-				c.UpdateState(CLOSED)
-			}
+			c.UpdateState(CLOSED)
 			return
 		}
 	}
