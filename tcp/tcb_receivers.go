@@ -35,8 +35,44 @@ func (c *TCB) packetDeal(segment *TCP_Packet) {
 		return
 	}
 
+	Assert(c.getState() != LISTEN && c.getState() != SYN_SENT, "state is listen/synsent")
 	// first check sequence number pg 69 txt
-	// TODO check sequence number
+	if len(segment.payload) == 0 {
+		if c.curWindow == 0 {
+			// TODO special allowances pg 69 rfc
+			logs.Warn.Println(c.Hash(), "Dropping unacceptable packet")
+			//	if not rst
+			if segment.header.flags&TCP_RST == 0 {
+				c.sendAck(c.seqNum, c.ackNum)
+			}
+			return
+		} else {
+			if !(c.ackNum <= segment.header.seq && segment.header.seq < c.ackNum + uint32(c.curWindow)) {
+				logs.Warn.Println(c.Hash(), "Dropping unacceptable packet")
+				//	if not rst
+				if segment.header.flags&TCP_RST == 0 {
+					c.sendAck(c.seqNum, c.ackNum)
+				}
+				return
+			}
+		}
+	} else if c.curWindow == 0 {
+		logs.Warn.Println(c.Hash(), "Dropping unacceptable packet")
+		//	if not rst
+		if segment.header.flags&TCP_RST == 0 {
+			c.sendAck(c.seqNum, c.ackNum)
+		}
+		return
+	} else {
+		if !((c.ackNum <= segment.header.seq && segment.header.seq < c.ackNum + uint32(c.curWindow)) || (c.ackNum <= segment.header.seq + uint32(len(segment.payload)) - 1) && segment.header.seq + uint32(len(segment.payload)) - 1 < c.ackNum + uint32(c.curWindow)) {
+			logs.Warn.Println(c.Hash(), "Dropping unacceptable packet")
+			//	if not rst
+			if segment.header.flags&TCP_RST == 0 {
+				c.sendAck(c.seqNum, c.ackNum)
+			}
+			return
+		}
+	}
 
 	// second, check the RST bit
 	if segment.header.flags&TCP_RST != 0 {
