@@ -6,6 +6,8 @@ import (
 	"network/ipv4/ipv4src"
 	"network/ipv4/ipv4tps"
 
+	"sync"
+
 	"golang.org/x/net/ipv4"
 )
 
@@ -17,6 +19,7 @@ type IP_Writer struct {
 	ttl         uint8
 	protocol    uint8
 	identifier  uint16
+	idLock      *sync.Mutex
 	maxFragSize uint16
 }
 
@@ -50,11 +53,14 @@ func NewIP_Writer(dst *ipv4tps.IPaddress, protocol uint8) (*IP_Writer, error) {
 		ttl:         DEFAULT_TTL,
 		protocol:    protocol,
 		identifier:  20000, // TODO generate this properly
-		maxFragSize: MTU,   // TODO determine this dynamically with LLDP
+		idLock:      &sync.Mutex{},
+		maxFragSize: MTU, // TODO determine this dynamically with LLDP
 	}, nil
 }
 
 func (ipw *IP_Writer) getID() uint16 {
+	ipw.idLock.Lock()
+	defer ipw.idLock.Unlock()
 	id := ipw.identifier
 	ipw.identifier++
 	return id
