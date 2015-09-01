@@ -32,7 +32,7 @@ func New_TCB_From_Client(local, remote uint16, dstIP *ipv4tps.IPaddress) (*TCB, 
 }
 
 func (c *TCB) Connect() error {
-	if c.kind != TCP_CLIENT || c.state != CLOSED {
+	if c.kind != TCP_CLIENT || c.getState() != CLOSED {
 		return errors.New("TCB is not a closed client")
 	}
 

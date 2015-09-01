@@ -27,6 +27,12 @@ func (c *TCB) updateStateReal(newState uint) {
 	}
 }
 
+func (c *TCB) getState() uint {
+	c.stateUpdate.L.Lock()
+	defer c.stateUpdate.L.Unlock()
+	return c.state
+}
+
 func (c *TCB) UpdateLastAck(newAck uint32) error {
 	logs.Trace.Println("New ack number:", newAck)
 	c.recentAckNum = newAck

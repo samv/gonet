@@ -133,7 +133,7 @@ func (s *Server_TCB) Accept() (c *TCB, rip *ipv4tps.IPaddress, rport uint16, err
 		// TODO add a timeout and remove the inner loop
 		for i := 0; i < len(s.connQueue); i++ {
 			next := <-s.connQueue
-			if next.state == ESTABLISHED {
+			if next.getState() == ESTABLISHED {
 				return next, next.ipAddress, next.rport, nil
 			}
 			s.connQueue <- next
