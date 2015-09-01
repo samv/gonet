@@ -111,6 +111,7 @@ func (c *TCB) packetDeal(segment *TCP_Packet) {
 				return
 			} else if segment.header.ack > c.seqNum {
 				// TODO send ack, drop segment, return
+				return
 			}
 		case CLOSING:
 			// TODO if ack is acknowledging our fin
@@ -122,6 +123,14 @@ func (c *TCB) packetDeal(segment *TCP_Packet) {
 			return
 		case TIME_WAIT:
 			// TODO handle remote fin
+			c.UpdateState(TIME_WAIT)
+			// This might be wrong
+			err := c.sendAck(c.seqNum, c.ackNum)
+			logs.Info.Println(c.Hash(), "Sent ACK data in response to retrans FIN")
+			if err != nil {
+				logs.Error.Println(c.Hash(), err)
+				return
+			}
 		}
 
 		if segment.header.flags&TCP_URG != 0 {
