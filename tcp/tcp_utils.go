@@ -30,7 +30,7 @@ func (c *TCB) updateStateReal(newState uint) {
 	if c.state == TIME_WAIT && newState == TIME_WAIT {
 		c.timeWaitRestart <- true
 		return
-	} else {
+	} else if newState == TIME_WAIT {
 		// start timer
 		go c.timeWaitTimer(c.timeWaitRestart)
 	}
