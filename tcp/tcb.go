@@ -127,17 +127,19 @@ func (c *TCB) Close() error {
 
 	if len(c.sendBuffer) != 0 {
 		logs.Trace.Println("Blocking until all pending writes complete")
-		<-c.sendFinished.Register(1) // wait for send to finish
+		<-c.sendFinished.Register(1) // wait for send to finish TODO unregister
 	}
 
 	// update state for sending FIN packet
+	c.stateUpdate.L.Lock()
 	if c.state == ESTABLISHED {
 		logs.Trace.Println("Entering fin-wait-1")
-		c.UpdateState(FIN_WAIT_1)
+		c.updateStateReal(FIN_WAIT_1)
 	} else if c.state == CLOSE_WAIT {
 		logs.Trace.Println("Entering last ack")
-		c.UpdateState(LAST_ACK)
+		c.updateStateReal(LAST_ACK)
 	}
+	c.stateUpdate.L.Unlock()
 
 	// send FIN
 	logs.Info.Println("Sending FIN within close")
