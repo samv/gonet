@@ -27,7 +27,6 @@ func New_Server_TCB() (*Server_TCB, error) {
 		listenIP:        ipv4tps.IP_ALL,
 		state:           CLOSED,
 		kind:            TCP_SERVER,
-		connQueue:       make(chan *TCB, TCP_LISTEN_QUEUE_SZ),
 		connQueueUpdate: sync.NewCond(&sync.Mutex{}),
 	}
 
@@ -35,6 +34,10 @@ func New_Server_TCB() (*Server_TCB, error) {
 }
 
 func (s *Server_TCB) BindListen(port uint16, ip *ipv4tps.IPaddress) error {
+	return s.BindListenWithQueueSize(port, ip, TCP_LISTEN_DEFAULT_QUEUE_SZ)
+}
+
+func (s *Server_TCB) BindListenWithQueueSize(port uint16, ip *ipv4tps.IPaddress, queue_sz int) error {
 	s.listenPort = port
 	s.listenIP = ip
 	read, err := TCP_Port_Manager.bind(0, port, ip)
@@ -43,6 +46,7 @@ func (s *Server_TCB) BindListen(port uint16, ip *ipv4tps.IPaddress) error {
 	}
 	s.listener = read
 	s.state = LISTEN
+	s.connQueue = make(chan *TCB, queue_sz)
 
 	go s.LongListener()
 
@@ -92,7 +96,7 @@ func (s *Server_TCB) LongListener() {
 
 			// send syn-ack
 			c.ackNum = in.header.seq + 1
-			logs.Trace.Printf("Server/TCB seq: %d, ack: %d, to rip: %v\n", c.seqNum, c.ackNum, c.ipAddress.IP)
+			logs.Trace.Printf("%s Server/TCB seq: %d, ack: %d, to rip: %v\n", c.Hash(), c.seqNum, c.ackNum, c.ipAddress.IP)
 			synack := &TCP_Packet{
 				header: &TCP_Header{
 					seq:     c.seqNum,
@@ -104,17 +108,17 @@ func (s *Server_TCB) LongListener() {
 				},
 				payload: []byte{},
 			}
-			//logs.Trace.Println("Server/TCB about to respond with SYN-ACK")
-			err = c.sendPacket(synack)
 			// TODO make sure that the seq and ack numbers are set properly
 			c.seqAckMutex.Lock()
 			c.seqNum += 1
 			c.seqAckMutex.Unlock()
+			logs.Trace.Println("Server/TCB about to respond with SYN-ACK")
+			err = c.sendWithRetransmit(synack)
 			if err != nil {
 				logs.Error.Println(err)
 				return
 			}
-			//logs.Trace.Println("Server/TCB about to responded with SYN-ACK")
+			logs.Trace.Println("Server/TCB about to responded with SYN-ACK")
 
 			select {
 			case s.connQueue <- c:

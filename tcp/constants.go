@@ -26,7 +26,7 @@ const (
 // Other Consts
 const TCP_INCOMING_BUFF_SZ = 100
 const TCP_BASIC_HEADER_SZ = 20
-const TCP_LISTEN_QUEUE_SZ = 100
+const TCP_LISTEN_DEFAULT_QUEUE_SZ = 100
 const TCP_RESEND_LIMIT = 12
 const ACK_BUF_SZ = 20
 

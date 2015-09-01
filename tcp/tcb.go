@@ -159,7 +159,7 @@ func (c *TCB) Close() error {
 		}
 		c.stateUpdate.Wait()
 	}
-	logs.Trace.Printf("Close of TCB with lport %d finished", c.lport)
+	logs.Trace.Printf("%s Close of TCB with lport %d finished", c.Hash(), c.lport)
 
 	return nil // TODO: free manager read buffer. Also kill timers with a wait group
 }
