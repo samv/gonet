@@ -85,19 +85,19 @@ func New_TCB(local, remote uint16, dstIP *ipv4tps.IPaddress, read chan *TCP_Pack
 	return c, nil
 }
 
-func (c *TCB) Send(data []byte) error { // a non-blocking send call
+func (c *TCB) Send(data []byte) error { // a blocking send call
+	c.sendBufferUpdate.L.Lock()
+	defer c.sendBufferUpdate.L.Unlock()
 	if c.stopSending {
 		return errors.New("Sending is not allowed anymore")
 	}
-	c.sendBufferUpdate.L.Lock()
-	defer c.sendBufferUpdate.L.Unlock()
 
 	c.sendBuffer = append(c.sendBuffer, data...)
 	c.sendBufferUpdate.Broadcast()
 	return nil
 }
 
-func (c *TCB) Recv(num uint64) ([]byte, error) {
+func (c *TCB) Recv(num uint64) ([]byte, error) { // blocking recv call
 	c.pushSignal.L.Lock()
 	defer c.pushSignal.L.Unlock()
 	for {
@@ -117,7 +117,12 @@ func (c *TCB) Recv(num uint64) ([]byte, error) {
 
 func (c *TCB) Close() error {
 	logs.Trace.Println("Closing TCB with lport:", c.lport)
-	c.stopSending = true // block all future sends
+
+	// block all future sends
+	c.sendBufferUpdate.L.Lock()
+	c.stopSending = true
+	c.sendBufferUpdate.L.Unlock()
+
 	if len(c.sendBuffer) != 0 {
 		logs.Trace.Println("Blocking until all pending writes complete")
 		<-c.sendFinished.Register(1) // wait for send to finish
