@@ -13,9 +13,13 @@ import (
 )
 
 func (c *TCB) UpdateState(newState uint) {
-	logs.Trace.Println("The New State is", newState)
 	c.stateUpdate.L.Lock()
 	defer c.stateUpdate.L.Unlock()
+	c.updateStateReal(newState)
+}
+
+func (c *TCB) updateStateReal(newState uint) {
+	logs.Trace.Println("The New State is", newState)
 	c.state = newState
 	c.stateUpdate.Broadcast()
 	if c.serverParent != nil {
