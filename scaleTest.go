@@ -52,12 +52,12 @@ func main() {
 				logs.Error.Println(err)
 			}
 
-			logs.Trace.Println("Client", i, "connecting")
+			logs.Info.Println("Client", i, "connecting")
 			err = c.Connect()
 			if err != nil {
 				logs.Error.Println(err)
 			}
-			logs.Trace.Println("Client", i, "connected; proceeding to send data")
+			logs.Info.Println("Client", i, "connected; proceeding to send data")
 
 			err = c.Send(data)
 			if err != nil {
@@ -69,8 +69,8 @@ func main() {
 			if err != nil {
 				logs.Error.Println(err)
 			}
-			logs.Trace.Println("Client finished close")
 		}(i)
+			logs.Info.Println("Client", i, "finished close")
 	}
 
 //	logs.Trace.Println("Signaling done")

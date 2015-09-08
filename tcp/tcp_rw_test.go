@@ -27,7 +27,7 @@ func read_write_test(t *testing.T, ip *ipv4tps.IPaddress) {
 
 	data := []byte{'H', 'e', 'l', 'l', 'o', ' ', 'W', 'o', 'r', 'l', 'd', '!'}
 
-	// server (reads data)
+	// server (reads data, initiates close)
 	go func() {
 		s, err := New_Server_TCB()
 		if err != nil {

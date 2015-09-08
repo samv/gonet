@@ -144,7 +144,7 @@ func (c *TCB) Close() error {
 	c.stateUpdate.L.Unlock()
 
 	// send FIN
-	logs.Info.Println(c.Hash(), "Sending FIN within close")
+	logs.Trace.Println(c.Hash(), "Sending FIN within close")
 	c.seqAckMutex.RLock()
 	c.sendFin(c.seqNum, c.ackNum)
 	c.seqAckMutex.RUnlock()

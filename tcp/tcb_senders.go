@@ -31,7 +31,7 @@ func (c *TCB) packetSender() {
 }
 
 func (c *TCB) sendData(data []byte) (err error) {
-	logs.Info.Println(c.Hash(), "Sending Data:", data)
+	logs.Trace.Println(c.Hash(), "Sending Data:", data)
 	psh_packet := &TCP_Packet{
 		header: &TCP_Header{
 			seq:     c.seqNum,
