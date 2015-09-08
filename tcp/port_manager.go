@@ -9,6 +9,7 @@ import (
 	"sync"
 
 	"github.com/hsheth2/logs"
+	"fmt"
 )
 
 // Global src, dst port and ip registry for TCP binding
@@ -112,6 +113,7 @@ func (m *TCP_Port_Manager_Type) readDeal(rip, lip *ipv4tps.IPaddress, payload []
 	} else {
 		// TODO send a rst to sender if nothing is binded to the dst port, src port, and remote ip
 		//fmt.Println(errors.New("Dst/Src port + ip not binded to"))
+		logs.Warn.Println(fmt.Errorf("Dropping TCP packet (lport: %d, rport %d); nothing listening for it", lport, rport))
 	}
 
 	return nil

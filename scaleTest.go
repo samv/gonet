@@ -40,26 +40,36 @@ func main() {
 		return
 	}
 
-	count := make(chan bool, numConn)
+	count := make(chan bool, numConn+5)
 	done := make(chan bool, 2)
 
 	for i := uint16(1); i <= numConn; i++ {
 		logs.Trace.Println("Connection attempter number", i)
 		go func(i uint16){
 			logs.Info.Println("i",i)
-			c, err := tcp.New_TCB_From_Client(throughput_port, client_port_base + i, ipv4src.Loopback_ip_address)
+			c, err := tcp.New_TCB_From_Client(client_port_base + i, throughput_port, ipv4src.Loopback_ip_address)
 			if err != nil {
 				logs.Error.Println(err)
 			}
+
+			logs.Trace.Println("Client", i, "connecting")
+			err = c.Connect()
+			if err != nil {
+				logs.Error.Println(err)
+			}
+			logs.Trace.Println("Client", i, "connected; proceeding to send data")
+
 			err = c.Send(data)
 			if err != nil {
 				logs.Error.Println(err)
 			}
 
+			logs.Trace.Println("Client starting close")
 			err = c.Close()
 			if err != nil {
 				logs.Error.Println(err)
 			}
+			logs.Trace.Println("Client finished close")
 		}(i)
 	}
 
@@ -68,12 +78,14 @@ func main() {
 	logs.Trace.Println("About to hit loop")
 	for i := uint16(1); i <= numConn; i++ {
 		logs.Trace.Println("Entering loop")
-		conn, _, _, err := s.Accept()
+
+		logs.Trace.Println("Waiting to accept connection")
+		conn, ip, port, err := s.Accept()
 		if err != nil {
 			logs.Error.Println(err)
 			return
 		}
-		//logs.Info.Println("Connection:", ip, port)
+		logs.Info.Println("Connection:", ip, port)
 
 		go func(conn *tcp.TCB, count chan bool) {
 			data, err := conn.Recv(bytes)
