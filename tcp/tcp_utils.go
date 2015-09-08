@@ -29,7 +29,11 @@ func (c *TCB) UpdateState(newState uint) {
 func (c *TCB) updateStateReal(newState uint) {
 	logs.Trace.Println(c.Hash(), "The New State is", newState)
 	if c.state == TIME_WAIT && newState == TIME_WAIT {
-		c.timeWaitRestart <- true
+		select {
+		case c.timeWaitRestart <- true:
+		default:
+			logs.Warn.Println("timeWaitRestart request already in progress; ignoring this request")
+		}
 		return
 	} else if newState == TIME_WAIT {
 		// start timer
@@ -65,6 +69,7 @@ func (c *TCB) timeWaitTimer(restart chan bool) error {
 	select {
 	case <-time.After(2 * time.Millisecond):
 		c.UpdateState(CLOSED)
+		close(c.timeWaitRestart)
 		return nil
 	case <-restart:
 		logs.Trace.Println(c.Hash(), "Restarting timeWaitTimer")

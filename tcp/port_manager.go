@@ -8,8 +8,9 @@ import (
 
 	"sync"
 
-	"github.com/hsheth2/logs"
 	"fmt"
+
+	"github.com/hsheth2/logs"
 )
 
 // Global src, dst port and ip registry for TCP binding

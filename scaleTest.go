@@ -11,13 +11,15 @@ import (
 	"strconv"
 	//"time"
 
-	"github.com/hsheth2/logs"
 	"network/ipv4/ipv4src"
+	"time"
+
+	"github.com/hsheth2/logs"
 )
 
 const throughput_port = 49230
 const client_port_base = 50000
-const bytes = 1048576 // 1 MB
+const bytes = 20480 // 20 kB
 
 func main() {
 	numc, _ := strconv.Atoi(os.Args[1])
@@ -43,43 +45,48 @@ func main() {
 	count := make(chan bool, numConn+5)
 	done := make(chan bool, 2)
 
-	for i := uint16(1); i <= numConn; i++ {
-		logs.Trace.Println("Connection attempter number", i)
-		go func(i uint16){
-			logs.Info.Println("i",i)
-			c, err := tcp.New_TCB_From_Client(client_port_base + i, throughput_port, ipv4src.Loopback_ip_address)
+	for j := uint16(1); j <= numConn; j++ {
+		logs.Info.Println("Connection attempter number", j)
+		go func(i uint16) {
+			logs.Info.Println("i:", i)
+			c, err := tcp.New_TCB_From_Client(client_port_base+i, throughput_port, ipv4src.Loopback_ip_address)
 			if err != nil {
 				logs.Error.Println(err)
+				return
 			}
 
 			logs.Info.Println("Client", i, "connecting")
 			err = c.Connect()
 			if err != nil {
 				logs.Error.Println(err)
+				return
 			}
 			logs.Info.Println("Client", i, "connected; proceeding to send data")
 
 			err = c.Send(data)
 			if err != nil {
 				logs.Error.Println(err)
+				return
 			}
 
-			logs.Trace.Println("Client starting close")
+			time.Sleep(25 * time.Millisecond)
+			logs.Info.Println("Client", i, "starting close")
 			err = c.Close()
 			if err != nil {
 				logs.Error.Println(err)
+				return
 			}
-		}(i)
 			logs.Info.Println("Client", i, "finished close")
+		}(j)
 	}
 
-//	logs.Trace.Println("Signaling done")
-//	done<-true
-	logs.Trace.Println("About to hit loop")
+	//	logs.Info.Println("Signaling done")
+	//	done<-true
+	logs.Info.Println("About to hit loop")
 	for i := uint16(1); i <= numConn; i++ {
-		logs.Trace.Println("Entering loop")
+		logs.Info.Println("Entering loop")
 
-		logs.Trace.Println("Waiting to accept connection")
+		logs.Info.Println("Waiting to accept connection")
 		conn, ip, port, err := s.Accept()
 		if err != nil {
 			logs.Error.Println(err)
@@ -87,28 +94,29 @@ func main() {
 		}
 		logs.Info.Println("Connection:", ip, port)
 
-		go func(conn *tcp.TCB, count chan bool) {
+		go func(conn *tcp.TCB, count chan bool, num uint16) {
 			data, err := conn.Recv(bytes)
 			if err != nil {
 				logs.Error.Println(err)
-				return
 			}
 
-			logs.Info.Println("first 50 bytes of received data:", data[:50])
+			logs.Info.Println("connection #", num, ": first 30 bytes of received data:", data[:30])
 
-			//time.Sleep(500 * time.Millisecond)
-			conn.Close()
-			logs.Trace.Println("connection finished")
+			err = conn.Close()
+			if err != nil {
+				logs.Error.Println(err)
+			}
+			logs.Info.Println("connection", num, "finished")
 
 			count <- true
 			if len(count) >= int(numConn) {
 				done <- true
 			}
 			logs.Info.Println("Chan len", len(count))
-		}(conn, count)
+		}(conn, count, i)
 		logs.Info.Println("Loop num", i)
 	}
 	logs.Info.Println("Exited loop")
 	<-done
-	logs.Trace.Println("Terminating")
+	logs.Info.Println("Terminating")
 }
