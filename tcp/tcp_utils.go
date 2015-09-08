@@ -32,10 +32,10 @@ func (c *TCB) updateStateReal(newState uint) {
 		select {
 		case c.timeWaitRestart <- true:
 		default:
-			logs.Warn.Println("timeWaitRestart request already in progress; ignoring this request")
+			logs.Warn.Println(c.Hash(), "timeWaitRestart request already in progress; ignoring this request")
 		}
 		return
-	} else if newState == TIME_WAIT {
+	} else if newState == TIME_WAIT && c.state != CLOSED {
 		// start timer
 		go c.timeWaitTimer(c.timeWaitRestart)
 	}
