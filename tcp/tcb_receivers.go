@@ -9,7 +9,11 @@ func (c *TCB) packetDealer() {
 	logs.Trace.Println(c.Hash(), "Packet Dealer starting")
 	for {
 		//logs.Trace.Println(c.Hash(), "Waiting for packets")
-		segment := <-c.read
+		segment, open := <-c.read
+		if !open {
+			logs.Trace.Println(c.Hash(), "Terminating packetdealer")
+			return
+		}
 		logs.Trace.Println(c.Hash(), "packetDealer received a packet:", segment.header, " in state:", c.getState())
 		c.packetDeal(segment)
 	}

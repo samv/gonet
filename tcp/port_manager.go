@@ -51,6 +51,8 @@ func (m *TCP_Port_Manager_Type) unbind(rport, lport uint16, ip *ipv4tps.IPaddres
 	defer m.lock.Unlock()
 
 	// TODO verify that it actually won't crash
+	close(m.incoming[lport][rport][ip.Hash()])
+	logs.Trace.Println("Closing the packetdealer channel")
 	delete(m.incoming[lport][rport], ip.Hash())
 	return nil
 }
