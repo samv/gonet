@@ -45,7 +45,8 @@ func main() {
 
 	for i := uint16(1); i <= numConn; i++ {
 		logs.Trace.Println("Connection attempter number", i)
-		go func(){
+		go func(i uint16){
+			logs.Info.Println("i",i)
 			c, err := tcp.New_TCB_From_Client(throughput_port, client_port_base + i, ipv4src.Loopback_ip_address)
 			if err != nil {
 				logs.Error.Println(err)
@@ -59,7 +60,7 @@ func main() {
 			if err != nil {
 				logs.Error.Println(err)
 			}
-		}()
+		}(i)
 	}
 
 //	logs.Trace.Println("Signaling done")
