@@ -27,7 +27,7 @@ const (
 
 const (
 	FRAGMENT_TIMEOUT               = time.Second * 5
-	FRAGMENT_ASSEMBLER_BUFFER_SIZE = 10
+	FRAGMENT_ASSEMBLER_BUFFER_SIZE = 35
 )
 
 func Checksum(data []byte) uint16 {

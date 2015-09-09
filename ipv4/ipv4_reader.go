@@ -123,7 +123,7 @@ func (ipr *IP_Reader) killFragmentAssembler(quit chan<- bool, didQuit <-chan boo
 		quit <- true
 		<-didQuit // will block until it has been received
 	case <-done:
-		//Trace.Println("Recieved done msg.")
+		//Trace.Println("Received done msg.")
 	}
 
 	//Trace.Println("Frag Assemble Ended, finished")
