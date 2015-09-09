@@ -185,7 +185,11 @@ func (ipr *IP_Reader) ReadFrom() (rip, lip *ipv4tps.IPaddress, b, payload []byte
 		}
 
 		// send the packet to the assembler
-		go func() { ipr.fragBuf[bufID] <- b }()
+		select {
+		case ipr.fragBuf[bufID] <- b:
+		default:
+			logs.Warn.Println("Dropping fragmented packet, no space in fragment buffer")
+		}
 
 		// after dealing with the fragment, try reading again
 		return ipr.ReadFrom()
