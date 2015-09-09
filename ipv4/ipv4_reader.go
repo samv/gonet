@@ -14,7 +14,7 @@ type IP_Reader struct {
 	protocol        uint8
 	ip              *ipv4tps.IPaddress
 	fragBuf         map[string](chan []byte)
-	fragBufMutex    *sync.RWMutex
+	fragBufMutex    *sync.Mutex
 }
 
 func NewIP_Reader(irm *IP_Read_Manager, ip *ipv4tps.IPaddress, protocol uint8) (*IP_Reader, error) {
@@ -28,7 +28,7 @@ func NewIP_Reader(irm *IP_Read_Manager, ip *ipv4tps.IPaddress, protocol uint8) (
 		protocol:        protocol,
 		ip:              ip,
 		fragBuf:         make(map[string](chan []byte)),
-		fragBufMutex:    &sync.RWMutex{},
+		fragBufMutex:    &sync.Mutex{},
 	}, nil
 }
 
@@ -176,14 +176,11 @@ func (ipr *IP_Reader) ReadFrom() (rip, lip *ipv4tps.IPaddress, b, payload []byte
 		})
 		//Trace.Printf("rcvd a fragment-bufId: %x, len: %d\n", bufID, len(b))
 
-		ipr.fragBufMutex.RLock()
+		ipr.fragBufMutex.Lock()
 		if _, ok := ipr.fragBuf[bufID]; !ok {
-			ipr.fragBufMutex.RUnlock()
-			ipr.fragBufMutex.Lock()
 			// create the fragment buffer and quit
 			//Trace.Printf("creating a new buffer for %x\n", bufID)
 			ipr.fragBuf[bufID] = make(chan []byte, FRAGMENT_ASSEMBLER_BUFFER_SIZE)
-			ipr.fragBufMutex.Unlock()
 
 			quit := make(chan bool, 1)
 			done := make(chan bool, 1)
@@ -192,18 +189,15 @@ func (ipr *IP_Reader) ReadFrom() (rip, lip *ipv4tps.IPaddress, b, payload []byte
 			// create the packet assembler in a goroutine to allow the program to continue
 			go ipr.fragmentAssembler(ipr.fragBuf[bufID], quit, didQuit, done)
 			go ipr.killFragmentAssembler(quit, didQuit, done, bufID)
-		} else {
-			ipr.fragBufMutex.RUnlock()
 		}
 
 		// send the packet to the assembler
-		ipr.fragBufMutex.RLock()
 		select {
 		case ipr.fragBuf[bufID] <- b:
 		default:
 			logs.Warn.Println("Dropping fragmented packet, no space in fragment buffer")
 		}
-		ipr.fragBufMutex.RUnlock()
+		ipr.fragBufMutex.Unlock()
 
 		// after dealing with the fragment, try reading again
 		return ipr.ReadFrom()
