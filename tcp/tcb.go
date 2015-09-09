@@ -119,7 +119,7 @@ func (c *TCB) Recv(num uint64) ([]byte, error) { // blocking recv call
 	return nil, errors.New("Read failed")
 }
 
-const UINT32_MAX = 0xffffffff
+const UINT32_MAX = uint32(0xffffffff)
 
 func (c *TCB) Close() error {
 	logs.Trace.Println(c.Hash(), "Closing TCB with lport:", c.lport)
