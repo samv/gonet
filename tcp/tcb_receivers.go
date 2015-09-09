@@ -232,9 +232,13 @@ func (c *TCB) packetDeal(segment *TCP_Packet) {
 			}
 
 			// TODO notify user of the connection closing
+			c.seqAckMutex.Lock()
 			c.ackNum += segment.getPayloadSize()
+			c.seqAckMutex.Unlock()
 
+			c.seqAckMutex.RLock()
 			err := c.sendAck(c.seqNum, c.ackNum)
+			c.seqAckMutex.RUnlock()
 			logs.Trace.Println(c.Hash(), "Sent ACK data in response to FIN")
 			if err != nil {
 				logs.Error.Println(c.Hash(), err)
