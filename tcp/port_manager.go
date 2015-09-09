@@ -1,7 +1,6 @@
 package tcp
 
 import (
-	"errors"
 	"network/ipv4"
 
 	"network/ipv4/ipv4tps"
@@ -37,7 +36,7 @@ func (m *TCP_Port_Manager_Type) bind(rport, lport uint16, ip *ipv4tps.IPaddress)
 	}
 
 	if _, ok := m.incoming[lport][rport][ip.Hash()]; ok {
-		return nil, errors.New("Ports and IP already binded to")
+		return nil, fmt.Errorf("Ports (lport: %d, rport %d) and IP (%v) already binded to", lport, rport, ip)
 	}
 
 	ans := make(chan *TCP_Packet, TCP_INCOMING_BUFF_SZ)

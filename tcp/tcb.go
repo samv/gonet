@@ -119,6 +119,8 @@ func (c *TCB) Recv(num uint64) ([]byte, error) { // blocking recv call
 	return nil, errors.New("Read failed")
 }
 
+const UINT32_MAX = 0xffffffff
+
 func (c *TCB) Close() error {
 	logs.Trace.Println(c.Hash(), "Closing TCB with lport:", c.lport)
 
@@ -129,7 +131,7 @@ func (c *TCB) Close() error {
 
 	if len(c.sendBuffer) != 0 {
 		logs.Trace.Println(c.Hash(), "Blocking until all pending writes complete")
-		<-c.sendFinished.Register(1) // wait for send to finish TODO unregister
+		c.sendFinished.Wait() // wait for send to finish
 	}
 
 	// update state for sending FIN packet
@@ -142,6 +144,9 @@ func (c *TCB) Close() error {
 		c.updateStateReal(LAST_ACK)
 	}
 	c.stateUpdate.L.Unlock()
+
+	// kill all retransmitter
+	c.recentAckUpdate.Broadcast(UINT32_MAX)
 
 	// send FIN
 	logs.Trace.Println(c.Hash(), "Sending FIN within close")

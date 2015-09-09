@@ -98,7 +98,7 @@ func (c *TCB) listenForAck(successOut chan<- bool, end <-chan bool, targetAck ui
 			select {
 			case v := <-in:
 				logs.Trace.Println(c.Hash(), "Ack listener got ack: ", v.(uint32))
-				if v.(uint32) == targetAck {
+				if v.(uint32) >= targetAck {
 					logs.Trace.Println(c.Hash(), "Killing the resender for ack:", v.(uint32))
 					successOut <- true
 					return
