@@ -190,7 +190,9 @@ func (c *TCB) packetDeal(segment *TCP_Packet) {
 			c.recvBuffer = append(c.recvBuffer, segment.payload...)
 			// TODO adjust rcv.wnd, for now just multiplying by 2
 			if uint32(c.curWindow)*2 >= uint32(1)<<16 {
+				c.windowMutex.Lock()
 				c.curWindow *= 2
+				c.windowMutex.Unlock()
 			}
 			pay_size := segment.getPayloadSize()
 			logs.Trace.Println(c.Hash(), "Payload Size is ", pay_size)

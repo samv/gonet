@@ -133,7 +133,9 @@ func (c *TCB) sendPacket(d *TCP_Packet) error {
 
 	d.header.srcport = c.lport
 	d.header.dstport = c.rport
+	c.windowMutex.RLock()
 	d.header.window = c.curWindow // TODO improve the window field calculation
+	c.windowMutex.RUnlock()
 	d.rip = c.ipAddress
 	d.lip = c.srcIP
 

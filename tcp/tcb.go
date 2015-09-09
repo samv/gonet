@@ -15,20 +15,21 @@ import (
 )
 
 type TCB struct {
-	read             chan *TCP_Packet    // input
-	writer           *ipv4.IP_Writer     // output
-	ipAddress        *ipv4tps.IPaddress  // destination ip address
-	srcIP            *ipv4tps.IPaddress  // src ip address
-	lport, rport     uint16              // ports
-	seqNum           uint32              // seq number (SND.NXT)
-	ackNum           uint32              // ack number (RCV.NXT)
-	seqAckMutex      *sync.RWMutex       // protects the seqNum and ackNum
-	state            uint                // from the FSM
-	timeWaitRestart  chan bool           // signals when the time_wait timer should restart
-	stateUpdate      *sync.Cond          // signals when the state is changed
-	kind             uint                // type (server or client)
-	serverParent     *Server_TCB         // the parent server
-	curWindow        uint16              // the current window size
+	read             chan *TCP_Packet   // input
+	writer           *ipv4.IP_Writer    // output
+	ipAddress        *ipv4tps.IPaddress // destination ip address
+	srcIP            *ipv4tps.IPaddress // src ip address
+	lport, rport     uint16             // ports
+	seqNum           uint32             // seq number (SND.NXT)
+	ackNum           uint32             // ack number (RCV.NXT)
+	seqAckMutex      *sync.RWMutex      // protects the seqNum and ackNum
+	state            uint               // from the FSM
+	timeWaitRestart  chan bool          // signals when the time_wait timer should restart
+	stateUpdate      *sync.Cond         // signals when the state is changed
+	kind             uint               // type (server or client)
+	serverParent     *Server_TCB        // the parent server
+	curWindow        uint16             // the current window size
+	windowMutex      *sync.RWMutex
 	sendBuffer       []byte              // a buffer of bytes that need to be sent
 	urgSendBuffer    []byte              // buffer of urgent data TODO urg data later
 	sendBufferUpdate *sync.Cond          // notifies of send buffer updates
@@ -70,6 +71,7 @@ func New_TCB(local, remote uint16, dstIP *ipv4tps.IPaddress, read chan *TCP_Pack
 		kind:             kind,
 		serverParent:     nil,
 		curWindow:        43690, // TODO calc using http://ithitman.blogspot.com/2013/02/understanding-tcp-window-window-scaling.html
+		windowMutex:      &sync.RWMutex{},
 		sendBufferUpdate: sync.NewCond(&sync.Mutex{}),
 		stopSending:      false,
 		sendFinished:     notifiers.NewNotifier(),
