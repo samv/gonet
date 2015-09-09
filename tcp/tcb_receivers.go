@@ -42,7 +42,7 @@ func (c *TCB) packetDeal(segment *TCP_Packet) {
 	Assert(c.getState() != LISTEN && c.getState() != SYN_SENT, "state is listen/synsent")
 	// first check sequence number pg 69 txt
 	if len(segment.payload) == 0 {
-		if c.curWindow == 0 {
+		if c.getWindow() == 0 {
 			// TODO special allowances pg 69 rfc
 			logs.Warn.Println(c.Hash(), "Dropping unacceptable packet")
 			//	if not rst
@@ -51,7 +51,7 @@ func (c *TCB) packetDeal(segment *TCP_Packet) {
 			}
 			return
 		} else {
-			if !(c.ackNum <= segment.header.seq && segment.header.seq < c.ackNum+uint32(c.curWindow)) {
+			if !(c.ackNum <= segment.header.seq && segment.header.seq < c.ackNum+uint32(c.getWindow())) {
 				logs.Warn.Println(c.Hash(), "Dropping unacceptable packet")
 				//	if not rst
 				if segment.header.flags&TCP_RST == 0 {
@@ -60,7 +60,7 @@ func (c *TCB) packetDeal(segment *TCP_Packet) {
 				return
 			}
 		}
-	} else if c.curWindow == 0 {
+	} else if c.getWindow() == 0 {
 		logs.Warn.Println(c.Hash(), "Dropping unacceptable packet")
 		//	if not rst
 		if segment.header.flags&TCP_RST == 0 {
@@ -68,7 +68,7 @@ func (c *TCB) packetDeal(segment *TCP_Packet) {
 		}
 		return
 	} else {
-		if !((c.ackNum <= segment.header.seq && segment.header.seq < c.ackNum+uint32(c.curWindow)) || (c.ackNum <= segment.header.seq+uint32(len(segment.payload))-1) && segment.header.seq+uint32(len(segment.payload))-1 < c.ackNum+uint32(c.curWindow)) {
+		if !((c.ackNum <= segment.header.seq && segment.header.seq < c.ackNum+uint32(c.getWindow())) || (c.ackNum <= segment.header.seq+uint32(len(segment.payload))-1) && segment.header.seq+uint32(len(segment.payload))-1 < c.ackNum+uint32(c.getWindow())) {
 			logs.Warn.Println(c.Hash(), "Dropping unacceptable packet")
 			//	if not rst
 			if segment.header.flags&TCP_RST == 0 {
@@ -189,7 +189,7 @@ func (c *TCB) packetDeal(segment *TCP_Packet) {
 			logs.Trace.Println(c.Hash(), "Received data of len:", len(segment.payload))
 			c.recvBuffer = append(c.recvBuffer, segment.payload...)
 			// TODO adjust rcv.wnd, for now just multiplying by 2
-			if uint32(c.curWindow)*2 >= uint32(1)<<16 {
+			if uint32(c.getWindow())*2 >= uint32(1)<<16 {
 				c.windowMutex.Lock()
 				c.curWindow *= 2
 				c.windowMutex.Unlock()

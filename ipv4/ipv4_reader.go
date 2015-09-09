@@ -131,8 +131,8 @@ func (ipr *IP_Reader) killFragmentAssembler(quit chan<- bool, didQuit <-chan boo
 
 	//Trace.Println("Frag Assemble Ended, finished")
 	ipr.fragBufMutex.Lock()
+	defer ipr.fragBufMutex.Unlock()
 	delete(ipr.fragBuf, bufID)
-	ipr.fragBufMutex.Unlock()
 }
 
 func (ipr *IP_Reader) ReadFrom() (rip, lip *ipv4tps.IPaddress, b, payload []byte, e error) {

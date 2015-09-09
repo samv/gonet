@@ -52,6 +52,12 @@ func (c *TCB) getState() uint {
 	return c.state
 }
 
+func (c *TCB) getWindow() uint16 {
+	c.windowMutex.RLock()
+	defer c.windowMutex.RUnlock()
+	return c.curWindow
+}
+
 func (c *TCB) UpdateLastAck(newAck uint32) error {
 	logs.Trace.Println(c.Hash(), "New ack number:", newAck)
 	c.recentAckNum = newAck
