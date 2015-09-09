@@ -192,6 +192,8 @@ func (ipr *IP_Reader) ReadFrom() (rip, lip *ipv4tps.IPaddress, b, payload []byte
 			// create the packet assembler in a goroutine to allow the program to continue
 			go ipr.fragmentAssembler(ipr.fragBuf[bufID], quit, didQuit, done)
 			go ipr.killFragmentAssembler(quit, didQuit, done, bufID)
+		} else {
+			ipr.fragBufMutex.RUnlock()
 		}
 
 		// send the packet to the assembler
