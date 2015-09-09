@@ -46,7 +46,9 @@ func (c *TCB) sendData(data []byte, push bool) (err error) {
 		},
 		payload: data,
 	}
+	c.seqAckMutex.Lock()
 	c.seqNum += uint32(len(data))
+	c.seqAckMutex.Unlock()
 	err = c.sendWithRetransmit(psh_packet)
 	if err != nil {
 		logs.Error.Println(c.Hash(), err)

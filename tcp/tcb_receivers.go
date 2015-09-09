@@ -406,7 +406,9 @@ func (c *TCB) dealSynSent(d *TCP_Packet) {
 			// the syn has been ACKed
 			// reply with an ACK
 			c.UpdateState(ESTABLISHED)
+			c.seqAckMutex.RLock()
 			err := c.sendAck(c.seqNum, c.ackNum)
+			c.seqAckMutex.RUnlock()
 			if err != nil {
 				logs.Error.Println(c.Hash(), err)
 			}
