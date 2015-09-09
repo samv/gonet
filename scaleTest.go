@@ -95,18 +95,20 @@ func main() {
 		logs.Info.Println("Connection:", ip, port)
 
 		go func(conn *tcp.TCB, count chan bool, num uint16) {
+			logs.Info.Println("connection #", num, "attempting to recv")
 			data, err := conn.Recv(bytes)
 			if err != nil {
 				logs.Error.Println(err)
 			}
 
 			logs.Info.Println("connection #", num, ": first 30 bytes of received data:", data[:30])
+			logs.Info.Println("connection #", num, ": total data len =", len(data))
 
 			err = conn.Close()
 			if err != nil {
 				logs.Error.Println(err)
 			}
-			logs.Info.Println("connection", num, "finished")
+			logs.Info.Println("connection #", num, "finished")
 
 			count <- true
 			if len(count) >= int(numConn) {

@@ -18,7 +18,7 @@ func (c *TCB) packetSender() {
 			sz := uint16(min(uint64(len(c.sendBuffer)), uint64(c.maxSegSize)))
 			data := c.sendBuffer[:sz]
 			c.sendBuffer = c.sendBuffer[sz:]
-			c.sendData(data)
+			c.sendData(data, len(c.sendBuffer) == 0)
 			continue
 		}
 		c.sendFinished.Broadcast(true)
@@ -30,13 +30,17 @@ func (c *TCB) packetSender() {
 	}
 }
 
-func (c *TCB) sendData(data []byte) (err error) {
+func (c *TCB) sendData(data []byte, push bool) (err error) {
 	logs.Trace.Println(c.Hash(), "Sending Data:", data)
+	var flags uint8 = TCP_ACK
+	if push {
+		flags |= TCP_PSH
+	}
 	psh_packet := &TCP_Packet{
 		header: &TCP_Header{
 			seq:     c.seqNum,
 			ack:     c.ackNum,
-			flags:   TCP_PSH | TCP_ACK, // TODO: fix the flags
+			flags:   flags,
 			urg:     0,
 			options: []byte{},
 		},
