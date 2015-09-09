@@ -5,6 +5,7 @@ import (
 	"time"
 
 	"github.com/hsheth2/logs"
+	"sync"
 )
 
 type IP_Reader struct {
@@ -13,6 +14,7 @@ type IP_Reader struct {
 	protocol        uint8
 	ip              *ipv4tps.IPaddress
 	fragBuf         map[string](chan []byte)
+	fragBufMutex *sync.RWMutex
 }
 
 func NewIP_Reader(irm *IP_Read_Manager, ip *ipv4tps.IPaddress, protocol uint8) (*IP_Reader, error) {
@@ -26,6 +28,7 @@ func NewIP_Reader(irm *IP_Read_Manager, ip *ipv4tps.IPaddress, protocol uint8) (
 		protocol:        protocol,
 		ip:              ip,
 		fragBuf:         make(map[string](chan []byte)),
+		fragBufMutex: &sync.RWMutex{},
 	}, nil
 }
 
@@ -127,7 +130,9 @@ func (ipr *IP_Reader) killFragmentAssembler(quit chan<- bool, didQuit <-chan boo
 	}
 
 	//Trace.Println("Frag Assemble Ended, finished")
+	ipr.fragBufMutex.Lock()
 	delete(ipr.fragBuf, bufID)
+	ipr.fragBufMutex.Unlock()
 }
 
 func (ipr *IP_Reader) ReadFrom() (rip, lip *ipv4tps.IPaddress, b, payload []byte, e error) {
@@ -171,10 +176,15 @@ func (ipr *IP_Reader) ReadFrom() (rip, lip *ipv4tps.IPaddress, b, payload []byte
 		})
 		//Trace.Printf("rcvd a fragment-bufId: %x, len: %d\n", bufID, len(b))
 
+		ipr.fragBufMutex.RLock()
 		if _, ok := ipr.fragBuf[bufID]; !ok {
+			ipr.fragBufMutex.RUnlock()
+			ipr.fragBufMutex.Lock()
 			// create the fragment buffer and quit
 			//Trace.Printf("creating a new buffer for %x\n", bufID)
 			ipr.fragBuf[bufID] = make(chan []byte, FRAGMENT_ASSEMBLER_BUFFER_SIZE)
+			ipr.fragBufMutex.Unlock()
+			
 			quit := make(chan bool, 1)
 			done := make(chan bool, 1)
 			didQuit := make(chan bool, 1)
