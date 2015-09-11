@@ -41,19 +41,15 @@ test_others:
 	./run_test.sh github.com/hsheth2/logs
 	./run_test.sh github.com/hsheth2/notifiers
 test_network: test_udp test_tcp test_ping
-test_udp: iptables
+test_udp:
 	./run_test.sh network/udp
-test_tcp: iptables
+test_tcp:
 	./run_test.sh network/tcp
 test_ping:
 	./run_test.sh network/ping
 test_ethernet:
 	# for testing water
 	./run_test.sh network/ethernet
-iptables:
-	sudo iptables -I INPUT -p tcp --sport 20102 -j DROP
-	sudo iptables -I INPUT -p tcp --dport 20102 -j DROP
-	sudo iptables -I INPUT -p tcp --dport 20101 -j DROP
 
 # Performance
 #latency:
