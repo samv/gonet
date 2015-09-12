@@ -32,7 +32,7 @@ func read_write_test(t *testing.T, ip *ipv4tps.IPaddress, exp int) {
 	defer r.Close()
 
 	data := []byte{'h', 'e', 'l', 'l', 'o'}
-	for i := 0; i  < exp; i++ {
+	for i := 0; i < exp; i++ {
 		data = append(data, data...)
 	}
 

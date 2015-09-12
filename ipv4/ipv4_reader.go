@@ -4,8 +4,9 @@ import (
 	"network/ipv4/ipv4tps"
 	"time"
 
-	"github.com/hsheth2/logs"
 	"sync"
+
+	"github.com/hsheth2/logs"
 )
 
 type IP_Reader struct {
