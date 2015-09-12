@@ -8,11 +8,18 @@ import time
 
 cmd = "./latency_test_stack_init.sh"
 ip = "10.0.0.3"
+nostack = False
 if 'tapip' in sys.argv:
 	cmd = './latency_tapip_stack_init.sh'
 	ip = "10.0.0.1"
-stack = subprocess.Popen(cmd)
-time.sleep(1)
+elif 'nostack' in sys.argv:
+	cmd = ':'
+	ip = '10.0.0.1'
+	nostack = True
+
+if not nostack:
+	stack = subprocess.Popen(cmd)
+	time.sleep(1)
 
 count = int(sys.argv[1])
 concurrent = int(sys.argv[2])
@@ -41,8 +48,9 @@ new = new[:-1] # remove mdev
 
 print '\t'.join(str(w) for w in new)
 
-try:
-	stack.kill()
-	stack.terminate()
-except:
-	pass
+if not nostack:
+	try:
+		stack.kill()
+		stack.terminate()
+	except:
+		pass

@@ -1,5 +1,6 @@
 #!/usr/bin/env bash
 
+ip link delete tap0
 pkill runStack
 pkill tapip
 ../../../tapip/tapip > /dev/null 2>&1 &

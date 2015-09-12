@@ -7,6 +7,8 @@ import sys
 
 if 'tapip' in sys.argv:
 	place = 'tapip'
+elif 'nostack' in sys.argv:
+	place = 'nostack'
 else:
 	place = 'golang'
 
