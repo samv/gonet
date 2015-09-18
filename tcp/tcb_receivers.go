@@ -10,7 +10,7 @@ func (c *TCB) packetDealer() {
 	for {
 		//logs.Trace.Println(c.Hash(), "Waiting for packets")
 		segment, open := <-c.read
-		if !open {
+		if !open || c.getState() == CLOSED {
 			logs.Trace.Println(c.Hash(), "Terminating packetdealer")
 			return
 		}
