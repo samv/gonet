@@ -22,7 +22,8 @@ const (
 )
 
 const (
-	MTU = 1500
+	//MTU = 1500
+	MTU = 65535 // TODO change back MTU for non-localhost stuff
 )
 
 const (

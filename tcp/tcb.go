@@ -121,6 +121,7 @@ func (c *TCB) Recv(num uint64) ([]byte, error) { // blocking recv call
 	return nil, errors.New("Read failed")
 }
 
+const UINT32_MIN = uint32(0x00000000)
 const UINT32_MAX = uint32(0xffffffff)
 
 func (c *TCB) Close() error {
@@ -148,6 +149,8 @@ func (c *TCB) Close() error {
 	c.stateUpdate.L.Unlock()
 
 	// kill all retransmitter
+	c.recentAckUpdate.Broadcast(UINT32_MIN)
+	c.recentAckUpdate.Broadcast(c.ackNum)
 	c.recentAckUpdate.Broadcast(UINT32_MAX)
 
 	// send FIN

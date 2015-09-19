@@ -12,14 +12,18 @@ import (
 	//"time"
 
 	"network/ipv4/ipv4src"
-	"time"
+	//	"time"
 
 	"github.com/hsheth2/logs"
 )
 
 const throughput_port = 49230
 const client_port_base = 50000
-const bytes = 20480 // 20 kB
+//const bytes = 1024 // 1 kB
+const bytes = 4096 // 4 kB
+//const bytes = 20480 // 20 kB
+//const bytes = 51200 // 50 kB
+//const bytes = 131072 // 128 kB
 
 func main() {
 	numc, _ := strconv.Atoi(os.Args[1])
@@ -36,7 +40,7 @@ func main() {
 		return
 	}
 
-	err = s.BindListenWithQueueSize(throughput_port, ipv4tps.IP_ALL, 10+int(numConn))
+	err = s.BindListenWithQueueSize(throughput_port, ipv4tps.IP_ALL, 10+3*int(numConn))
 	if err != nil {
 		logs.Error.Println(err)
 		return
@@ -69,14 +73,14 @@ func main() {
 				return
 			}
 
-			time.Sleep(25 * time.Millisecond)
-			logs.Info.Println("Client", i, "starting close")
-			err = c.Close()
-			if err != nil {
-				logs.Error.Println(err)
-				return
-			}
-			logs.Info.Println("Client", i, "finished close")
+			//			time.Sleep(50 * time.Millisecond)
+			//			logs.Info.Println("Client", i, "starting close")
+			//			err = c.Close()
+			//			if err != nil {
+			//				logs.Error.Println(err)
+			//				return
+			//			}
+			//			logs.Info.Println("Client", i, "finished close")
 		}(j)
 	}
 
@@ -96,19 +100,28 @@ func main() {
 
 		go func(conn *tcp.TCB, count chan bool, num uint16) {
 			logs.Info.Println("connection #", num, "attempting to recv")
-			data, err := conn.Recv(bytes)
-			if err != nil {
-				logs.Error.Println(err)
+
+			revcd := 0
+			for {
+				data, err := conn.Recv(bytes)
+				if err != nil {
+					logs.Error.Println(err)
+				}
+
+				logs.Info.Println("connection #", num, ": first 30 bytes of received data:", data[:30])
+				logs.Info.Println("connection #", num, ": data len =", len(data), "total data len (before this one) = ", revcd)
+
+				revcd += len(data)
+				if revcd+2 >= bytes {
+					break
+				}
 			}
 
-			logs.Info.Println("connection #", num, ": first 30 bytes of received data:", data[:30])
-			logs.Info.Println("connection #", num, ": total data len =", len(data))
-
-			err = conn.Close()
-			if err != nil {
-				logs.Error.Println(err)
-			}
-			logs.Info.Println("connection #", num, "finished")
+			//			err = conn.Close()
+			//			if err != nil {
+			//				logs.Error.Println(err)
+			//			}
+			//			logs.Info.Println("connection #", num, "finished")
 
 			count <- true
 			if len(count) >= int(numConn) {

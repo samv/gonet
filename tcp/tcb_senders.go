@@ -31,9 +31,10 @@ func (c *TCB) packetSender() {
 }
 
 func (c *TCB) sendData(data []byte, push bool) (err error) {
-	logs.Trace.Println(c.Hash(), "Sending Data:", data)
+	logs.Trace.Println(c.Hash(), "Sending Data with len:", len(data))
 	var flags uint8 = TCP_ACK
 	if push {
+		logs.Trace.Println(c.Hash(), "Data send with PSH flag")
 		flags |= TCP_PSH
 	}
 	psh_packet := &TCP_Packet{
@@ -105,7 +106,7 @@ func (c *TCB) listenForAck(successOut chan<- bool, end <-chan bool, targetAck ui
 			case v := <-in:
 				logs.Trace.Println(c.Hash(), "Ack listener got ack: ", v.(uint32))
 				if v.(uint32) >= targetAck {
-					logs.Trace.Println(c.Hash(), "Killing the resender for ack:", v.(uint32))
+					logs.Trace.Println(c.Hash(), "Killing the resender for ack:", targetAck)
 					successOut <- true
 					return
 				}
