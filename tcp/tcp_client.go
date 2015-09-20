@@ -4,9 +4,9 @@ import (
 	"errors"
 	"network/ipv4"
 
-	"network/ipv4/ipv4tps"
-
 	"github.com/hsheth2/logs"
+
+	"network/ipv4/ipv4tps"
 )
 
 func New_TCB_From_Client(local, remote uint16, dstIP *ipv4tps.IPaddress) (*TCB, error) {
@@ -27,7 +27,7 @@ func New_TCB_From_Client(local, remote uint16, dstIP *ipv4tps.IPaddress) (*TCB, 
 		return nil, err
 	}
 
-	logs.Trace.Println("Finished New TCB from Client")
+	//ch logs.Trace.Println("Finished New TCB from Client")
 	return New_TCB(local, remote, dstIP, read, r, TCP_CLIENT)
 }
 
@@ -55,10 +55,10 @@ func (c *TCB) Connect() error {
 	c.seqNum += 1
 
 	// Send the SYN packet
-	logs.Trace.Println(c.Hash(), "About to send syn")
+	//ch logs.Trace.Println(c.Hash(), "About to send syn")
 	c.UpdateState(SYN_SENT)
 	go c.sendWithRetransmit(SYN)
-	logs.Trace.Println(c.Hash(), "Sent SYN")
+	//ch logs.Trace.Println(c.Hash(), "Sent SYN")
 
 	// wait for the connection to be established
 	c.stateUpdate.L.Lock()

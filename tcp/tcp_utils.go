@@ -27,12 +27,12 @@ func (c *TCB) UpdateState(newState uint) {
 }
 
 func (c *TCB) updateStateReal(newState uint) {
-	logs.Trace.Println(c.Hash(), "The New State is", newState)
+	//ch logs.Trace.Println(c.Hash(), "The New State is", newState)
 	if c.state == TIME_WAIT && newState == TIME_WAIT {
 		//		select {
 		//		case c.timeWaitRestart <- true:
 		//		default:
-		//			logs.Trace.Println(c.Hash(), "timeWaitRestart request already in progress; ignoring this request")
+		//			//ch logs.Trace.Println(c.Hash(), "timeWaitRestart request already in progress; ignoring this request")
 		//		}
 		return
 	} else if newState == TIME_WAIT && c.state != CLOSED {
@@ -59,7 +59,7 @@ func (c *TCB) getWindow() uint16 {
 }
 
 func (c *TCB) UpdateLastAck(newAck uint32) error {
-	logs.Trace.Println(c.Hash(), "New ack number:", newAck)
+	//ch logs.Trace.Println(c.Hash(), "New ack number:", newAck)
 	c.recentAckNum = newAck
 	go notifiers.SendNotifierBroadcast(c.recentAckUpdate, c.recentAckNum)
 	return nil
@@ -78,7 +78,7 @@ func (c *TCB) timeWaitTimer(restart chan bool) error {
 		c.UpdateState(CLOSED)
 		return nil
 	case <-restart:
-		logs.Trace.Println(c.Hash(), "Restarting timeWaitTimer")
+		//ch logs.Trace.Println(c.Hash(), "Restarting timeWaitTimer")
 		return c.timeWaitTimer(restart)
 	}
 }

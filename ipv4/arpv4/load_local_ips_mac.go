@@ -4,6 +4,8 @@ import (
 	"network/arp"
 	"network/ethernet"
 
+	"github.com/hsheth2/logs"
+
 	//	"bufio"
 	//	"net"
 	//	"network/ipv4/ipv4tps"
@@ -13,8 +15,6 @@ import (
 	//	"strings"
 
 	"network/ipv4/ipv4src"
-
-	"github.com/hsheth2/logs"
 )
 
 var GlobalARPv4_Table = func() *ARPv4_Table {

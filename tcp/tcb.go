@@ -47,7 +47,7 @@ type TCB struct {
 }
 
 func New_TCB(local, remote uint16, dstIP *ipv4tps.IPaddress, read chan *TCP_Packet, write *ipv4.IP_Writer, kind uint) (*TCB, error) {
-	logs.Trace.Println("New_TCB")
+	//ch logs.Trace.Println("New_TCB")
 
 	seq, err := genRandSeqNum()
 	if err != nil {
@@ -83,7 +83,7 @@ func New_TCB(local, remote uint16, dstIP *ipv4tps.IPaddress, read chan *TCP_Pack
 		recentAckUpdate:  notifiers.NewNotifier(),
 		maxSegSize:       ipv4.MTU - TCP_BASIC_HEADER_SZ,
 	}
-	//logs.Trace.Println("Starting the packet dealer")
+	////ch logs.Trace.Println("Starting the packet dealer")
 
 	go c.packetSender()
 	go c.packetDealer()
@@ -107,15 +107,15 @@ func (c *TCB) Recv(num uint64) ([]byte, error) { // blocking recv call
 	c.pushSignal.L.Lock()
 	defer c.pushSignal.L.Unlock()
 	for {
-		logs.Trace.Println(c.Hash(), "Attempting to read off of pushBuffer")
-		logs.Trace.Println(c.Hash(), "Amt of data on pushBuffer:", len(c.pushBuffer))
+		//ch logs.Trace.Println(c.Hash(), "Attempting to read off of pushBuffer")
+		//ch logs.Trace.Println(c.Hash(), "Amt of data on pushBuffer:", len(c.pushBuffer))
 		amt := min(num, uint64(len(c.pushBuffer)))
 		if amt != 0 {
 			data := c.pushBuffer[:amt]
 			c.pushBuffer = c.pushBuffer[amt:]
 			return data, nil
 		}
-		logs.Trace.Println(c.Hash(), "Waiting for push signal")
+		//ch logs.Trace.Println(c.Hash(), "Waiting for push signal")
 		c.pushSignal.Wait() // wait for a push
 	}
 	return nil, errors.New("Read failed")
@@ -125,7 +125,7 @@ const UINT32_MIN = uint32(0x00000000)
 const UINT32_MAX = uint32(0xffffffff)
 
 func (c *TCB) Close() error {
-	logs.Trace.Println(c.Hash(), "Closing TCB with lport:", c.lport)
+	//ch logs.Trace.Println(c.Hash(), "Closing TCB with lport:", c.lport)
 
 	// block all future sends
 	c.sendBufferUpdate.L.Lock()
@@ -133,17 +133,17 @@ func (c *TCB) Close() error {
 	c.sendBufferUpdate.L.Unlock()
 
 	if len(c.sendBuffer) != 0 {
-		logs.Trace.Println(c.Hash(), "Blocking until all pending writes complete")
+		//ch logs.Trace.Println(c.Hash(), "Blocking until all pending writes complete")
 		c.sendFinished.Wait() // wait for send to finish
 	}
 
 	// update state for sending FIN packet
 	c.stateUpdate.L.Lock()
 	if c.state == ESTABLISHED {
-		logs.Trace.Println(c.Hash(), "Entering fin-wait-1")
+		//ch logs.Trace.Println(c.Hash(), "Entering fin-wait-1")
 		c.updateStateReal(FIN_WAIT_1)
 	} else if c.state == CLOSE_WAIT {
-		logs.Trace.Println(c.Hash(), "Entering last ack")
+		//ch logs.Trace.Println(c.Hash(), "Entering last ack")
 		c.updateStateReal(LAST_ACK)
 	}
 	c.stateUpdate.L.Unlock()
@@ -154,7 +154,7 @@ func (c *TCB) Close() error {
 	c.recentAckUpdate.Broadcast(UINT32_MAX)
 
 	// send FIN
-	logs.Trace.Println(c.Hash(), "Sending FIN within close")
+	//ch logs.Trace.Println(c.Hash(), "Sending FIN within close")
 	c.seqAckMutex.RLock()
 	c.sendFin(c.seqNum, c.ackNum)
 	c.seqAckMutex.RUnlock()
@@ -171,9 +171,9 @@ func (c *TCB) Close() error {
 		}
 		c.stateUpdate.Wait()
 	}
-	logs.Trace.Printf("%s Close of TCB with lport %d finished", c.Hash(), c.lport)
+	//ch logs.Trace.Printf("%s Close of TCB with lport %d finished", c.Hash(), c.lport)
 
-	logs.Trace.Println(c.Hash(), "Unbinding TCB")
+	//ch logs.Trace.Println(c.Hash(), "Unbinding TCB")
 	err := TCP_Port_Manager.unbind(c.rport, c.lport, c.ipAddress)
 	if err != nil {
 		return err

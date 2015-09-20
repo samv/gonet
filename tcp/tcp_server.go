@@ -5,9 +5,9 @@ import (
 	"network/ipv4"
 	"sync"
 
-	"network/ipv4/ipv4tps"
-
 	"github.com/hsheth2/logs"
+
+	"network/ipv4/ipv4tps"
 )
 
 type Server_TCB struct {
@@ -54,10 +54,10 @@ func (s *Server_TCB) BindListenWithQueueSize(port uint16, ip *ipv4tps.IPaddress,
 }
 
 func (s *Server_TCB) LongListener() {
-	logs.Trace.Println("Server listener routine")
+	//ch logs.Trace.Println("Server listener routine")
 	for {
 		in := <-s.listener
-		//logs.Trace.Println("Server rcvd packet:", in)
+		////ch logs.Trace.Println("Server rcvd packet:", in)
 		if in.header.flags&TCP_RST != 0 {
 			continue // parent TCB drops the RST
 		} else if in.header.flags&TCP_ACK != 0 {
@@ -66,7 +66,7 @@ func (s *Server_TCB) LongListener() {
 			// TODO send reset
 		}
 
-		//logs.Trace.Println("Packet rcvd by server has promise: responding with SYN-ACK")
+		////ch logs.Trace.Println("Packet rcvd by server has promise: responding with SYN-ACK")
 		go func(s *Server_TCB, in *TCP_Packet) {
 			lp := s.listenPort
 			rp := in.header.srcport
@@ -96,7 +96,7 @@ func (s *Server_TCB) LongListener() {
 
 			// send syn-ack
 			c.ackNum = in.header.seq + 1
-			logs.Trace.Printf("%s Server/TCB seq: %d, ack: %d, to rip: %v\n", c.Hash(), c.seqNum, c.ackNum, c.ipAddress.IP)
+			//ch logs.Trace.Printf("%s Server/TCB seq: %d, ack: %d, to rip: %v\n", c.Hash(), c.seqNum, c.ackNum, c.ipAddress.IP)
 			synack := &TCP_Packet{
 				header: &TCP_Header{
 					seq:     c.seqNum,
@@ -112,13 +112,13 @@ func (s *Server_TCB) LongListener() {
 			c.seqAckMutex.Lock()
 			c.seqNum += 1
 			c.seqAckMutex.Unlock()
-			logs.Trace.Println(c.Hash(), "Server/TCB about to respond with SYN-ACK")
+			//ch logs.Trace.Println(c.Hash(), "Server/TCB about to respond with SYN-ACK")
 			err = c.sendWithRetransmit(synack)
 			if err != nil {
 				logs.Error.Println(err)
 				return
 			}
-			logs.Trace.Println(c.Hash(), "Server/TCB responded with SYN-ACK")
+			//ch logs.Trace.Println(c.Hash(), "Server/TCB responded with SYN-ACK")
 
 			select {
 			case s.connQueue <- c:

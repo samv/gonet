@@ -61,10 +61,10 @@ func (x *ICMP_Read_Manager) readAll() {
 			logs.Error.Println(err)
 			continue
 		}
-		//logs.Info.Println("Pay", payload, "rip", rip, "lip", lip)
+		////ch logs.Info.Println("Pay", payload, "rip", rip, "lip", lip)
 
 		if len(payload) < ICMP_Header_MinSize {
-			logs.Info.Println("Dropping Small ICMP packet:", payload)
+			//ch logs.Info.Println("Dropping Small ICMP packet:", payload)
 			continue
 		}
 
@@ -72,14 +72,14 @@ func (x *ICMP_Read_Manager) readAll() {
 		// TODO verify checksum
 		data, err := ExtractICMPHeader(payload, lip, rip)
 		if err != nil {
-			logs.Info.Println(err)
+			//ch logs.Info.Println(err)
 			continue
 		}
 
 		if buf, ok := x.buff[data.Header.TypeF]; ok {
 			buf <- data
 		} else {
-			logs.Info.Println("Dropping ICMP packet:", payload)
+			//ch logs.Info.Println("Dropping ICMP packet:", payload)
 		}
 	}
 }

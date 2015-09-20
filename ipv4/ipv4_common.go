@@ -32,7 +32,7 @@ const (
 )
 
 func Checksum(data []byte) uint16 {
-	//logs.Trace.Println(data)
+	////ch logs.Trace.Println(data)
 	totalSum := uint64(0)
 	for ind, elem := range data {
 		if ind%2 == 0 {
@@ -62,16 +62,16 @@ func Checksum(data []byte) uint16 {
 func calculateIPChecksum(header []byte) uint16 {
 	header[10] = 0
 	header[11] = 0
-	//logs.Trace.Println("Compute IP Checksum")
+	////ch logs.Trace.Println("Compute IP Checksum")
 	return Checksum(header)
 }
 func verifyIPChecksum(header []byte) bool {
-	//logs.Trace.Println("Verify Checksum")
+	////ch logs.Trace.Println("Verify Checksum")
 	return Checksum(header) == 0
 }
 
 func CalcTransportChecksum(header []byte, srcIP, dstIP *ipv4tps.IPaddress, headerLen uint16, proto uint8) uint16 {
-	//logs.Trace.Println("Transport Checksum")
+	////ch logs.Trace.Println("Transport Checksum")
 	ips := append(srcIP.IP, dstIP.IP...)
 	return Checksum(append(append(ips, []byte{0, byte(proto), byte(headerLen >> 8), byte(headerLen)}...), header...))
 }

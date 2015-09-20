@@ -19,7 +19,7 @@ func (pm *Ping_Manager) ping_response_dealer() {
 		ping := <-pm.reply
 		identNum := uint16(ping.Header.Opt >> 16)
 		if _, ok := pm.identifiers[identNum]; !ok {
-			logs.Info.Println("Dropped something from response dealer, identnum=", identNum, "options=", ping.Header.Opt)
+			//ch logs.Info.Println("Dropped something from response dealer, identnum=", identNum, "options=", ping.Header.Opt)
 			continue
 		}
 		pm.identifiers[identNum] <- ping
@@ -55,7 +55,7 @@ func sendSinglePing(writer *ipv4.IP_Writer, id, seq uint16, timeout time.Duratio
 			select {
 			case pingResonse := <-seqChan:
 				if !bytes.Equal(pingResonse.Header.Data, header.Data) {
-					logs.Info.Println("Dropped packet because header data not equal to ping sent")
+					//ch logs.Info.Println("Dropped packet because header data not equal to ping sent")
 					continue
 				}
 				time2 := time.Now()
@@ -93,15 +93,15 @@ func sequenceDealer(idInput chan *icmp.ICMP_In, seqChan map[uint16](chan *icmp.I
 	for {
 		select {
 		case <-terminate:
-			//			logs.Info.Println("Terminating seq dealer")
+			//			//ch logs.Info.Println("Terminating seq dealer")
 			return
 		case packet := <-idInput:
-			// logs.Info.Println("icmp in =", packet.Header.Opt)
+			// //ch logs.Info.Println("icmp in =", packet.Header.Opt)
 			seqNum := uint16(packet.Header.Opt)
 			if _, ok := seqChan[seqNum]; ok {
 				seqChan[seqNum] <- packet
 			} else {
-				logs.Info.Println("Dropping bad seq num packet with existing identifier")
+				//ch logs.Info.Println("Dropping bad seq num packet with existing identifier")
 			}
 		}
 	}

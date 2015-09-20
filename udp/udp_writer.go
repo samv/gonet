@@ -44,7 +44,7 @@ func (c *UDP_Writer) Write(x []byte) error {
 	data[6] = uint8(cksum >> 8)
 	data[7] = uint8(cksum)
 
-	//logs.Trace.Println("UDP Writing:", data)
+	////ch logs.Trace.Println("UDP Writing:", data)
 	return c.writer.WriteTo(data)
 }
 

@@ -13,7 +13,7 @@ func main() {
 	if err != nil {
 		logs.Error.Println(err)
 	} else {
-		logs.Info.Println("Worked")
+		//ch logs.Info.Println("Worked")
 	}
 	time.Sleep(500 * time.Millisecond)
 }

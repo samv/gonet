@@ -3,13 +3,13 @@ package tcp
 import (
 	"network/ipv4"
 
+	"github.com/hsheth2/logs"
+
 	"network/ipv4/ipv4tps"
 
 	"sync"
 
 	"fmt"
-
-	"github.com/hsheth2/logs"
 )
 
 // Global src, dst port and ip registry for TCP binding
@@ -25,7 +25,7 @@ func (m *TCP_Port_Manager_Type) bind(rport, lport uint16, ip *ipv4tps.IPaddress)
 	defer m.lock.Unlock()
 
 	// lport is the local one here, rport is the remote
-	logs.Info.Println("Attempting to bind to rport", rport, "lport", lport, "ip", ip.Hash())
+	//ch logs.Info.Println("Attempting to bind to rport", rport, "lport", lport, "ip", ip.Hash())
 	if _, ok := m.incoming[lport]; !ok {
 		m.incoming[lport] = make(map[uint16](map[ipv4tps.IPhash](chan *TCP_Packet)))
 	}
@@ -51,7 +51,7 @@ func (m *TCP_Port_Manager_Type) unbind(rport, lport uint16, ip *ipv4tps.IPaddres
 
 	// TODO verify that it actually won't crash
 	close(m.incoming[lport][rport][ip.Hash()])
-	logs.Trace.Println("Closing the packetdealer channel")
+	//ch logs.Trace.Println("Closing the packetdealer channel")
 	delete(m.incoming[lport][rport], ip.Hash())
 	return nil
 }
@@ -86,18 +86,18 @@ func (m *TCP_Port_Manager_Type) readDeal(rip, lip *ipv4tps.IPaddress, payload []
 
 	m.lock.RLock()
 	defer m.lock.RUnlock()
-	//logs.Trace.Printf("readAll tcp packet manager dealing with packet or rport: %d and lport %d", rport, lport)
+	////ch logs.Trace.Printf("readAll tcp packet manager dealing with packet or rport: %d and lport %d", rport, lport)
 	if _, ok := m.incoming[lport]; ok {
-		//logs.Trace.Printf("readAll: promising packet rport: %d and lport %d", rport, lport)
+		////ch logs.Trace.Printf("readAll: promising packet rport: %d and lport %d", rport, lport)
 		if p, ok := m.incoming[lport][rport]; ok {
-			//logs.Trace.Println("readAll: exact port number match")
+			////ch logs.Trace.Println("readAll: exact port number match")
 			if x, ok := p[rip.Hash()]; ok {
 				output = x
 			} else if x, ok := p[ipv4tps.IP_ALL_HASH]; ok {
 				output = x
 			}
 		} else if p, ok := m.incoming[lport][0]; ok {
-			//logs.Trace.Println("readAll: forwarding to a listening server")
+			////ch logs.Trace.Println("readAll: forwarding to a listening server")
 			if x, ok := p[ipv4tps.IP_ALL_HASH]; ok {
 				output = x
 			} else if x, ok := p[rip.Hash()]; ok {

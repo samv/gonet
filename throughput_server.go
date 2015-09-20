@@ -33,7 +33,7 @@ func main() {
 			logs.Error.Println(err)
 			return
 		}
-		logs.Info.Println("Connection:", ip, port)
+		//ch logs.Info.Println("Connection:", ip, port)
 
 		go func() {
 			data, err := conn.Recv(20000)
@@ -42,10 +42,10 @@ func main() {
 				return
 			}
 
-			logs.Info.Println("first 50 bytes of received data:", data[:50])
+			//ch logs.Info.Println("first 50 bytes of received data:", data[:50])
 
 			conn.Close()
-			logs.Info.Println("connection finished")
+			//ch logs.Info.Println("connection finished")
 		}()
 	}
 }

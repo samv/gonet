@@ -47,7 +47,7 @@ func (ntap *Network_Tap) write(data []byte) error {
 	if len(data) != n {
 		return errors.New("ifce failed to write all data")
 	}
-	//logs.Info.Println("Finished write")
+	////ch logs.Info.Println("Finished write")
 	return nil
 }
 
@@ -59,7 +59,7 @@ func (ntap *Network_Tap) readAll() {
 		}
 		select {
 		case ntap.readBuf <- rx:
-			//logs.Trace.Println("Forwarded packet in readAll")
+			////ch logs.Trace.Println("Forwarded packet in readAll")
 		default:
 			logs.Warn.Println("Dropped packet in Network_Tap readAll")
 			continue
@@ -73,12 +73,12 @@ func (ntap *Network_Tap) readOnce() ([]byte, error) {
 	if err != nil {
 		return nil, err
 	}
-	//logs.Trace.Println("readOnce:", buf[:ln])
+	////ch logs.Trace.Println("readOnce:", buf[:ln])
 	return buf[:ln], nil
 }
 
 func (ntap *Network_Tap) read() ([]byte, error) {
-	//logs.Trace.Println("read packet off network_tap")
+	////ch logs.Trace.Println("read packet off network_tap")
 	return <-ntap.readBuf, nil
 }
 

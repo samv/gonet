@@ -1,20 +1,18 @@
 package tcp
 
-import (
-	"github.com/hsheth2/logs"
-)
+import "github.com/hsheth2/logs"
 
 func (c *TCB) packetDealer() {
 	// read each tcp packet and deal with it
-	logs.Trace.Println(c.Hash(), "Packet Dealer starting")
+	//ch logs.Trace.Println(c.Hash(), "Packet Dealer starting")
 	for {
-		//logs.Trace.Println(c.Hash(), "Waiting for packets")
+		////ch logs.Trace.Println(c.Hash(), "Waiting for packets")
 		segment, open := <-c.read
 		if !open || c.getState() == CLOSED {
-			logs.Trace.Println(c.Hash(), "Terminating packetdealer")
+			//ch logs.Trace.Println(c.Hash(), "Terminating packetdealer")
 			return
 		}
-		logs.Trace.Println(c.Hash(), "packetDealer received a packet:", segment.header, " in state:", c.getState())
+		//ch logs.Trace.Println(c.Hash(), "packetDealer received a packet:", segment.header, " in state:", c.getState())
 		c.packetDeal(segment)
 	}
 }
@@ -166,7 +164,7 @@ func (c *TCB) packetDeal(segment *TCP_Packet) {
 			c.UpdateState(TIME_WAIT)
 			// This might be wrong
 			err := c.sendAck(c.seqNum, c.ackNum)
-			logs.Trace.Println(c.Hash(), "Sent ACK data in response to retrans FIN")
+			//ch logs.Trace.Println(c.Hash(), "Sent ACK data in response to retrans FIN")
 			if err != nil {
 				logs.Error.Println(c.Hash(), err)
 				return
@@ -186,7 +184,7 @@ func (c *TCB) packetDeal(segment *TCP_Packet) {
 		// step 7 (?)
 		switch c.getState() {
 		case ESTABLISHED, FIN_WAIT_1, FIN_WAIT_2:
-			logs.Trace.Println(c.Hash(), "Received data of len:", len(segment.payload))
+			//ch logs.Trace.Println(c.Hash(), "Received data of len:", len(segment.payload))
 			c.recvBuffer = append(c.recvBuffer, segment.payload...)
 			// TODO adjust rcv.wnd, for now just multiplying by 2
 			if uint32(c.getWindow())*2 >= uint32(1)<<16 {
@@ -195,12 +193,12 @@ func (c *TCB) packetDeal(segment *TCP_Packet) {
 				c.windowMutex.Unlock()
 			}
 			pay_size := segment.getPayloadSize()
-			logs.Trace.Println(c.Hash(), "Payload Size is ", pay_size)
+			//ch logs.Trace.Println(c.Hash(), "Payload Size is ", pay_size)
 
 			// TODO piggyback this
 
 			if segment.header.flags&TCP_PSH != 0 {
-				logs.Trace.Println(c.Hash(), "Pushing new data to client")
+				//ch logs.Trace.Println(c.Hash(), "Pushing new data to client")
 				c.pushData()
 			}
 
@@ -211,7 +209,7 @@ func (c *TCB) packetDeal(segment *TCP_Packet) {
 				c.seqAckMutex.RLock()
 				err := c.sendAck(c.seqNum, c.ackNum)
 				c.seqAckMutex.RUnlock()
-				logs.Trace.Println(c.Hash(), "Sent ACK data")
+				//ch logs.Trace.Println(c.Hash(), "Sent ACK data")
 				if err != nil {
 					logs.Error.Println(c.Hash(), err)
 					return
@@ -239,14 +237,14 @@ func (c *TCB) packetDeal(segment *TCP_Packet) {
 			c.seqAckMutex.RLock()
 			err := c.sendAck(c.seqNum, c.ackNum)
 			c.seqAckMutex.RUnlock()
-			logs.Trace.Println(c.Hash(), "Sent ACK data in response to FIN")
+			//ch logs.Trace.Println(c.Hash(), "Sent ACK data in response to FIN")
 			if err != nil {
 				logs.Error.Println(c.Hash(), err)
 				return
 			}
 
 			// FIN implies PSH
-			logs.Trace.Println(c.Hash(), "Pushing data to client because of FIN")
+			//ch logs.Trace.Println(c.Hash(), "Pushing data to client because of FIN")
 			c.pushData()
 
 			switch c.getState() {
@@ -270,14 +268,14 @@ func (c *TCB) pushData() {
 	// move data
 	c.pushBuffer = append(c.pushBuffer, c.recvBuffer...)
 	c.recvBuffer = []byte{}
-	logs.Trace.Println(c.Hash(), "Pushing: new pushBuffer len:", len(c.pushBuffer))
+	//ch logs.Trace.Println(c.Hash(), "Pushing: new pushBuffer len:", len(c.pushBuffer))
 
 	// signal push
 	c.pushSignal.Signal()
 }
 
 func (c *TCB) rcvClosed(d *TCP_Packet) {
-	logs.Trace.Println(c.Hash(), "Dealing closed")
+	//ch logs.Trace.Println(c.Hash(), "Dealing closed")
 	if d.header.flags&TCP_RST != 0 {
 		// drop incoming RSTs
 		return
@@ -305,7 +303,7 @@ func (c *TCB) rcvClosed(d *TCP_Packet) {
 }
 
 func (c *TCB) rcvListen(d *TCP_Packet) {
-	logs.Trace.Println(c.Hash(), "Dealing listen")
+	//ch logs.Trace.Println(c.Hash(), "Dealing listen")
 
 	if d.header.flags&TCP_RST != 0 {
 		// drop incoming RSTs
@@ -314,7 +312,7 @@ func (c *TCB) rcvListen(d *TCP_Packet) {
 
 	if d.header.flags&TCP_ACK != 0 {
 		err := c.sendReset(d.header.ack, 0)
-		logs.Trace.Println(c.Hash(), "Sent ACK data")
+		//ch logs.Trace.Println(c.Hash(), "Sent ACK data")
 		if err != nil {
 			logs.Error.Println(c.Hash(), err)
 			return
@@ -349,7 +347,7 @@ func (c *TCB) rcvListen(d *TCP_Packet) {
 			logs.Error.Println(c.Hash(), err)
 			return
 		}
-		logs.Trace.Println(c.Hash(), "Sent ACK data")
+		//ch logs.Trace.Println(c.Hash(), "Sent ACK data")
 
 		c.seqNum += 1
 		c.recentAckNum = c.ISS
@@ -358,9 +356,9 @@ func (c *TCB) rcvListen(d *TCP_Packet) {
 }
 
 func (c *TCB) dealSynSent(d *TCP_Packet) {
-	logs.Trace.Println(c.Hash(), "Dealing state syn-sent")
+	//ch logs.Trace.Println(c.Hash(), "Dealing state syn-sent")
 	if d.header.flags&TCP_ACK != 0 {
-		logs.Trace.Println(c.Hash(), "verifing the ack")
+		//ch logs.Trace.Println(c.Hash(), "verifing the ack")
 		if d.header.flags&TCP_RST != 0 {
 			return
 		}
@@ -395,18 +393,18 @@ func (c *TCB) dealSynSent(d *TCP_Packet) {
 	// TODO verify security/precedence
 
 	if d.header.flags&TCP_SYN != 0 {
-		logs.Trace.Println(c.Hash(), "rcvd a SYN")
+		//ch logs.Trace.Println(c.Hash(), "rcvd a SYN")
 		c.ackNum = d.header.seq + 1
 		c.IRS = d.header.seq
 
 		if d.header.flags&TCP_ACK != 0 {
 			c.UpdateLastAck(d.header.ack)
-			logs.Trace.Println(c.Hash(), "recentAckNum:", c.recentAckNum)
-			logs.Trace.Println(c.Hash(), "ISS:", c.ISS)
+			//ch logs.Trace.Println(c.Hash(), "recentAckNum:", c.recentAckNum)
+			//ch logs.Trace.Println(c.Hash(), "ISS:", c.ISS)
 		}
 
 		if c.recentAckNum > c.ISS {
-			logs.Trace.Println(c.Hash(), "rcvd a SYN-ACK")
+			//ch logs.Trace.Println(c.Hash(), "rcvd a SYN-ACK")
 			// the syn has been ACKed
 			// reply with an ACK
 			c.UpdateState(ESTABLISHED)
@@ -417,7 +415,7 @@ func (c *TCB) dealSynSent(d *TCP_Packet) {
 				logs.Error.Println(c.Hash(), err)
 			}
 
-			logs.Trace.Println(c.Hash(), "Connection established")
+			//ch logs.Trace.Println(c.Hash(), "Connection established")
 			return
 		} else {
 			// special case... TODO deal with this case later
@@ -435,12 +433,12 @@ func (c *TCB) dealSynSent(d *TCP_Packet) {
 }
 
 func (c *TCB) dealSynRcvd(d *TCP_Packet) {
-	logs.Trace.Println(c.Hash(), "dealing Syn Rcvd")
+	//ch logs.Trace.Println(c.Hash(), "dealing Syn Rcvd")
 	c.seqAckMutex.RLock()
 	defer c.seqAckMutex.RUnlock()
-	logs.Trace.Printf("%s recentAck: %d, header ack: %d, seqNum: %d", c.Hash(), c.recentAckNum, d.header.ack, c.seqNum)
+	//ch logs.Trace.Printf("%s recentAck: %d, header ack: %d, seqNum: %d", c.Hash(), c.recentAckNum, d.header.ack, c.seqNum)
 	if c.recentAckNum <= d.header.ack && d.header.ack <= c.seqNum {
-		logs.Trace.Println(c.Hash(), "SynRcvd -> Established")
+		//ch logs.Trace.Println(c.Hash(), "SynRcvd -> Established")
 		c.UpdateState(ESTABLISHED)
 	} else {
 		err := c.sendReset(d.header.ack, 0)

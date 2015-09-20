@@ -4,9 +4,9 @@ import (
 	"testing"
 	"time"
 
-	"network/ipv4/ipv4tps"
-
 	"github.com/hsheth2/logs"
+
+	"network/ipv4/ipv4tps"
 )
 
 func ping_tester(t *testing.T, ip *ipv4tps.IPaddress, num uint16) {

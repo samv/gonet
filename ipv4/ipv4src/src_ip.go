@@ -6,9 +6,9 @@ import (
 	"runtime"
 	"strings"
 
-	"network/ipv4/ipv4tps"
-
 	"github.com/hsheth2/logs"
+
+	"network/ipv4/ipv4tps"
 )
 
 const (
@@ -54,7 +54,7 @@ var GlobalSource_IP_Table = func() *Source_IP_Table {
 	}
 	str := strings.TrimSpace(string(data))
 	External_ip_address = ipv4tps.MakeIP(str)
-	// logs.Info.Println("using ext ip:", External_ip_address)
+	// //ch logs.Info.Println("using ext ip:", External_ip_address)
 
 	err = table.add(Loopback_ip_address)
 	if err != nil {
@@ -90,9 +90,9 @@ func (sipt *Source_IP_Table) Query(dst *ipv4tps.IPaddress) (src *ipv4tps.IPaddre
 	if len(sipt.table) == 0 {
 		logs.Error.Fatalln("sipt Query: no entries in table")
 	}
-	//	logs.Trace.Println("Query:", "table:", sipt.table, "len:", len(sipt.table))
+	//	//ch logs.Trace.Println("Query:", "table:", sipt.table, "len:", len(sipt.table))
 	for _, base := range sipt.table {
-		//		logs.Trace.Println("Trying query:", base, "compared to", dst)
+		//		//ch logs.Trace.Println("Trying query:", base, "compared to", dst)
 		if ipCompare(base, dst, IPv4_DEFAULT_NETMASK) { // TODO determine netmask dynamically
 			return base
 		}

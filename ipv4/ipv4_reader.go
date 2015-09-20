@@ -4,9 +4,9 @@ import (
 	"network/ipv4/ipv4tps"
 	"time"
 
-	"sync"
-
 	"github.com/hsheth2/logs"
+
+	"sync"
 )
 
 type IP_Reader struct {
@@ -139,7 +139,7 @@ func (ipr *IP_Reader) killFragmentAssembler(quit chan<- bool, didQuit <-chan boo
 func (ipr *IP_Reader) ReadFrom() (rip, lip *ipv4tps.IPaddress, b, payload []byte, e error) {
 	//fmt.Println("STARTING READ")
 	b = <-ipr.incomingPackets
-	//	logs.Info.Println("Read IP packet")
+	//	//ch logs.Info.Println("Read IP packet")
 	//fmt.Println("RAW READ COMPLETED")
 	//fmt.Println("Read Length: ", len(b))
 	//fmt.Print(".")
