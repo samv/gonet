@@ -39,7 +39,7 @@ func slicePacket(b []byte) (hrd, payload []byte) {
 	return b[:hdrLen], b[hdrLen:]
 }
 
-func (ipr *IP_Reader) fragmentAssembler(in <-chan []byte, quit <-chan bool, didQuit chan<- bool, done chan bool) {
+func (ipr *IP_Reader) fragAssembler(in <-chan []byte, quit <-chan bool, didQuit chan<- bool, done chan bool) {
 	payload := make([]byte, 0)
 	extraFrags := make(map[uint64]([]byte))
 	recvLast := false
@@ -119,7 +119,7 @@ func (ipr *IP_Reader) fragmentAssembler(in <-chan []byte, quit <-chan bool, didQ
 	//return
 }
 
-func (ipr *IP_Reader) killFragmentAssembler(quit chan<- bool, didQuit <-chan bool, done <-chan bool, bufID string) {
+func (ipr *IP_Reader) killFragAssembler(quit chan<- bool, didQuit <-chan bool, done <-chan bool, bufID string) {
 	// sends quit to the assembler if it doesn't send done
 	select {
 	case <-time.After(FRAGMENT_TIMEOUT):
@@ -188,8 +188,8 @@ func (ipr *IP_Reader) ReadFrom() (rip, lip *ipv4tps.IPaddress, b, payload []byte
 			didQuit := make(chan bool, 1)
 
 			// create the packet assembler in a goroutine to allow the program to continue
-			go ipr.fragmentAssembler(ipr.fragBuf[bufID], quit, didQuit, done)
-			go ipr.killFragmentAssembler(quit, didQuit, done, bufID)
+			go ipr.fragAssembler(ipr.fragBuf[bufID], quit, didQuit, done)
+			go ipr.killFragAssembler(quit, didQuit, done, bufID)
 		}
 
 		// send the packet to the assembler
