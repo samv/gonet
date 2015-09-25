@@ -51,6 +51,7 @@ func (nr *Network_Read_Manager) readAll() { // TODO terminate (using notifiers)
 
 			select {
 			case c.input <- data:
+				//logs.Trace.Println("Ethernet Data begin forwarded:", data)
 			default:
 				logs.Warn.Printf("Dropping Ethernet packet %v no space in input buffer\n", eth_protocol)
 			}
@@ -92,6 +93,7 @@ type ethernet_reader struct {
 func new_ethernet_reader(etp EtherType) (*ethernet_reader, error) {
 	ethr := &ethernet_reader{
 		ethertype: etp,
+		input: make(chan []byte, ETH_PROTOCOL_BUF_SZ),
 		processed: make(chan *Ethernet_Header, ETH_PROTOCOL_BUF_SZ),
 	}
 

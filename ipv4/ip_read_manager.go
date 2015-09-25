@@ -51,6 +51,7 @@ func (nr *IP_Read_Manager) readAll() {
 
 		if len(buf) <= IP_HEADER_LEN {
 			logs.Warn.Println("Dropping IP Packet for bogus length <=", IP_HEADER_LEN)
+			logs.Warn.Println("Data being dropped:", buf)
 			continue
 		}
 

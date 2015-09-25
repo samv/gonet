@@ -9,6 +9,7 @@ import (
 	"sync"
 
 	"golang.org/x/net/ipv4"
+	"github.com/hsheth2/logs"
 )
 
 type IP_Writer struct {
@@ -172,8 +173,9 @@ func (ipw *IP_Writer) WriteTo(p []byte) (int, error) {
 
 		// write the bytes
 		// //ch logs.Trace.Println("IP Writing:", newPacket)
-		_, err := ipw.nw.Write(p)
+		_, err := ipw.nw.Write(newPacket)
 		if err != nil {
+			logs.Error.Println(err)
 			return 0, err // returning 0 because the fragment is invalid
 		}
 	}

@@ -2,7 +2,7 @@ package ethernet
 
 import (
 	"network/physical"
-//	"github.com/hsheth2/logs"
+	//"github.com/hsheth2/logs"
 )
 
 type ethernet_writer struct {
@@ -43,6 +43,7 @@ func (nw *ethernet_writer) Write(data []byte) (int, error) {
 	copy(packet[ETH_HEADER_SZ:], data)
 
 	// send packet
+	//logs.Trace.Println("Ethernet sending packet:", packet)
 	return physical.Physical_IO.Write(nw.index, packet) // TODO do not use directly?
 }
 
