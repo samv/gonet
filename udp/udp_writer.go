@@ -30,7 +30,7 @@ func NewUDP_Writer(src, dest uint16, dstIP *ipv4tps.IPaddress) (*UDP_Writer, err
 	}, nil
 }
 
-func (c *UDP_Writer) Write(x []byte) error {
+func (c *UDP_Writer) Write(x []byte) (int, error) {
 	headerLen := uint16(UDP_HEADER_SZ + len(x))
 	UDPHeader := []byte{
 		byte(c.src >> 8), byte(c.src), // Source port in byte slice
