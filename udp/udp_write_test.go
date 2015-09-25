@@ -45,7 +45,7 @@ func TestBasic(t *testing.T) {
 
 		// send data
 		fmt.Println("Sending")
-		err = w.Write(data)
+		_, err = w.Write(data)
 		if err != nil {
 			t.Fatal(err)
 		}
