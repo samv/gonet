@@ -21,13 +21,12 @@ var GlobalNetworkReadManager = func() *Network_Read_Manager {
 }()
 
 type Network_Read_Manager struct {
-	proto_buf map[EtherType](chan *Ethernet_Header)
+	proto_buf map[EtherType](*ethernet_reader)
 }
 
 func newNetwork_Read_Manager() (*Network_Read_Manager, error) {
 	nr := &Network_Read_Manager{
-		net:       physical.GlobalTapIO,
-		proto_buf: make(map[EtherType](chan *Ethernet_Header)),
+		proto_buf: make(map[EtherType]*ethernet_reader),
 	}
 	go nr.readAll()
 
@@ -50,17 +49,10 @@ func (nr *Network_Read_Manager) readAll() { // TODO terminate (using notifiers)
 			// //ch logs.Trace.Println("Something binded to protocol:", eth_protocol)
 			// //ch logs.Info.Println("Found that ethernet protocol is registered")
 
-			ethHead := &Ethernet_Header{
-				//Rmac: &MAC_Address{Data: data[ETH_MAC_ADDR_SZ : 2*ETH_MAC_ADDR_SZ]},
-				//Lmac:   &MAC_Address{Data: data[0:ETH_MAC_ADDR_SZ]},
-				Packet: data[ETH_HEADER_SZ:],
-			}
-			//			//ch logs.Info.Println("Beginning to forward ethernet packet")
 			select {
-			case c <- ethHead:
-				// //ch logs.Info.Println("Forwarding ethernet packet")
+			case c.input <- data:
 			default:
-				logs.Warn.Println("Dropping Ethernet packet: buffer full")
+				logs.Warn.Printf("Dropping Ethernet packet %v no space in input buffer\n", eth_protocol)
 			}
 		} else {
 			logs.Warn.Println("Dropping Ethernet packet for wrong protocol:", eth_protocol)
@@ -68,22 +60,71 @@ func (nr *Network_Read_Manager) readAll() { // TODO terminate (using notifiers)
 	}
 }
 
-func (nr *Network_Read_Manager) Bind(proto EtherType) (chan *Ethernet_Header, error) {
+func (nr *Network_Read_Manager) Bind(proto EtherType) (Ethernet_Reader, error) {
 	if _, exists := nr.proto_buf[proto]; exists {
 		return nil, errors.New("Protocol already registered")
 	} else {
-		c := make(chan *Ethernet_Header, ETH_PROTOCOL_BUF_SZ)
+		c, err := new_ethernet_reader(proto)
+		if err != nil {
+			return nil, err
+		}
 		nr.proto_buf[proto] = c
 		return c, nil
 	}
 }
 
 func (nr *Network_Read_Manager) Unbind(proto EtherType) error {
-	// TODO write the unbind ether proto function
+	// TODO write the unbind ethernet proto function
 	return nil
 }
 
 func (nr *Network_Read_Manager) readFrame() (d []byte, err error) {
 	_, d, err = physical.Physical_IO.Read()
 	return
+}
+
+type ethernet_reader struct {
+	ethertype EtherType
+	input chan []byte
+	processed chan *Ethernet_Header
+}
+
+func new_ethernet_reader(etp EtherType) (*ethernet_reader, error) {
+	ethr := &ethernet_reader{
+		ethertype: etp,
+		processed: make(chan *Ethernet_Header, ETH_PROTOCOL_BUF_SZ),
+	}
+
+	go ethr.readAll()
+
+	return ethr, nil
+}
+
+func (ethr *ethernet_reader) readAll() {
+	data := <- ethr.input
+
+	ethHead := &Ethernet_Header{
+		//Rmac: &MAC_Address{Data: data[ETH_MAC_ADDR_SZ : 2*ETH_MAC_ADDR_SZ]},
+		//Lmac:   &MAC_Address{Data: data[0:ETH_MAC_ADDR_SZ]},
+		Packet: data[ETH_HEADER_SZ:],
+	}
+	//			//ch logs.Info.Println("Beginning to forward ethernet packet")
+	select {
+	case ethr.processed <- ethHead:
+	// //ch logs.Info.Println("Forwarding ethernet packet")
+	default:
+		logs.Warn.Println("Dropping Ethernet packet: buffer full")
+	}
+}
+
+// blocking read call
+func (ethr *ethernet_reader) Read() (*Ethernet_Header, error) {
+	return <- ethr.processed, nil
+}
+
+func (ethr *ethernet_reader) Close() error {
+	// TODO unbind
+	// TODO close input channel
+	// TODO close output channel
+	return nil
 }

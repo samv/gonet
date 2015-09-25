@@ -12,13 +12,12 @@ import (
 )
 
 type ARP_Manager struct {
-	read          chan *ethernet.Ethernet_Header
-	write         *ethernet.Network_Writer
+	read          ethernet.Ethernet_Reader
 	ethtp_manager map[ethernet.EtherType](ARP_Protocol_Dealer)
 }
 
 var GlobalARP_Manager *ARP_Manager = func() *ARP_Manager {
-	am, err := NewARP_Manager(ethernet.GlobalNetworkReader)
+	am, err := NewARP_Manager(ethernet.GlobalNetworkReadManager)
 	if err != nil {
 		logs.Error.Fatalln(err)
 	}
@@ -31,14 +30,8 @@ func NewARP_Manager(in *ethernet.Network_Read_Manager) (*ARP_Manager, error) {
 		return nil, err
 	}
 
-	write, err := ethernet.NewNetwork_Writer()
-	if err != nil {
-		return nil, err
-	}
-
 	am := &ARP_Manager{
 		read:          read,
-		write:         write,
 		ethtp_manager: make(map[ethernet.EtherType](ARP_Protocol_Dealer)),
 	}
 
@@ -62,7 +55,11 @@ func (am *ARP_Manager) Register(tp ethernet.EtherType, arppd ARP_Protocol_Dealer
 
 func (am *ARP_Manager) dealer() {
 	for {
-		header := <-am.read
+		header, err := am.read.Read()
+		if err != nil {
+			logs.Error.Println(err)
+			continue
+		}
 		data := header.Packet
 		packet := ParseARP_Packet_General(data)
 
@@ -89,7 +86,7 @@ func (am *ARP_Manager) dealer() {
 						logs.Warn.Println("MarshalPacket failed; dropping ARP request")
 						continue
 					}
-					err = am.write.Write(rp, reply.tha, ethernet.ETHERTYPE_ARP)
+					_, err = ethernet.EthernetWriteOne(reply.tha, ethernet.ETHERTYPE_ARP, rp)
 					if err != nil {
 						logs.Warn.Println("Failed to send ARP response; dropping request packet")
 						continue
@@ -111,7 +108,7 @@ func (am *ARP_Manager) dealer() {
 
 func (am *ARP_Manager) Request(tp ethernet.EtherType, raddr ARP_Protocol_Address) (*ethernet.MAC_Address, error) {
 	if pd, ok := am.ethtp_manager[tp]; ok {
-		// send request
+		// prepare request
 		requestPacket := &ARP_Packet{
 			htype: ARP_HTYPE_ETHERNET,
 			ptype: tp,
@@ -123,11 +120,15 @@ func (am *ARP_Manager) Request(tp ethernet.EtherType, raddr ARP_Protocol_Address
 			tha:   ethernet.External_bcast_address,
 			tpa:   raddr,
 		}
+
+		// make request
 		request, err := requestPacket.MarshalPacket()
 		if err != nil {
 			return nil, err
 		}
-		err = am.write.Write(request, requestPacket.tha, ethernet.ETHERTYPE_ARP)
+
+		// send request
+		_, err = ethernet.EthernetWriteOne(requestPacket.tha, ethernet.ETHERTYPE_ARP, request)
 		if err != nil {
 			return nil, err
 		}

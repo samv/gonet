@@ -5,13 +5,13 @@ import (
 //	"github.com/hsheth2/logs"
 )
 
-type Network_Writer struct {
+type ethernet_writer struct {
 	dst_mac, src_mac *MAC_Address
 	ethertype EtherType
 	index physical.Internal_Index
 }
 
-func NewNetwork_Writer(dst_mac *MAC_Address, ethertype EtherType) (*Network_Writer, error) {
+func NewEthernet_Writer(dst_mac *MAC_Address, ethertype EtherType) (Ethernet_Writer, error) {
 	index := getInternalIndex(dst_mac)
 	//	//ch logs.Info.Println("Found internal index")
 	src_mac, err := globalSource_MAC_Table.search(index)
@@ -19,7 +19,7 @@ func NewNetwork_Writer(dst_mac *MAC_Address, ethertype EtherType) (*Network_Writ
 		return nil, err
 	}
 
-	return &Network_Writer{
+	return &ethernet_writer{
 		dst_mac: dst_mac,
 		src_mac: src_mac,
 		ethertype: ethertype,
@@ -27,7 +27,7 @@ func NewNetwork_Writer(dst_mac *MAC_Address, ethertype EtherType) (*Network_Writ
 	}, nil
 }
 
-func (nw *Network_Writer) Write(data []byte) (int, error) {
+func (nw *ethernet_writer) Write(data []byte) (int, error) {
 	// build the ethernet header
 	//	//ch logs.Info.Println("Ethernet write request")
 	packet := make([]byte, ETH_HEADER_SZ+len(data))
@@ -46,6 +46,16 @@ func (nw *Network_Writer) Write(data []byte) (int, error) {
 	return physical.Physical_IO.Write(nw.index, packet) // TODO do not use directly?
 }
 
-func (nw *Network_Writer) Close() error {
+func (nw *ethernet_writer) Close() error {
 	return nil
+}
+
+// helper method for one-time sends
+func EthernetWriteOne(dst_mac *MAC_Address, ethertype EtherType, data []byte) (int, error) {
+	nw, err := NewEthernet_Writer(dst_mac, ethertype)
+	if err != nil {
+		return 0, err
+	}
+
+	return nw.Write(data)
 }

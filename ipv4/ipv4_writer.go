@@ -12,7 +12,7 @@ import (
 )
 
 type IP_Writer struct {
-	nw          *ethernet.Network_Writer
+	nw          *ethernet.ethernet_writer
 	version     uint8
 	dst, src    *ipv4tps.IPaddress
 	headerLen   uint16
@@ -25,7 +25,7 @@ type IP_Writer struct {
 
 func NewIP_Writer(dst *ipv4tps.IPaddress, protocol uint8) (*IP_Writer, error) {
 	// create its own network_writer
-	nw, err := ethernet.NewNetwork_Writer()
+	nw, err := ethernet.NewEthernet_Writer()
 	if err != nil {
 		return nil, err
 	}
