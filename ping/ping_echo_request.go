@@ -36,18 +36,8 @@ func sendSinglePing(writer *ipv4.IP_Writer, id, seq uint16, timeout time.Duratio
 	}
 
 	// make data
-	data, err := packet.MarshalICMPHeader()
-	if err != nil {
-		logs.Error.Println(err)
-		return
-	}
+	icmp.SendICMPPacket(writer, packet)
 
-	// send
-	err = writer.WriteTo(data)
-	if err != nil {
-		logs.Error.Println(err)
-		return
-	}
 	time1 := time.Now()
 	timeoutTimer := time.NewTimer(timeout)
 	go func(seqChan chan *icmp.ICMP_In, header *icmp.ICMP_Header, time1 *time.Time, timer *time.Timer) {

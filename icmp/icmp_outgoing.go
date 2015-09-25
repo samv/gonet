@@ -10,5 +10,6 @@ func SendICMPPacket(writer *ipv4.IP_Writer, data *ICMP_Header) error {
 		return err
 	}
 
-	return writer.WriteTo(packet)
+	_, err = writer.WriteTo(packet)
+	return err
 }

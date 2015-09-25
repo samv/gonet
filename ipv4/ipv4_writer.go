@@ -12,7 +12,7 @@ import (
 )
 
 type IP_Writer struct {
-	nw          *ethernet.ethernet_writer
+	nw          ethernet.Ethernet_Writer
 	version     uint8
 	dst, src    *ipv4tps.IPaddress
 	headerLen   uint16
@@ -24,8 +24,14 @@ type IP_Writer struct {
 }
 
 func NewIP_Writer(dst *ipv4tps.IPaddress, protocol uint8) (*IP_Writer, error) {
+	gateway := ipv4src.GlobalSource_IP_Table.Gateway(dst)
+	dst_mac, err := arpv4.GlobalARPv4_Table.LookupRequest(gateway)
+	if err != nil {
+		return nil, err
+	}
+
 	// create its own network_writer
-	nw, err := ethernet.NewEthernet_Writer()
+	nw, err := ethernet.NewEthernet_Writer(dst_mac, ethernet.ETHERTYPE_IP)
 	if err != nil {
 		return nil, err
 	}
@@ -66,7 +72,7 @@ func (ipw *IP_Writer) getID() uint16 {
 	return id
 }
 
-func (ipw *IP_Writer) WriteTo(p []byte) error {
+func (ipw *IP_Writer) WriteTo(p []byte) (int, error) {
 	////ch logs.Trace.Println("IP Preparing to Write:", p)
 	//	//ch logs.Info.Println("IPv4 WriteTo request")
 
@@ -166,24 +172,14 @@ func (ipw *IP_Writer) WriteTo(p []byte) error {
 
 		// write the bytes
 		// //ch logs.Trace.Println("IP Writing:", newPacket)
-		err := ipw.sendIP(newPacket)
+		_, err := ipw.nw.Write(p)
 		if err != nil {
-			return err
+			return 0, err // returning 0 because the fragment is invalid
 		}
 	}
 	//fmt.Println("PAY LEN", len(p))
 
-	return nil
-}
-
-func (ipw *IP_Writer) sendIP(p []byte) error {
-	gateway := ipv4src.GlobalSource_IP_Table.Gateway(ipw.dst)
-	arp_data, err := arpv4.GlobalARPv4_Table.LookupRequest(gateway)
-	if err != nil {
-		return err
-	}
-	//	//ch logs.Info.Println("Finished IP address lookup stuff; Send IP packet")
-	return ipw.nw.Write(p, arp_data, ethernet.ETHERTYPE_IP)
+	return len(p), nil
 }
 
 func (ipw *IP_Writer) Close() error {

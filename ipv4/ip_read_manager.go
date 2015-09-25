@@ -11,12 +11,12 @@ import (
 const IP_READ_MANAGER_BUFFER_SIZE = 5000
 
 type IP_Read_Manager struct {
-	incoming chan *ethernet.Ethernet_Header
+	read ethernet.Ethernet_Reader
 	buffers  map[uint8](map[ipv4tps.IPhash](chan []byte))
 }
 
 var GlobalIPReadManager = func() *IP_Read_Manager {
-	irm, err := NewIP_Read_Manager(ethernet.GlobalNetworkReader)
+	irm, err := NewIP_Read_Manager(ethernet.GlobalNetworkReadManager)
 	if err != nil {
 		logs.Error.Fatal(err)
 	}
@@ -24,13 +24,13 @@ var GlobalIPReadManager = func() *IP_Read_Manager {
 }()
 
 func NewIP_Read_Manager(in *ethernet.Network_Read_Manager) (*IP_Read_Manager, error) {
-	input, err := in.Bind(ethernet.ETHERTYPE_IP)
+	r, err := in.Bind(ethernet.ETHERTYPE_IP)
 	if err != nil {
 		return nil, err
 	}
 
 	irm := &IP_Read_Manager{
-		incoming: input,
+		read: r,
 		buffers:  make(map[uint8](map[ipv4tps.IPhash](chan []byte))),
 	}
 
@@ -41,7 +41,11 @@ func NewIP_Read_Manager(in *ethernet.Network_Read_Manager) (*IP_Read_Manager, er
 
 func (nr *IP_Read_Manager) readAll() {
 	for {
-		eth_packet := <-nr.incoming
+		eth_packet, err := nr.read.Read()
+		if err != nil {
+			logs.Error.Println(err)
+			continue
+		}
 		// //ch logs.Info.Println("IP read_manager recvd packet:", eth_packet.Packet)
 		buf := eth_packet.Packet
 

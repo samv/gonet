@@ -17,13 +17,6 @@ func (pm *Ping_Manager) ping_replier() {
 func (pm *Ping_Manager) respondTo(ping *icmp.ICMP_In) error {
 	ping.Header.TypeF = PING_ECHO_REPLY_TYPE
 
-	// make packet
-	err := ping.Header.MarshalICMPHeaderGivenSlice(ping.OriginalPacket)
-	if err != nil {
-		logs.Error.Println(err)
-		return err
-	}
-
 	// get writer
 	writer, err := pm.getIP_Writer(ping.RIP)
 	if err != nil {
@@ -33,9 +26,10 @@ func (pm *Ping_Manager) respondTo(ping *icmp.ICMP_In) error {
 
 	// send
 	//	//ch logs.Info.Println("Send ping reply")
-	err = writer.WriteTo(ping.OriginalPacket)
+	err = icmp.SendICMPPacket(writer, ping.Header)
 	if err != nil {
 		logs.Error.Println(err)
+		return err
 	}
 
 	return nil
