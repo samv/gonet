@@ -4,6 +4,7 @@ import (
 	"errors"
 
 	"github.com/hsheth2/logs"
+	"network/physical"
 )
 
 type Ethernet_Header struct {
@@ -11,22 +12,21 @@ type Ethernet_Header struct {
 	Packet []byte
 }
 
-var GlobalNetworkReader = func() *Network_Reader {
-	x, err := NewNetwork_Reader()
+var GlobalNetworkReadManager = func() *Network_Read_Manager {
+	x, err := newNetwork_Read_Manager()
 	if err != nil {
 		logs.Error.Fatal(err)
 	}
 	return x
 }()
 
-type Network_Reader struct {
-	net       *Network_Tap
+type Network_Read_Manager struct {
 	proto_buf map[EtherType](chan *Ethernet_Header)
 }
 
-func NewNetwork_Reader() (*Network_Reader, error) {
-	nr := &Network_Reader{
-		net:       GlobalNetwork_Tap,
+func newNetwork_Read_Manager() (*Network_Read_Manager, error) {
+	nr := &Network_Read_Manager{
+		net:       physical.GlobalTapIO,
 		proto_buf: make(map[EtherType](chan *Ethernet_Header)),
 	}
 	go nr.readAll()
@@ -34,7 +34,7 @@ func NewNetwork_Reader() (*Network_Reader, error) {
 	return nr, nil
 }
 
-func (nr *Network_Reader) readAll() { // TODO terminate (using notifiers)
+func (nr *Network_Read_Manager) readAll() { // TODO terminate (using notifiers)
 	for {
 		data, err := nr.readFrame()
 		// //ch logs.Info.Println("Recv ethernet packet")
@@ -68,7 +68,7 @@ func (nr *Network_Reader) readAll() { // TODO terminate (using notifiers)
 	}
 }
 
-func (nr *Network_Reader) Bind(proto EtherType) (chan *Ethernet_Header, error) {
+func (nr *Network_Read_Manager) Bind(proto EtherType) (chan *Ethernet_Header, error) {
 	if _, exists := nr.proto_buf[proto]; exists {
 		return nil, errors.New("Protocol already registered")
 	} else {
@@ -78,11 +78,12 @@ func (nr *Network_Reader) Bind(proto EtherType) (chan *Ethernet_Header, error) {
 	}
 }
 
-func (nr *Network_Reader) Unbind(proto EtherType) error {
+func (nr *Network_Read_Manager) Unbind(proto EtherType) error {
 	// TODO write the unbind ether proto function
 	return nil
 }
 
-func (nr *Network_Reader) readFrame() ([]byte, error) {
-	return nr.net.read()
+func (nr *Network_Read_Manager) readFrame() (d []byte, err error) {
+	_, d, err = physical.Physical_IO.Read()
+	return
 }

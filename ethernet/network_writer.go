@@ -1,48 +1,49 @@
 package ethernet
 
+import (
+	"network/physical"
 //	"github.com/hsheth2/logs"
+)
 
 type Network_Writer struct {
-	net *Network_Tap
+	dst_mac, src_mac *MAC_Address
+	ethertype EtherType
+	index physical.Internal_Index
 }
 
-func NewNetwork_Writer() (*Network_Writer, error) {
-	return &Network_Writer{
-		net: GlobalNetwork_Tap,
-	}, nil
-}
-
-func (nw *Network_Writer) Write(data []byte, dst_mac *MAC_Address, ethertype EtherType) error {
-	// build the ethernet header
-	//	//ch logs.Info.Println("Ethernet write request")
+func NewNetwork_Writer(dst_mac *MAC_Address, ethertype EtherType) (*Network_Writer, error) {
 	index := getInternalIndex(dst_mac)
 	//	//ch logs.Info.Println("Found internal index")
 	src_mac, err := globalSource_MAC_Table.search(index)
 	if err != nil {
-		return err
+		return nil, err
 	}
 
+	return &Network_Writer{
+		dst_mac: dst_mac,
+		src_mac: src_mac,
+		ethertype: ethertype,
+		index: index,
+	}, nil
+}
+
+func (nw *Network_Writer) Write(data []byte) (int, error) {
+	// build the ethernet header
+	//	//ch logs.Info.Println("Ethernet write request")
 	packet := make([]byte, ETH_HEADER_SZ+len(data))
 
 	//	//ch logs.Info.Println("Finished ARP lookup stuff")
-	copy(packet, dst_mac.Data[:ETH_MAC_ADDR_SZ])
-	copy(packet[ETH_MAC_ADDR_SZ:], src_mac.Data[:ETH_MAC_ADDR_SZ])
-	packet[2*ETH_MAC_ADDR_SZ] = byte(ethertype >> 8)
-	packet[2*ETH_MAC_ADDR_SZ+1] = byte(ethertype)
+	copy(packet, nw.dst_mac.Data[:ETH_MAC_ADDR_SZ])
+	copy(packet[ETH_MAC_ADDR_SZ:], nw.src_mac.Data[:ETH_MAC_ADDR_SZ])
+	packet[2*ETH_MAC_ADDR_SZ] = byte(nw.ethertype >> 8)
+	packet[2*ETH_MAC_ADDR_SZ+1] = byte(nw.ethertype)
 	//fmt.Println("My header:", etherHead)
 
 	// add on the ethernet header
 	copy(packet[ETH_HEADER_SZ:], data)
 
 	// send packet
-	//	//ch logs.Info.Println("Send ethernet packet")
-	if index == loopback_internal_index {
-		nw.net.readBuf <- packet // TODO verify the packet is correctly built
-		return nil
-	} else {
-		// //ch logs.Info.Println("network_writer:", "write: full packet with ethernet header:", newPacket)
-		return nw.net.write(packet)
-	}
+	return physical.Physical_IO.Write(nw.index, packet) // TODO do not use directly?
 }
 
 func (nw *Network_Writer) Close() error {

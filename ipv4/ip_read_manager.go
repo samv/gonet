@@ -23,7 +23,7 @@ var GlobalIPReadManager = func() *IP_Read_Manager {
 	return irm
 }()
 
-func NewIP_Read_Manager(in *ethernet.Network_Reader) (*IP_Read_Manager, error) {
+func NewIP_Read_Manager(in *ethernet.Network_Read_Manager) (*IP_Read_Manager, error) {
 	input, err := in.Bind(ethernet.ETHERTYPE_IP)
 	if err != nil {
 		return nil, err

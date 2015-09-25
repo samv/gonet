@@ -25,7 +25,7 @@ var GlobalARP_Manager *ARP_Manager = func() *ARP_Manager {
 	return am
 }()
 
-func NewARP_Manager(in *ethernet.Network_Reader) (*ARP_Manager, error) {
+func NewARP_Manager(in *ethernet.Network_Read_Manager) (*ARP_Manager, error) {
 	read, err := in.Bind(ethernet.ETHERTYPE_ARP)
 	if err != nil {
 		return nil, err

@@ -1,4 +1,4 @@
-package ethernet
+package physical
 
 import (
 	"testing"
@@ -44,17 +44,20 @@ func TestWriteWater(t *testing.T) {
 }
 
 func TestReadWater(t *testing.T) {
-	c, err := GlobalNetworkReader.Bind(ETHERTYPE_IP)
+	const TAP_NAME = "tap0"
+	ifce, err := water.NewTAP(TAP_NAME)
 	if err != nil {
-		logs.Error.Println(err)
-		t.Fail()
+		logs.Error.Fatalln(err)
 	}
 
+	d := make([]byte, 1522)
 	for {
-		buffer := <-c
-		packet := buffer.Packet
+		_, err := ifce.Read(d)
+		if err != nil {
+			logs.Error.Fatalln(err)
+		}
 		//ch logs.Info.Println("Got a packet:", packet)
-		if waterutil.IsIPv4(packet) {
+		if waterutil.IsIPv4(d) {
 			//ch logs.Info.Printf("Source:      %v\n", waterutil.IPv4Source(packet))
 			//ch logs.Info.Printf("Destination: %v\n", waterutil.IPv4Destination(packet))
 			//ch logs.Info.Printf("Protocol:    %v\n", waterutil.IPv4Protocol(packet))
