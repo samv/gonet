@@ -16,7 +16,7 @@ import (
 
 type TCB struct {
 	read             chan *TCP_Packet    // input
-	writer           *ipv4.IP_Writer     // output
+	writer           ipv4.IPv4_Writer    // output
 	ipAddress        *ipv4tps.IPaddress  // destination ip address
 	srcIP            *ipv4tps.IPaddress  // src ip address
 	lport, rport     uint16              // ports
@@ -46,7 +46,7 @@ type TCB struct {
 	maxSegSize       uint16              // MSS (MTU)
 }
 
-func New_TCB(local, remote uint16, dstIP *ipv4tps.IPaddress, read chan *TCP_Packet, write *ipv4.IP_Writer, kind uint) (*TCB, error) {
+func New_TCB(local, remote uint16, dstIP *ipv4tps.IPaddress, read chan *TCP_Packet, write ipv4.IPv4_Writer, kind uint) (*TCB, error) {
 	//ch logs.Trace.Println("New_TCB")
 
 	seq, err := genRandSeqNum()

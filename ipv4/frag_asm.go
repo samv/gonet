@@ -5,7 +5,7 @@ import (
 	"time"
 )
 
-func (ipr *IP_Reader) fragAssembler(in <-chan []byte, quit <-chan bool, didQuit chan<- bool, done chan bool) {
+func (ipr *ipv4_reader) fragAssembler(in <-chan []byte, quit <-chan bool, didQuit chan<- bool, done chan bool) {
 	payload := make([]byte, 0)
 	extraFrags := make(map[uint64]([]byte))
 	recvLast := false
@@ -85,7 +85,7 @@ func (ipr *IP_Reader) fragAssembler(in <-chan []byte, quit <-chan bool, didQuit 
 	//return
 }
 
-func (ipr *IP_Reader) killFragAssembler(quit chan<- bool, didQuit <-chan bool, done <-chan bool, bufID string) {
+func (ipr *ipv4_reader) killFragAssembler(quit chan<- bool, didQuit <-chan bool, done <-chan bool, bufID string) {
 	// sends quit to the assembler if it doesn't send done
 	select {
 	case <-time.After(FRAGMENT_TIMEOUT):

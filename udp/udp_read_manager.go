@@ -10,7 +10,7 @@ import (
 )
 
 type UDP_Read_Manager struct {
-	reader *ipv4.IP_Reader
+	reader ipv4.IPv4_Reader
 	buff   map[uint16](map[ipv4tps.IPhash](chan []byte))
 }
 

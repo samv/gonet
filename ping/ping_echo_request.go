@@ -26,7 +26,7 @@ func (pm *Ping_Manager) ping_response_dealer() {
 	}
 }
 
-func sendSinglePing(writer *ipv4.IP_Writer, id, seq uint16, timeout time.Duration, reply chan *icmp.ICMP_In) {
+func sendSinglePing(writer ipv4.IPv4_Writer, id, seq uint16, timeout time.Duration, reply chan *icmp.ICMP_In) {
 	// prepare packet
 	packet := &icmp.ICMP_Header{
 		TypeF: PING_ECHO_REQUEST_TYPE,

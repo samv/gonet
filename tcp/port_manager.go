@@ -14,7 +14,7 @@ import (
 
 // Global src, dst port and ip registry for TCP binding
 type TCP_Port_Manager_Type struct {
-	tcp_reader *ipv4.IP_Reader
+	tcp_reader ipv4.IPv4_Reader
 	incoming   map[uint16](map[uint16](map[ipv4tps.IPhash](chan *TCP_Packet))) // dst, src port, remote ip
 	lock       *sync.RWMutex
 }

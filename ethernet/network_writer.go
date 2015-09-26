@@ -27,6 +27,7 @@ func NewEthernet_Writer(dst_mac *MAC_Address, ethertype EtherType) (Ethernet_Wri
 	}, nil
 }
 
+// blocking write call
 func (nw *ethernet_writer) Write(data []byte) (int, error) {
 	// build the ethernet header
 	//	//ch logs.Info.Println("Ethernet write request")

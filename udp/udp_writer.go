@@ -11,7 +11,7 @@ const UDP_HEADER_SZ = 8
 type UDP_Writer struct {
 	rip      *ipv4tps.IPaddress // destination ip address
 	lip      *ipv4tps.IPaddress // source ip address
-	writer   *ipv4.IP_Writer
+	writer   ipv4.IPv4_Writer
 	src, dst uint16 // ports
 }
 

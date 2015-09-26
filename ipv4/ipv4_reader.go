@@ -14,7 +14,7 @@ type IP_Read_Header struct {
 	B, Payload []byte
 }
 
-type IP_Reader struct {
+type ipv4_reader struct {
 	incomingPackets chan []byte
 	processed chan *IP_Read_Header
 	irm             *IP_Read_Manager
@@ -24,13 +24,13 @@ type IP_Reader struct {
 	fragBufMutex    *sync.Mutex
 }
 
-func NewIP_Reader(irm *IP_Read_Manager, ip *ipv4tps.IPaddress, protocol uint8) (*IP_Reader, error) {
+func NewIP_Reader(irm *IP_Read_Manager, ip *ipv4tps.IPaddress, protocol uint8) (*ipv4_reader, error) {
 	c, err := irm.Bind(ip, protocol)
 	if err != nil {
 		return nil, err
 	}
 
-	ipr := &IP_Reader{
+	ipr := &ipv4_reader{
 		incomingPackets: c,
 		processed: make(chan *IP_Read_Header, IP_READ_MANAGER_BUFFER_SIZE),
 		protocol:        protocol,
@@ -50,7 +50,7 @@ func slicePacket(b []byte) (hrd, payload []byte) {
 	return b[:hdrLen], b[hdrLen:]
 }
 
-func (ipr *IP_Reader) readAll() {
+func (ipr *ipv4_reader) readAll() {
 	for {
 		//fmt.Println("STARTING READ")
 		b := <-ipr.incomingPackets
@@ -67,18 +67,12 @@ func (ipr *IP_Reader) readAll() {
 	}
 }
 
-func (ipr *IP_Reader) readOne(b []byte) error {
+func (ipr *ipv4_reader) readOne(b []byte) error {
 	hdr, p := slicePacket(b)
 
 	// extract source IP and protocol
 	rip := &ipv4tps.IPaddress{IP: hdr[12:16]}
 	lip := &ipv4tps.IPaddress{IP: hdr[16:20]}
-	//	proto := uint8(hdr[9])
-	//	if !((bytes.Equal(ipr.ip.IP, rip.IP) || bytes.Equal(ipr.ip.IP, ipv4tps.IP_ALL)) && ipr.protocol == proto) {
-	//		//Info.Println("Not interested in packet: dropping.")
-	//		// TODO should this already have been done in the read manager?
-	//		return ipr.ReadFrom()
-	//	}
 
 	// verify checksum
 	if !verifyIPChecksum(hdr) {
@@ -138,11 +132,11 @@ func (ipr *IP_Reader) readOne(b []byte) error {
 	}
 }
 
-func (ipr *IP_Reader) ReadFrom() (*IP_Read_Header, error) {
+func (ipr *ipv4_reader) ReadFrom() (*IP_Read_Header, error) {
 	return <-ipr.processed, nil
 }
 
-func (ipr *IP_Reader) Close() error {
+func (ipr *ipv4_reader) Close() error {
 	return ipr.irm.Unbind(ipr.ip, ipr.protocol)
 }
 

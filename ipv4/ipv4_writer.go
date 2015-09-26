@@ -12,7 +12,7 @@ import (
 	"golang.org/x/net/ipv4"
 )
 
-type IP_Writer struct {
+type ipv4_writer struct {
 	nw          ethernet.Ethernet_Writer
 	version     uint8
 	dst, src    *ipv4tps.IPaddress
@@ -24,7 +24,7 @@ type IP_Writer struct {
 	maxFragSize uint16
 }
 
-func NewIP_Writer(dst *ipv4tps.IPaddress, protocol uint8) (*IP_Writer, error) {
+func NewIP_Writer(dst *ipv4tps.IPaddress, protocol uint8) (*ipv4_writer, error) {
 	gateway := ipv4src.GlobalSource_IP_Table.Gateway(dst)
 	dst_mac, err := arpv4.GlobalARPv4_Table.LookupRequest(gateway)
 	if err != nil {
@@ -49,7 +49,7 @@ func NewIP_Writer(dst *ipv4tps.IPaddress, protocol uint8) (*IP_Writer, error) {
 		return nil, errors.New("Failed to connect.")
 	}*/
 
-	return &IP_Writer{
+	return &ipv4_writer{
 		//fd:          fd,
 		//sockAddr:    addr,
 		nw:          nw,
@@ -65,7 +65,7 @@ func NewIP_Writer(dst *ipv4tps.IPaddress, protocol uint8) (*IP_Writer, error) {
 	}, nil
 }
 
-func (ipw *IP_Writer) getID() uint16 {
+func (ipw *ipv4_writer) getID() uint16 {
 	ipw.idLock.Lock()
 	defer ipw.idLock.Unlock()
 	id := ipw.identifier
@@ -73,7 +73,7 @@ func (ipw *IP_Writer) getID() uint16 {
 	return id
 }
 
-func (ipw *IP_Writer) WriteTo(p []byte) (int, error) {
+func (ipw *ipv4_writer) WriteTo(p []byte) (int, error) {
 	////ch logs.Trace.Println("IP Preparing to Write:", p)
 	//	//ch logs.Info.Println("IPv4 WriteTo request")
 
@@ -184,7 +184,7 @@ func (ipw *IP_Writer) WriteTo(p []byte) (int, error) {
 	return len(p), nil
 }
 
-func (ipw *IP_Writer) Close() error {
+func (ipw *ipv4_writer) Close() error {
 	return ipw.nw.Close()
 }
 

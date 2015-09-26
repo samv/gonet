@@ -9,7 +9,7 @@ import (
 )
 
 type ICMP_Read_Manager struct {
-	reader *ipv4.IP_Reader
+	reader ipv4.IPv4_Reader
 	buff   map[uint8](chan *ICMP_In)
 }
 
