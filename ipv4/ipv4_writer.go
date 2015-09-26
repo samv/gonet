@@ -13,7 +13,7 @@ import (
 )
 
 type ipv4_writer struct {
-	nw          ethernet.Ethernet_Writer
+	nw          ethernet.Writer
 	version     uint8
 	dst, src    *ipv4tps.IPaddress
 	headerLen   uint16
@@ -32,7 +32,7 @@ func NewIP_Writer(dst *ipv4tps.IPaddress, protocol uint8) (*ipv4_writer, error) 
 	}
 
 	// create its own network_writer
-	nw, err := ethernet.NewEthernet_Writer(dst_mac, ethernet.ETHERTYPE_IP)
+	nw, err := ethernet.NewEthernetWriter(dst_mac, ethernet.EtherTypeIP)
 	if err != nil {
 		return nil, err
 	}

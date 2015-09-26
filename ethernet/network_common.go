@@ -1,10 +1,12 @@
 package ethernet
 
-type MAC_Address struct {
+// The MACAddress type holds a 48-bit MAC Address
+type MACAddress struct {
 	Data []byte
 }
 
-func (m *MAC_Address) Make() [8]byte {
+// Converts a MAC address to an array of 8 bytes
+func (m *MACAddress) make() [8]byte {
 	// pad data to 8 bytes
 	mac := m.Data
 	for len(mac) < 8 {
@@ -19,31 +21,21 @@ func (m *MAC_Address) Make() [8]byte {
 	return data
 }
 
-const (
-	// 768 = htons(ETH_P_ALL) = htons(3)
-	// see http://ideone.com/2eunQu
-
-	// 17 = AF_PACKET
-	// see http://ideone.com/TGYlGc
-
-	SOCK_DGRAM      = 2
-	SOCK_RAW        = 3
-	AF_PACKET       = 17
-	HTONS_ETH_P_ALL = 768
-	ETH_ALEN        = 6
-)
-
+// EtherType implements the ethernet protocol's EtherType (https://en.wikipedia.org/wiki/EtherType).
 type EtherType uint16
 
+// Major EtherTypes as constants
 const (
-	ETHERTYPE_IP  = 0x0800
-	ETHERTYPE_ARP = 0x0806
+	EtherTypeIP  EtherType = 0x0800
+	EtherTypeARP EtherType = 0x0806
 )
 
 const (
-	ETH_MAC_ADDR_SZ       = 6
-	ETH_ETHERTYPE_SZ      = 2
-	ETH_HEADER_SZ         = ETH_ETHERTYPE_SZ + 2*ETH_MAC_ADDR_SZ
-	MAX_ETHERNET_FRAME_SZ = 1522 // for 1500 MTU + 22 bytes
-	ETH_PROTOCOL_BUF_SZ   = 5000
+	ethMACAddressSize = 6
+	ethEtherTypeSize  = 2
+	ethHeaderSize     = ethEtherTypeSize + 2*ethMACAddressSize
 )
+
+const maxEthernetFrameSize = 1522 // for 1500 MTU + 22 bytes
+
+const ethProtocolBufferSize = 5000

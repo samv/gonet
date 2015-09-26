@@ -4,22 +4,22 @@ import (
 	"github.com/hsheth2/logs"
 )
 
-type Ethernet_Header struct {
+type FrameHeader struct {
 	//Rmac, Lmac *MAC_Address
 	Packet []byte
 }
 
-type ethernet_reader struct {
+type ethernetReader struct {
 	ethertype EtherType
 	input     chan []byte
-	processed chan *Ethernet_Header
+	processed chan *FrameHeader
 }
 
-func new_ethernet_reader(etp EtherType) (*ethernet_reader, error) {
-	ethr := &ethernet_reader{
+func newEthernetReader(etp EtherType) (*ethernetReader, error) {
+	ethr := &ethernetReader{
 		ethertype: etp,
-		input:     make(chan []byte, ETH_PROTOCOL_BUF_SZ),
-		processed: make(chan *Ethernet_Header, ETH_PROTOCOL_BUF_SZ),
+		input:     make(chan []byte, ethProtocolBufferSize),
+		processed: make(chan *FrameHeader, ethProtocolBufferSize),
 	}
 
 	go ethr.readAll()
@@ -27,16 +27,16 @@ func new_ethernet_reader(etp EtherType) (*ethernet_reader, error) {
 	return ethr, nil
 }
 
-func (ethr *ethernet_reader) readAll() {
+func (ethr *ethernetReader) readAll() {
 	for {
 		//logs.Trace.Println("Ethernet reader attempting to get work")
 		data := <-ethr.input
 		//logs.Trace.Println("Ethernet reader recieved packet")
 
-		ethHead := &Ethernet_Header{
+		ethHead := &FrameHeader{
 			//Rmac: &MAC_Address{Data: data[ETH_MAC_ADDR_SZ : 2*ETH_MAC_ADDR_SZ]},
 			//Lmac:   &MAC_Address{Data: data[0:ETH_MAC_ADDR_SZ]},
-			Packet: data[ETH_HEADER_SZ:],
+			Packet: data[ethHeaderSize:],
 		}
 		//			//ch logs.Info.Println("Beginning to forward ethernet packet")
 		select {
@@ -49,11 +49,11 @@ func (ethr *ethernet_reader) readAll() {
 }
 
 // blocking read call
-func (ethr *ethernet_reader) Read() (*Ethernet_Header, error) {
+func (ethr *ethernetReader) Read() (*FrameHeader, error) {
 	return <-ethr.processed, nil
 }
 
-func (ethr *ethernet_reader) Close() error {
+func (ethr *ethernetReader) Close() error {
 	// TODO unbind
 	// TODO close input channel
 	// TODO close output channel

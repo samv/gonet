@@ -12,7 +12,7 @@ import (
 )
 
 type ARP_Manager struct {
-	read          ethernet.Ethernet_Reader
+	read          ethernet.Reader
 	ethtp_manager map[ethernet.EtherType](ARP_Protocol_Dealer)
 }
 
@@ -24,8 +24,8 @@ var GlobalARP_Manager *ARP_Manager = func() *ARP_Manager {
 	return am
 }()
 
-func NewARP_Manager(in *ethernet.Network_Read_Manager) (*ARP_Manager, error) {
-	read, err := in.Bind(ethernet.ETHERTYPE_ARP)
+func NewARP_Manager(in *ethernet.NetworkReadManager) (*ARP_Manager, error) {
+	read, err := in.Bind(ethernet.EtherTypeARP)
 	if err != nil {
 		return nil, err
 	}
@@ -41,7 +41,7 @@ func NewARP_Manager(in *ethernet.Network_Read_Manager) (*ARP_Manager, error) {
 }
 
 func (am *ARP_Manager) Register(tp ethernet.EtherType, arppd ARP_Protocol_Dealer) error {
-	if tp == ethernet.ETHERTYPE_ARP {
+	if tp == ethernet.EtherTypeARP {
 		return errors.New("ARP Manager: cannot bind to ARP ethertype")
 	}
 	if _, ok := am.ethtp_manager[tp]; ok {
@@ -76,7 +76,7 @@ func (am *ARP_Manager) dealer() {
 						hlen:  packet.hlen,
 						plen:  packet.plen,
 						oper:  ARP_OPER_REPLY,
-						sha:   ethernet.External_mac_address,
+						sha:   ethernet.ExternalMACAddress,
 						spa:   pd.GetAddress(),
 						tha:   packet.sha,
 						tpa:   packet.spa,
@@ -86,7 +86,7 @@ func (am *ARP_Manager) dealer() {
 						logs.Warn.Println("MarshalPacket failed; dropping ARP request")
 						continue
 					}
-					_, err = ethernet.EthernetWriteOne(reply.tha, ethernet.ETHERTYPE_ARP, rp)
+					_, err = ethernet.WriteSingle(reply.tha, ethernet.EtherTypeARP, rp)
 					if err != nil {
 						logs.Warn.Println("Failed to send ARP response; dropping request packet")
 						continue
@@ -106,7 +106,7 @@ func (am *ARP_Manager) dealer() {
 	}
 }
 
-func (am *ARP_Manager) Request(tp ethernet.EtherType, raddr ARP_Protocol_Address) (*ethernet.MAC_Address, error) {
+func (am *ARP_Manager) Request(tp ethernet.EtherType, raddr ARP_Protocol_Address) (*ethernet.MACAddress, error) {
 	if pd, ok := am.ethtp_manager[tp]; ok {
 		// prepare request
 		requestPacket := &ARP_Packet{
@@ -115,9 +115,9 @@ func (am *ARP_Manager) Request(tp ethernet.EtherType, raddr ARP_Protocol_Address
 			hlen:  ARP_HLEN_ETHERNET,
 			plen:  raddr.Len(),
 			oper:  ARP_OPER_REQUEST,
-			sha:   ethernet.External_mac_address,
+			sha:   ethernet.ExternalMACAddress,
 			spa:   pd.GetAddress(),
-			tha:   ethernet.External_bcast_address,
+			tha:   ethernet.ExternalBroadcastAddress,
 			tpa:   raddr,
 		}
 
@@ -128,7 +128,7 @@ func (am *ARP_Manager) Request(tp ethernet.EtherType, raddr ARP_Protocol_Address
 		}
 
 		// send request
-		_, err = ethernet.EthernetWriteOne(requestPacket.tha, ethernet.ETHERTYPE_ARP, request)
+		_, err = ethernet.WriteSingle(requestPacket.tha, ethernet.EtherTypeARP, request)
 		if err != nil {
 			return nil, err
 		}
@@ -157,11 +157,11 @@ func (am *ARP_Manager) Request(tp ethernet.EtherType, raddr ARP_Protocol_Address
 }
 
 type ARP_Protocol_Dealer interface {
-	Lookup(ARP_Protocol_Address) (*ethernet.MAC_Address, error)
-	Request(ARP_Protocol_Address) (*ethernet.MAC_Address, error)
+	Lookup(ARP_Protocol_Address) (*ethernet.MACAddress, error)
+	Request(ARP_Protocol_Address) (*ethernet.MACAddress, error)
 	// TODO add discover (probe) function to broadcast ARP requests
 	// TODO support ARP announcements
-	Add(ARP_Protocol_Address, *ethernet.MAC_Address) error
+	Add(ARP_Protocol_Address, *ethernet.MACAddress) error
 	GetReplyNotifier() *notifiers.Notifier
 	Unmarshal([]byte) ARP_Protocol_Address
 	GetAddress() ARP_Protocol_Address
