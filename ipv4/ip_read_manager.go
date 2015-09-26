@@ -89,7 +89,7 @@ func (nr *IP_Read_Manager) processOne(buf []byte) error {
 		}
 		select {
 		case output <- buf:
-			logs.Trace.Println("IP Read Manager forwarding packet")
+			//logs.Trace.Println("IP Read Manager forwarding packet")
 		default:
 			logs.Warn.Println("Dropping incoming IPv4 packet: no space in buffer")
 		}
