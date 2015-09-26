@@ -7,8 +7,8 @@ import (
 
 type ethernet_writer struct {
 	dst_mac, src_mac *MAC_Address
-	ethertype EtherType
-	index physical.Internal_Index
+	ethertype        EtherType
+	index            physical.Internal_Index
 }
 
 func NewEthernet_Writer(dst_mac *MAC_Address, ethertype EtherType) (Ethernet_Writer, error) {
@@ -20,10 +20,10 @@ func NewEthernet_Writer(dst_mac *MAC_Address, ethertype EtherType) (Ethernet_Wri
 	}
 
 	return &ethernet_writer{
-		dst_mac: dst_mac,
-		src_mac: src_mac,
+		dst_mac:   dst_mac,
+		src_mac:   src_mac,
 		ethertype: ethertype,
-		index: index,
+		index:     index,
 	}, nil
 }
 

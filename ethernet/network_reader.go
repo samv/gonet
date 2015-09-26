@@ -3,8 +3,9 @@ package ethernet
 import (
 	"errors"
 
-	"github.com/hsheth2/logs"
 	"network/physical"
+
+	"github.com/hsheth2/logs"
 )
 
 type Ethernet_Header struct {
@@ -46,8 +47,8 @@ func (nr *Network_Read_Manager) readAll() { // TODO terminate (using notifiers)
 		eth_protocol := EtherType(uint16(data[12])<<8 | uint16(data[13]))
 		// //ch logs.Trace.Println("Eth frame with protocol:", eth_protocol)
 		if c, ok := nr.proto_buf[eth_protocol]; ok {
-			// //ch logs.Trace.Println("Something binded to protocol:", eth_protocol)
-			// //ch logs.Info.Println("Found that ethernet protocol is registered")
+			//logs.Trace.Println("Something binded to protocol:", eth_protocol)
+			//logs.Info.Println("Found that ethernet protocol is registered")
 
 			select {
 			case c.input <- data:
@@ -86,14 +87,14 @@ func (nr *Network_Read_Manager) readFrame() (d []byte, err error) {
 
 type ethernet_reader struct {
 	ethertype EtherType
-	input chan []byte
+	input     chan []byte
 	processed chan *Ethernet_Header
 }
 
 func new_ethernet_reader(etp EtherType) (*ethernet_reader, error) {
 	ethr := &ethernet_reader{
 		ethertype: etp,
-		input: make(chan []byte, ETH_PROTOCOL_BUF_SZ),
+		input:     make(chan []byte, ETH_PROTOCOL_BUF_SZ),
 		processed: make(chan *Ethernet_Header, ETH_PROTOCOL_BUF_SZ),
 	}
 
@@ -103,25 +104,29 @@ func new_ethernet_reader(etp EtherType) (*ethernet_reader, error) {
 }
 
 func (ethr *ethernet_reader) readAll() {
-	data := <- ethr.input
+	for {
+		//logs.Trace.Println("Ethernet reader attempting to get work")
+		data := <-ethr.input
+		//logs.Trace.Println("Ethernet reader recieved packet")
 
-	ethHead := &Ethernet_Header{
-		//Rmac: &MAC_Address{Data: data[ETH_MAC_ADDR_SZ : 2*ETH_MAC_ADDR_SZ]},
-		//Lmac:   &MAC_Address{Data: data[0:ETH_MAC_ADDR_SZ]},
-		Packet: data[ETH_HEADER_SZ:],
-	}
-	//			//ch logs.Info.Println("Beginning to forward ethernet packet")
-	select {
-	case ethr.processed <- ethHead:
-	// //ch logs.Info.Println("Forwarding ethernet packet")
-	default:
-		logs.Warn.Println("Dropping Ethernet packet: buffer full")
+		ethHead := &Ethernet_Header{
+			//Rmac: &MAC_Address{Data: data[ETH_MAC_ADDR_SZ : 2*ETH_MAC_ADDR_SZ]},
+			//Lmac:   &MAC_Address{Data: data[0:ETH_MAC_ADDR_SZ]},
+			Packet: data[ETH_HEADER_SZ:],
+		}
+		//			//ch logs.Info.Println("Beginning to forward ethernet packet")
+		select {
+		case ethr.processed <- ethHead:
+			//logs.Trace.Println("Forwarding ethernet packet")
+		default:
+			logs.Warn.Println("Dropping Ethernet packet: buffer full")
+		}
 	}
 }
 
 // blocking read call
 func (ethr *ethernet_reader) Read() (*Ethernet_Header, error) {
-	return <- ethr.processed, nil
+	return <-ethr.processed, nil
 }
 
 func (ethr *ethernet_reader) Close() error {

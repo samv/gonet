@@ -11,8 +11,8 @@ import (
 const IP_READ_MANAGER_BUFFER_SIZE = 5000
 
 type IP_Read_Manager struct {
-	read ethernet.Ethernet_Reader
-	buffers  map[uint8](map[ipv4tps.IPhash](chan []byte))
+	read    ethernet.Ethernet_Reader
+	buffers map[uint8](map[ipv4tps.IPhash](chan []byte))
 }
 
 var GlobalIPReadManager = func() *IP_Read_Manager {
@@ -30,8 +30,8 @@ func NewIP_Read_Manager(in *ethernet.Network_Read_Manager) (*IP_Read_Manager, er
 	}
 
 	irm := &IP_Read_Manager{
-		read: r,
-		buffers:  make(map[uint8](map[ipv4tps.IPhash](chan []byte))),
+		read:    r,
+		buffers: make(map[uint8](map[ipv4tps.IPhash](chan []byte))),
 	}
 
 	go irm.readAll()
@@ -41,12 +41,13 @@ func NewIP_Read_Manager(in *ethernet.Network_Read_Manager) (*IP_Read_Manager, er
 
 func (nr *IP_Read_Manager) readAll() {
 	for {
+		//logs.Trace.Println("IP read manager readAll starting")
 		eth_packet, err := nr.read.Read()
 		if err != nil {
 			logs.Error.Println(err)
 			continue
 		}
-		// //ch logs.Info.Println("IP read_manager recvd packet:", eth_packet.Packet)
+		//logs.Info.Println("IP read_manager recvd packet:", eth_packet.Packet)
 		buf := eth_packet.Packet
 
 		if len(buf) <= IP_HEADER_LEN {
@@ -55,35 +56,45 @@ func (nr *IP_Read_Manager) readAll() {
 			continue
 		}
 
-		protocol := uint8(buf[9])
-		rip := &ipv4tps.IPaddress{buf[12:16]}
-
-		//fmt.Println(ln)
-		//fmt.Println(protocol, ip)
-		/*if ln == 47 {
-			fmt.Println(buf)
-		}*/
-		//fmt.Println(protocol, ip)
-		if protoBuf, foundProto := nr.buffers[protocol]; foundProto {
-			//fmt.Println("Dealing with packet")
-			var output chan []byte = nil
-			if c, foundIP := protoBuf[rip.Hash()]; foundIP {
-				//fmt.Println("Found exact")
-				output = c
-			} else if c, foundAll := protoBuf[ipv4tps.IP_ALL_HASH]; foundAll {
-				//fmt.Println("Found global")
-				output = c
-			} else {
-				logs.Warn.Println("output buf doesn't exist, rip:", rip)
-				continue
-			}
-			select {
-			case output <- buf:
-			default:
-				logs.Warn.Println("Dropping incoming IPv4 packet: no space in buffer")
-			}
+		err = nr.processOne(buf)
+		if err != nil {
+			logs.Warn.Println(err)
+			continue
 		}
 	}
+}
+
+func (nr *IP_Read_Manager) processOne(buf []byte) error {
+	protocol := uint8(buf[9])
+	rip := &ipv4tps.IPaddress{buf[12:16]}
+
+	//fmt.Println(ln)
+	//fmt.Println(protocol, ip)
+	/*if ln == 47 {
+		fmt.Println(buf)
+	}*/
+	//fmt.Println(protocol, ip)
+	if protoBuf, foundProto := nr.buffers[protocol]; foundProto {
+		//fmt.Println("Dealing with packet")
+		var output chan []byte = nil
+		if c, foundIP := protoBuf[rip.Hash()]; foundIP {
+			//fmt.Println("Found exact")
+			output = c
+		} else if c, foundAll := protoBuf[ipv4tps.IP_ALL_HASH]; foundAll {
+			//fmt.Println("Found global")
+			output = c
+		} else {
+			logs.Warn.Println("output buf doesn't exist, rip:", rip)
+			return nil
+		}
+		select {
+		case output <- buf:
+			logs.Trace.Println("IP Read Manager forwarding packet")
+		default:
+			logs.Warn.Println("Dropping incoming IPv4 packet: no space in buffer")
+		}
+	}
+	return nil
 }
 
 func (irm *IP_Read_Manager) Bind(ip *ipv4tps.IPaddress, protocol uint8) (chan []byte, error) {

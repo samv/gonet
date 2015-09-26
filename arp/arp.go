@@ -65,7 +65,7 @@ func (am *ARP_Manager) dealer() {
 
 		if pd, ok := am.ethtp_manager[packet.ptype]; ok && packet.htype == ARP_HTYPE_ETHERNET {
 			packet = ParseARP_Packet_Type(data, packet, pd)
-			//			//ch logs.Trace.Println("ARP packet:", packet)
+			logs.Trace.Println("ARP packet:", packet)
 			pd.Add(packet.spa, packet.sha)
 			if packet.oper == ARP_OPER_REQUEST {
 				////ch logs.Trace.Println("Got ARP Request")
@@ -91,13 +91,13 @@ func (am *ARP_Manager) dealer() {
 						logs.Warn.Println("Failed to send ARP response; dropping request packet")
 						continue
 					}
-					////ch logs.Trace.Println("Replied to ARP request")
+					logs.Trace.Println("Replied to ARP request")
 				} else {
 					logs.Warn.Println("Ignoring ARP request with a different target protocol address")
 					continue
 				}
 			} else if packet.oper == ARP_OPER_REPLY {
-				////ch logs.Trace.Println("Got ARP Reply")
+				logs.Trace.Println("Got ARP Reply")
 				// signal is sent in the Add function
 			} else {
 				logs.Warn.Println("Dropping ARP packet for bad operation")

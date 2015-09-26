@@ -1,11 +1,14 @@
 package physical
 
-import "io"
+import (
+	"io"
+)
 
-type Physical_IO_T struct {}
+type Physical_IO_T struct{}
+
 var Physical_IO *Physical_IO_T = &Physical_IO_T{} // TODO fix this
 
-func (pio *Physical_IO_T) getInterface(ifindex Internal_Index) (Physical_Interface_IO) {
+func (pio *Physical_IO_T) getInterface(ifindex Internal_Index) Physical_Interface_IO {
 	if ifindex == Loopback_Internal_Index {
 		return GlobalLoopbackIO
 	} else { // TODO check properly
@@ -22,6 +25,7 @@ func (pio *Physical_IO_T) Write(ifindex Internal_Index, data []byte) (n int, err
 
 // blocking read from any interface
 func (pio *Physical_IO_T) Read() (Internal_Index, []byte, error) {
+	//logs.Trace.Println("Reading from tap or lo")
 	select { // TODO support more interfaces
 	case d := <-pio.getInterface(Loopback_Internal_Index).getInput():
 		return Loopback_Internal_Index, d, nil

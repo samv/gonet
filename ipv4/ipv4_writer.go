@@ -8,8 +8,8 @@ import (
 
 	"sync"
 
-	"golang.org/x/net/ipv4"
 	"github.com/hsheth2/logs"
+	"golang.org/x/net/ipv4"
 )
 
 type IP_Writer struct {
