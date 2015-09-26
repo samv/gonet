@@ -1,1 +1,1 @@
-Pro stack
+A network stack written in Go.
