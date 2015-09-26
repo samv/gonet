@@ -11,7 +11,7 @@ import (
 const IP_READ_MANAGER_BUFFER_SIZE = 5000
 
 type ip_read_manager struct {
-	read    ethernet.Ethernet_Reader
+	read    ethernet.Reader
 	buffers map[uint8](map[ipv4tps.IPhash](chan []byte))
 }
 
@@ -23,8 +23,8 @@ var globalIP_Read_Manager = func() *ip_read_manager {
 	return irm
 }()
 
-func NewIP_Read_Manager(in *ethernet.Network_Read_Manager) (*ip_read_manager, error) {
-	r, err := in.Bind(ethernet.ETHERTYPE_IP)
+func NewIP_Read_Manager(in *ethernet.NetworkReadManager) (*ip_read_manager, error) {
+	r, err := in.Bind(ethernet.EtherTypeIP)
 	if err != nil {
 		return nil, err
 	}

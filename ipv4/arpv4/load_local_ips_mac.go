@@ -25,19 +25,19 @@ var GlobalARPv4_Table = func() *ARPv4_Table {
 	}
 
 	// add loopback ARP entry
-	err = table.Add(ipv4src.Loopback_ip_address, ethernet.Loopback_mac_address)
+	err = table.Add(ipv4src.Loopback_ip_address, ethernet.LoopbackMACAddress)
 	if err != nil {
 		logs.Error.Fatalln(err)
 	}
 
 	// add external loopback entry to ARP
-	err = table.Add(ipv4src.External_ip_address, ethernet.External_mac_address)
+	err = table.Add(ipv4src.External_ip_address, ethernet.ExternalMACAddress)
 	if err != nil {
 		logs.Error.Fatalln(err)
 	}
 
 	// register to get packets
-	arp.GlobalARP_Manager.Register(ethernet.ETHERTYPE_IP, table)
+	arp.GlobalARP_Manager.Register(ethernet.EtherTypeIP, table)
 
 	return table
 }()

@@ -13,20 +13,20 @@ import (
 )
 
 type ARPv4_Table struct {
-	table         map[ipv4tps.IPhash](*ethernet.MAC_Address)
+	table         map[ipv4tps.IPhash](*ethernet.MACAddress)
 	tableMutex    *sync.RWMutex
 	replyNotifier *notifiers.Notifier
 }
 
 func NewARP_Table() (*ARPv4_Table, error) {
 	return &ARPv4_Table{
-		table:         make(map[ipv4tps.IPhash](*ethernet.MAC_Address)),
+		table:         make(map[ipv4tps.IPhash](*ethernet.MACAddress)),
 		replyNotifier: notifiers.NewNotifier(),
 		tableMutex:    &sync.RWMutex{},
 	}, nil
 }
 
-func (table *ARPv4_Table) Lookup(ip arp.ARP_Protocol_Address) (*ethernet.MAC_Address, error) {
+func (table *ARPv4_Table) Lookup(ip arp.ARP_Protocol_Address) (*ethernet.MACAddress, error) {
 	table.tableMutex.RLock()
 	defer table.tableMutex.RUnlock()
 	if ans, ok := table.table[ip.(*ipv4tps.IPaddress).Hash()]; ok {
@@ -37,7 +37,7 @@ func (table *ARPv4_Table) Lookup(ip arp.ARP_Protocol_Address) (*ethernet.MAC_Add
 	return nil, errors.New("ARP lookup into table failed")
 }
 
-func (table *ARPv4_Table) LookupRequest(ip arp.ARP_Protocol_Address) (*ethernet.MAC_Address, error) {
+func (table *ARPv4_Table) LookupRequest(ip arp.ARP_Protocol_Address) (*ethernet.MACAddress, error) {
 	x, err := table.Lookup(ip)
 	if err == nil {
 		return x, nil
@@ -45,11 +45,11 @@ func (table *ARPv4_Table) LookupRequest(ip arp.ARP_Protocol_Address) (*ethernet.
 	return table.Request(ip)
 }
 
-func (table *ARPv4_Table) Request(rip arp.ARP_Protocol_Address) (*ethernet.MAC_Address, error) {
-	return arp.GlobalARP_Manager.Request(ethernet.ETHERTYPE_IP, rip)
+func (table *ARPv4_Table) Request(rip arp.ARP_Protocol_Address) (*ethernet.MACAddress, error) {
+	return arp.GlobalARP_Manager.Request(ethernet.EtherTypeIP, rip)
 }
 
-func (table *ARPv4_Table) Add(ip arp.ARP_Protocol_Address, addr *ethernet.MAC_Address) error {
+func (table *ARPv4_Table) Add(ip arp.ARP_Protocol_Address, addr *ethernet.MACAddress) error {
 	// if _, ok := table.table[ip]; ok {
 	// 	return errors.New("Cannot overwrite existing entry")
 	// }
