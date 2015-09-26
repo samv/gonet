@@ -17,15 +17,15 @@ type IP_Read_Header struct {
 type ipv4_reader struct {
 	incomingPackets chan []byte
 	processed chan *IP_Read_Header
-	irm             *IP_Read_Manager
+	irm             *ip_read_manager
 	protocol        uint8
 	ip              *ipv4tps.IPaddress
 	fragBuf         map[string](chan []byte)
 	fragBufMutex    *sync.Mutex
 }
 
-func NewIP_Reader(irm *IP_Read_Manager, ip *ipv4tps.IPaddress, protocol uint8) (*ipv4_reader, error) {
-	c, err := irm.Bind(ip, protocol)
+func NewIP_Reader(ip *ipv4tps.IPaddress, protocol uint8) (*ipv4_reader, error) {
+	c, err := globalIP_Read_Manager.Bind(ip, protocol)
 	if err != nil {
 		return nil, err
 	}

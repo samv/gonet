@@ -1,6 +1,9 @@
 package ipv4
 
-import "io"
+import (
+	"io"
+	"network/ipv4/ipv4tps"
+)
 
 type ip_read_t interface {
 	ReadFrom() (*IP_Read_Header, error)

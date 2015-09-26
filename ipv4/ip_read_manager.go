@@ -10,12 +10,12 @@ import (
 
 const IP_READ_MANAGER_BUFFER_SIZE = 5000
 
-type IP_Read_Manager struct {
+type ip_read_manager struct {
 	read    ethernet.Ethernet_Reader
 	buffers map[uint8](map[ipv4tps.IPhash](chan []byte))
 }
 
-var GlobalIPReadManager = func() *IP_Read_Manager {
+var globalIP_Read_Manager = func() *ip_read_manager {
 	irm, err := NewIP_Read_Manager(ethernet.GlobalNetworkReadManager)
 	if err != nil {
 		logs.Error.Fatal(err)
@@ -23,13 +23,13 @@ var GlobalIPReadManager = func() *IP_Read_Manager {
 	return irm
 }()
 
-func NewIP_Read_Manager(in *ethernet.Network_Read_Manager) (*IP_Read_Manager, error) {
+func NewIP_Read_Manager(in *ethernet.Network_Read_Manager) (*ip_read_manager, error) {
 	r, err := in.Bind(ethernet.ETHERTYPE_IP)
 	if err != nil {
 		return nil, err
 	}
 
-	irm := &IP_Read_Manager{
+	irm := &ip_read_manager{
 		read:    r,
 		buffers: make(map[uint8](map[ipv4tps.IPhash](chan []byte))),
 	}
@@ -39,7 +39,7 @@ func NewIP_Read_Manager(in *ethernet.Network_Read_Manager) (*IP_Read_Manager, er
 	return irm, nil
 }
 
-func (nr *IP_Read_Manager) readAll() {
+func (nr *ip_read_manager) readAll() {
 	for {
 		//logs.Trace.Println("IP read manager readAll starting")
 		eth_packet, err := nr.read.Read()
@@ -64,7 +64,7 @@ func (nr *IP_Read_Manager) readAll() {
 	}
 }
 
-func (nr *IP_Read_Manager) processOne(buf []byte) error {
+func (nr *ip_read_manager) processOne(buf []byte) error {
 	protocol := uint8(buf[9])
 	rip := &ipv4tps.IPaddress{buf[12:16]}
 
@@ -97,7 +97,7 @@ func (nr *IP_Read_Manager) processOne(buf []byte) error {
 	return nil
 }
 
-func (irm *IP_Read_Manager) Bind(ip *ipv4tps.IPaddress, protocol uint8) (chan []byte, error) {
+func (irm *ip_read_manager) Bind(ip *ipv4tps.IPaddress, protocol uint8) (chan []byte, error) {
 	// create the protocol buffer if it doesn't exist already
 	_, protoOk := irm.buffers[protocol]
 	if !protoOk {
@@ -115,7 +115,7 @@ func (irm *IP_Read_Manager) Bind(ip *ipv4tps.IPaddress, protocol uint8) (chan []
 	return nil, errors.New("IP already bound to.")
 }
 
-func (irm *IP_Read_Manager) Unbind(ip *ipv4tps.IPaddress, protocol uint8) error {
+func (irm *ip_read_manager) Unbind(ip *ipv4tps.IPaddress, protocol uint8) error {
 	ipBuf, protoOk := irm.buffers[protocol]
 	if !protoOk {
 		return errors.New("IP not bound, cannot unbind")

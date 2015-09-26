@@ -23,9 +23,7 @@ var GlobalUDP_Read_Manager *UDP_Read_Manager = func() *UDP_Read_Manager {
 }()
 
 func NewUDP_Read_Manager() (*UDP_Read_Manager, error) {
-	irm := ipv4.GlobalIPReadManager
-
-	ipr, err := ipv4.NewIP_Reader(irm, ipv4tps.IP_ALL, ipv4.UDP_PROTO)
+	ipr, err := ipv4.NewIP_Reader(ipv4tps.IP_ALL, ipv4.UDP_PROTO)
 	if err != nil {
 		return nil, err
 	}

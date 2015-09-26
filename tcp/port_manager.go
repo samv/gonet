@@ -122,9 +122,7 @@ func (m *TCP_Port_Manager_Type) readDeal(rip, lip *ipv4tps.IPaddress, payload []
 }
 
 var TCP_Port_Manager = func() *TCP_Port_Manager_Type {
-	irm := ipv4.GlobalIPReadManager
-
-	ipr, err := ipv4.NewIP_Reader(irm, ipv4tps.IP_ALL, ipv4.TCP_PROTO)
+	ipr, err := ipv4.NewIP_Reader(ipv4tps.IP_ALL, ipv4.TCP_PROTO)
 	if err != nil {
 		logs.Error.Println(err)
 		return nil
