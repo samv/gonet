@@ -1,9 +1,10 @@
 package ethernet
 
 import (
-	"github.com/hsheth2/logs"
 	"errors"
 	"network/physical"
+
+	"github.com/hsheth2/logs"
 )
 
 var GlobalNetworkReadManager = func() *Network_Read_Manager {

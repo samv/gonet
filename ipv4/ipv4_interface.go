@@ -34,7 +34,7 @@ type IPv4_RW interface {
 }
 
 type ipv4_read_writer struct {
-	read *ipv4_reader
+	read  *ipv4_reader
 	write *ipv4_writer
 }
 
@@ -51,7 +51,7 @@ func NewIPv4_RW(ip *ipv4tps.IPaddress, protocol uint8) (IPv4_RW, error) {
 	}
 
 	return &ipv4_read_writer{
-		read: read,
+		read:  read,
 		write: write,
 	}, nil
 }

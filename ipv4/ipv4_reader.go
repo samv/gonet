@@ -5,18 +5,18 @@ import (
 
 	"github.com/hsheth2/logs"
 
-	"sync"
 	"errors"
+	"sync"
 )
 
 type IP_Read_Header struct {
-	Rip, Lip *ipv4tps.IPaddress
+	Rip, Lip   *ipv4tps.IPaddress
 	B, Payload []byte
 }
 
 type ipv4_reader struct {
 	incomingPackets chan []byte
-	processed chan *IP_Read_Header
+	processed       chan *IP_Read_Header
 	irm             *ip_read_manager
 	protocol        uint8
 	ip              *ipv4tps.IPaddress
@@ -32,7 +32,7 @@ func NewIP_Reader(ip *ipv4tps.IPaddress, protocol uint8) (*ipv4_reader, error) {
 
 	ipr := &ipv4_reader{
 		incomingPackets: c,
-		processed: make(chan *IP_Read_Header, IP_READ_MANAGER_BUFFER_SIZE),
+		processed:       make(chan *IP_Read_Header, IP_READ_MANAGER_BUFFER_SIZE),
 		protocol:        protocol,
 		ip:              ip,
 		fragBuf:         make(map[string](chan []byte)),
@@ -84,9 +84,9 @@ func (ipr *ipv4_reader) readOne(b []byte) error {
 	if ((hdr[6]>>5)&0x01 == 0) && (packetOffset == 0) {
 		// not a fragment
 		packet := &IP_Read_Header{
-			Rip: rip,
-			Lip: lip,
-			B: b,
+			Rip:     rip,
+			Lip:     lip,
+			B:       b,
 			Payload: p,
 		}
 		select {

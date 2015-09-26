@@ -1,8 +1,9 @@
 package ipv4
 
 import (
-	"github.com/hsheth2/logs"
 	"time"
+
+	"github.com/hsheth2/logs"
 )
 
 func (ipr *ipv4_reader) fragAssembler(in <-chan []byte, quit <-chan bool, didQuit chan<- bool, done chan bool) {
@@ -13,29 +14,29 @@ func (ipr *ipv4_reader) fragAssembler(in <-chan []byte, quit <-chan bool, didQui
 	for {
 		select {
 		case <-quit:
-		//Trace.Println("quitting upon quit signal")
+			//Trace.Println("quitting upon quit signal")
 			didQuit <- true
 			return
 		case frag := <-in:
-		//Trace.Println("got a fragment packet. len:", len(frag))
+			//Trace.Println("got a fragment packet. len:", len(frag))
 			hdr, p := slicePacket(frag)
-		//offset := 8 * (uint64(hdr[6]&0x1f)<<8 + uint64(hdr[7]))
-		//fmt.Println("RECEIVED FRAG")
-		//fmt.Println("Offset:", offset)
-		//fmt.Println(len(payload))
+			//offset := 8 * (uint64(hdr[6]&0x1f)<<8 + uint64(hdr[7]))
+			//fmt.Println("RECEIVED FRAG")
+			//fmt.Println("Offset:", offset)
+			//fmt.Println(len(payload))
 
-		// add to map
+			// add to map
 			offset := 8 * (uint64(hdr[6]&0x1F)<<8 + uint64(hdr[7]))
-		//Trace.Println("Offset:", offset)
+			//Trace.Println("Offset:", offset)
 			extraFrags[offset] = p
 
-		// check more fragments flag
+			// check more fragments flag
 			if (hdr[6]>>5)&0x01 == 0 {
 				recvLast = true
 			}
 
-		// add to payload
-		//Trace.Println("Begin to add to the payload")
+			// add to payload
+			//Trace.Println("Begin to add to the payload")
 			for {
 				if storedFrag, found := extraFrags[uint64(len(payload))]; found {
 					//Trace.Println("New Payload Len: ", len(payload))
@@ -45,9 +46,9 @@ func (ipr *ipv4_reader) fragAssembler(in <-chan []byte, quit <-chan bool, didQui
 					break
 				}
 			}
-		//Trace.Println("Finished add to the payload")
+			//Trace.Println("Finished add to the payload")
 
-		// deal with the payload
+			// deal with the payload
 			if recvLast && len(extraFrags) == 0 {
 				//Trace.Println("Done")
 				// correct the header
@@ -76,7 +77,7 @@ func (ipr *ipv4_reader) fragAssembler(in <-chan []byte, quit <-chan bool, didQui
 				done <- true
 				return // from goroutine
 			}
-		//Trace.Println("Looping")
+			//Trace.Println("Looping")
 		}
 	}
 
@@ -89,11 +90,11 @@ func (ipr *ipv4_reader) killFragAssembler(quit chan<- bool, didQuit <-chan bool,
 	// sends quit to the assembler if it doesn't send done
 	select {
 	case <-time.After(FRAGMENT_TIMEOUT):
-	//Trace.Println("Force quitting packet assembler")
+		//Trace.Println("Force quitting packet assembler")
 		quit <- true
 		<-didQuit // will block until it has been received
 	case <-done:
-	//Trace.Println("Received done msg.")
+		//Trace.Println("Received done msg.")
 	}
 
 	//Trace.Println("Frag Assemble Ended, finished")
