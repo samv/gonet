@@ -75,6 +75,6 @@ func (nr *Network_Read_Manager) Unbind(proto EtherType) error {
 }
 
 func (nr *Network_Read_Manager) readFrame() (d []byte, err error) {
-	_, d, err = physical.Physical_IO.Read()
+	d, _, err = physical.Read()
 	return
 }

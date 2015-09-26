@@ -1,12 +1,15 @@
 package physical
 
-type Internal_Index int
+// An InternalIndex allows simpler referencing to physical and virtual network interfaces.
+// They are similar to Linux's ifindex
+type InternalIndex int
 
+// InternalIndexes are hardcoded
 const (
-	Loopback_Internal_Index = Internal_Index(1)
-	External_Internal_Index = Internal_Index(2)
+	LoopbackInternalIndex InternalIndex = 1
+	ExternalInternalIndex InternalIndex = 2
 )
 
-const TAP_NAME = "tap0"
-const RX_QUEUE_SIZE = 5000
-const MAX_FRAME_SZ = 1526
+const tapName = "tap0"
+const rxQUEUESIZE = 5000
+const maxFRAMESIZE = 1526

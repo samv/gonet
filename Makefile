@@ -23,9 +23,12 @@ clean:
 setup:
 	-./tap_setup.sh
 	-./arp_setup.sh
-lines:
-	find ./ -name '*.go' -o -name '*.py' -o -name '*.c' -o -name '*.sh' | xargs wc -l
 
+# line counting
+lines_all:
+	find ./ -name '*.go' -o -name '*.py' -o -name '*.c' -o -name '*.sh' | xargs wc -l
+lines_go:
+	find ./ -name '*.go' | xargs wc -l
 
 # Error Checking
 vet:

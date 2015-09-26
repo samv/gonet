@@ -12,8 +12,8 @@ import (
 func TestWriteWater(t *testing.T) {
 	t.Skip("caution: this test will always fail, as the network_rw will already be using tap0")
 
-	const TAP_NAME = "tap0"
-	ifce, err := water.NewTAP(TAP_NAME)
+	const tapName = "tap0"
+	ifce, err := water.NewTAP(tapName)
 	if err != nil {
 		logs.Error.Fatalln(err)
 	}
@@ -44,8 +44,8 @@ func TestWriteWater(t *testing.T) {
 }
 
 func TestReadWater(t *testing.T) {
-	const TAP_NAME = "tap0"
-	ifce, err := water.NewTAP(TAP_NAME)
+	const tapName = "tap0"
+	ifce, err := water.NewTAP(tapName)
 	if err != nil {
 		logs.Error.Fatalln(err)
 	}

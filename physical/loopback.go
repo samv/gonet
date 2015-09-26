@@ -8,17 +8,19 @@ type loopbackIO struct {
 	readBuf chan []byte
 }
 
-var GlobalLoopbackIO *loopbackIO = func() *loopbackIO {
+var globalLoopbackIO *loopbackIO
+
+func loInit() *loopbackIO {
 	lo, err := newLoopbackIO()
 	if err != nil {
 		logs.Error.Fatalln(err)
 	}
 	return lo
-}()
+}
 
 func newLoopbackIO() (*loopbackIO, error) {
 	lo := &loopbackIO{
-		readBuf: make(chan []byte, RX_QUEUE_SIZE),
+		readBuf: make(chan []byte, rxQUEUESIZE),
 	}
 
 	return lo, nil

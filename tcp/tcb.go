@@ -103,7 +103,7 @@ func (c *TCB) Send(data []byte) error { // a blocking send call
 	return nil
 }
 
-func (c *TCB) Recv(num uint64) ([]byte, error) { // blocking recv call
+func (c *TCB) Recv(num uint64) ([]byte, error) { // blocking recv call TODO add timeout
 	c.pushSignal.L.Lock()
 	defer c.pushSignal.L.Unlock()
 	for {
@@ -118,7 +118,7 @@ func (c *TCB) Recv(num uint64) ([]byte, error) { // blocking recv call
 		//ch logs.Trace.Println(c.Hash(), "Waiting for push signal")
 		c.pushSignal.Wait() // wait for a push
 	}
-	return nil, errors.New("Read failed")
+	//return nil, errors.New("Read failed")
 }
 
 const UINT32_MIN = uint32(0x00000000)

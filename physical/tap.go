@@ -12,13 +12,15 @@ type tapIO struct {
 	readBuf chan []byte
 }
 
-var GlobalTapIO *tapIO = func() *tapIO {
-	ifce, err := newTapIO(TAP_NAME)
+var globalTapIO *tapIO
+
+func tapInit() *tapIO {
+	ifce, err := newTapIO(tapName)
 	if err != nil {
 		logs.Error.Fatalln(err)
 	}
 	return ifce
-}()
+}
 
 func newTapIO(ifname string) (*tapIO, error) {
 	ifce, err := water.NewTAP(ifname)
@@ -28,7 +30,7 @@ func newTapIO(ifname string) (*tapIO, error) {
 
 	tap := &tapIO{
 		ifce:    ifce,
-		readBuf: make(chan []byte, RX_QUEUE_SIZE),
+		readBuf: make(chan []byte, rxQUEUESIZE),
 	}
 
 	go tap.readAll()
@@ -69,7 +71,7 @@ func (tap *tapIO) readAll() {
 }
 
 func (tap *tapIO) readOnce() ([]byte, error) {
-	buf := make([]byte, MAX_FRAME_SZ)
+	buf := make([]byte, maxFRAMESIZE)
 	ln, err := tap.ifce.Read(buf)
 	if err != nil {
 		return nil, err

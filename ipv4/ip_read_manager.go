@@ -66,7 +66,7 @@ func (nr *ip_read_manager) readAll() {
 
 func (nr *ip_read_manager) processOne(buf []byte) error {
 	protocol := uint8(buf[9])
-	rip := &ipv4tps.IPaddress{buf[12:16]}
+	rip := &ipv4tps.IPaddress{IP: buf[12:16]}
 
 	//fmt.Println(ln)
 	//fmt.Println(protocol, ip)

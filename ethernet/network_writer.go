@@ -8,7 +8,7 @@ import (
 type ethernet_writer struct {
 	dst_mac, src_mac *MAC_Address
 	ethertype        EtherType
-	index            physical.Internal_Index
+	index            physical.InternalIndex
 }
 
 func NewEthernet_Writer(dst_mac *MAC_Address, ethertype EtherType) (Ethernet_Writer, error) {
@@ -45,7 +45,7 @@ func (nw *ethernet_writer) Write(data []byte) (int, error) {
 
 	// send packet
 	//logs.Trace.Println("Ethernet sending packet:", packet)
-	return physical.Physical_IO.Write(nw.index, packet) // TODO do not use directly?
+	return physical.Write(nw.index, packet) // TODO do not use directly?
 }
 
 func (nw *ethernet_writer) Close() error {
