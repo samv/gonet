@@ -17,7 +17,9 @@ build:
 clean:
 	-rm -rf *.static.orig
 	-rm -rf *.static
-	-rm *.test
+	-rm -f *.test
+	-rm -f *.cover
+	-rm -f *.html
 	-rm runStack scaleTest local_latency
 	go clean ${pkgs}
 setup:
