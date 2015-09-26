@@ -9,14 +9,12 @@ import (
 )
 
 type ICMP_Read_Manager struct {
-	reader *ipv4.IP_Reader
+	reader ipv4.IPv4_Reader
 	buff   map[uint8](chan *ICMP_In)
 }
 
 func NewICMP_Read_Manager() (*ICMP_Read_Manager, error) {
-	irm := ipv4.GlobalIPReadManager
-
-	ipr, err := ipv4.NewIP_Reader(irm, ipv4tps.IP_ALL, ipv4.ICMP_PROTO)
+	ipr, err := ipv4.NewIP_Reader(ipv4tps.IP_ALL, ipv4.ICMP_PROTO)
 	if err != nil {
 		return nil, err
 	}
@@ -56,21 +54,21 @@ func (x *ICMP_Read_Manager) Unbind(ICMP_type uint8) error {
 
 func (x *ICMP_Read_Manager) readAll() {
 	for {
-		rip, lip, _, payload, err := x.reader.ReadFrom()
+		header, err := x.reader.ReadFrom()
 		if err != nil {
 			logs.Error.Println(err)
 			continue
 		}
 		////ch logs.Info.Println("Pay", payload, "rip", rip, "lip", lip)
 
-		if len(payload) < ICMP_Header_MinSize {
+		if len(header.Payload) < ICMP_Header_MinSize {
 			//ch logs.Info.Println("Dropping Small ICMP packet:", payload)
 			continue
 		}
 
 		// extract header
 		// TODO verify checksum
-		data, err := ExtractICMPHeader(payload, lip, rip)
+		data, err := ExtractICMPHeader(header.Payload, header.Lip, header.Lip)
 		if err != nil {
 			//ch logs.Info.Println(err)
 			continue

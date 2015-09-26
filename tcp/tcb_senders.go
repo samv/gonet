@@ -148,7 +148,10 @@ func (c *TCB) sendPacket(d *TCP_Packet) error {
 		return err
 	}
 
-	err = c.writer.WriteTo(pay)
+	n, err := c.writer.WriteTo(pay)
+	if n != len(pay) {
+		return errors.New("Not all data written successfully")
+	}
 
 	if err != nil {
 		logs.Error.Println(c.Hash(), err)

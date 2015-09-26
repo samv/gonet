@@ -10,7 +10,7 @@ import (
 )
 
 type UDP_Read_Manager struct {
-	reader *ipv4.IP_Reader
+	reader ipv4.IPv4_Reader
 	buff   map[uint16](map[ipv4tps.IPhash](chan []byte))
 }
 
@@ -23,9 +23,7 @@ var GlobalUDP_Read_Manager *UDP_Read_Manager = func() *UDP_Read_Manager {
 }()
 
 func NewUDP_Read_Manager() (*UDP_Read_Manager, error) {
-	irm := ipv4.GlobalIPReadManager
-
-	ipr, err := ipv4.NewIP_Reader(irm, ipv4tps.IP_ALL, ipv4.UDP_PROTO)
+	ipr, err := ipv4.NewIP_Reader(ipv4tps.IP_ALL, ipv4.UDP_PROTO)
 	if err != nil {
 		return nil, err
 	}
@@ -42,7 +40,7 @@ func NewUDP_Read_Manager() (*UDP_Read_Manager, error) {
 
 func (x *UDP_Read_Manager) readAll() {
 	for {
-		rip, lip, _, payload, err := x.reader.ReadFrom()
+		header, err := x.reader.ReadFrom()
 		if err != nil {
 			logs.Error.Println(err)
 			continue
@@ -50,26 +48,26 @@ func (x *UDP_Read_Manager) readAll() {
 		//fmt.Println(b)
 		//fmt.Println("UDP header and payload: ", payload)
 
-		dst := (((uint16)(payload[2])) * 256) + ((uint16)(payload[3]))
+		dst := (((uint16)(header.Payload[2])) * 256) + ((uint16)(header.Payload[3]))
 		//fmt.Println(dst)
 
-		if len(payload) < UDP_HEADER_SZ {
+		if len(header.Payload) < UDP_HEADER_SZ {
 			//ch logs.Info.Println("Dropping Small UDP packet:", payload)
 			continue
 		}
 
-		headerLen := uint16(payload[4])<<8 | uint16(payload[5])
-		if !ipv4.VerifyTransportChecksum(payload[:UDP_HEADER_SZ], rip, lip, headerLen, ipv4.UDP_PROTO) {
+		headerLen := uint16(header.Payload[4])<<8 | uint16(header.Payload[5])
+		if !ipv4.VerifyTransportChecksum(header.Payload[:UDP_HEADER_SZ], header.Rip, header.Lip, headerLen, ipv4.UDP_PROTO) {
 			//ch logs.Info.Println("Dropping UDP Packet for bad checksum:", payload)
 			continue
 		}
 
-		payload = payload[UDP_HEADER_SZ:]
+		header.Payload = header.Payload[UDP_HEADER_SZ:]
 		//fmt.Println(payload)
 
 		if portBuf, ok := x.buff[dst]; ok {
 			var output chan []byte = nil
-			if c, ok := portBuf[rip.Hash()]; ok {
+			if c, ok := portBuf[header.Rip.Hash()]; ok {
 				//fmt.Println("Found exact IP match for port", dst)
 				output = c
 			} else if c, ok := portBuf[ipv4tps.IP_ALL_HASH]; ok {
@@ -79,7 +77,7 @@ func (x *UDP_Read_Manager) readAll() {
 				logs.Warn.Println("Dropping UDP packet because nothing wanted it")
 			}
 			select {
-			case output <- payload:
+			case output <- header.Payload:
 				//ch logs.Trace.Println("Forwarded UDP packet lport:", dst, "and rip:", rip.IP)
 			default:
 				logs.Warn.Println("Dropping UDP packet: no space in buffer")

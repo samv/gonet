@@ -12,33 +12,26 @@ import (
 )
 
 type ARP_Manager struct {
-	read          chan *ethernet.Ethernet_Header
-	write         *ethernet.Network_Writer
+	read          ethernet.Ethernet_Reader
 	ethtp_manager map[ethernet.EtherType](ARP_Protocol_Dealer)
 }
 
 var GlobalARP_Manager *ARP_Manager = func() *ARP_Manager {
-	am, err := NewARP_Manager(ethernet.GlobalNetworkReader)
+	am, err := NewARP_Manager(ethernet.GlobalNetworkReadManager)
 	if err != nil {
 		logs.Error.Fatalln(err)
 	}
 	return am
 }()
 
-func NewARP_Manager(in *ethernet.Network_Reader) (*ARP_Manager, error) {
+func NewARP_Manager(in *ethernet.Network_Read_Manager) (*ARP_Manager, error) {
 	read, err := in.Bind(ethernet.ETHERTYPE_ARP)
-	if err != nil {
-		return nil, err
-	}
-
-	write, err := ethernet.NewNetwork_Writer()
 	if err != nil {
 		return nil, err
 	}
 
 	am := &ARP_Manager{
 		read:          read,
-		write:         write,
 		ethtp_manager: make(map[ethernet.EtherType](ARP_Protocol_Dealer)),
 	}
 
@@ -62,13 +55,17 @@ func (am *ARP_Manager) Register(tp ethernet.EtherType, arppd ARP_Protocol_Dealer
 
 func (am *ARP_Manager) dealer() {
 	for {
-		header := <-am.read
+		header, err := am.read.Read()
+		if err != nil {
+			logs.Error.Println(err)
+			continue
+		}
 		data := header.Packet
 		packet := ParseARP_Packet_General(data)
 
 		if pd, ok := am.ethtp_manager[packet.ptype]; ok && packet.htype == ARP_HTYPE_ETHERNET {
 			packet = ParseARP_Packet_Type(data, packet, pd)
-			//			//ch logs.Trace.Println("ARP packet:", packet)
+			//logs.Trace.Println("ARP packet:", packet)
 			pd.Add(packet.spa, packet.sha)
 			if packet.oper == ARP_OPER_REQUEST {
 				////ch logs.Trace.Println("Got ARP Request")
@@ -89,18 +86,18 @@ func (am *ARP_Manager) dealer() {
 						logs.Warn.Println("MarshalPacket failed; dropping ARP request")
 						continue
 					}
-					err = am.write.Write(rp, reply.tha, ethernet.ETHERTYPE_ARP)
+					_, err = ethernet.EthernetWriteOne(reply.tha, ethernet.ETHERTYPE_ARP, rp)
 					if err != nil {
 						logs.Warn.Println("Failed to send ARP response; dropping request packet")
 						continue
 					}
-					////ch logs.Trace.Println("Replied to ARP request")
+					//logs.Trace.Println("Replied to ARP request")
 				} else {
 					logs.Warn.Println("Ignoring ARP request with a different target protocol address")
 					continue
 				}
 			} else if packet.oper == ARP_OPER_REPLY {
-				////ch logs.Trace.Println("Got ARP Reply")
+				//logs.Trace.Println("Got ARP Reply")
 				// signal is sent in the Add function
 			} else {
 				logs.Warn.Println("Dropping ARP packet for bad operation")
@@ -111,7 +108,7 @@ func (am *ARP_Manager) dealer() {
 
 func (am *ARP_Manager) Request(tp ethernet.EtherType, raddr ARP_Protocol_Address) (*ethernet.MAC_Address, error) {
 	if pd, ok := am.ethtp_manager[tp]; ok {
-		// send request
+		// prepare request
 		requestPacket := &ARP_Packet{
 			htype: ARP_HTYPE_ETHERNET,
 			ptype: tp,
@@ -123,11 +120,15 @@ func (am *ARP_Manager) Request(tp ethernet.EtherType, raddr ARP_Protocol_Address
 			tha:   ethernet.External_bcast_address,
 			tpa:   raddr,
 		}
+
+		// make request
 		request, err := requestPacket.MarshalPacket()
 		if err != nil {
 			return nil, err
 		}
-		err = am.write.Write(request, requestPacket.tha, ethernet.ETHERTYPE_ARP)
+
+		// send request
+		_, err = ethernet.EthernetWriteOne(requestPacket.tha, ethernet.ETHERTYPE_ARP, request)
 		if err != nil {
 			return nil, err
 		}

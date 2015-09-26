@@ -1,7 +1,5 @@
 package ethernet
 
-type internal_index int
-
 type MAC_Address struct {
 	Data []byte
 }

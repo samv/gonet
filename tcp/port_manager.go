@@ -14,7 +14,7 @@ import (
 
 // Global src, dst port and ip registry for TCP binding
 type TCP_Port_Manager_Type struct {
-	tcp_reader *ipv4.IP_Reader
+	tcp_reader ipv4.IPv4_Reader
 	incoming   map[uint16](map[uint16](map[ipv4tps.IPhash](chan *TCP_Packet))) // dst, src port, remote ip
 	lock       *sync.RWMutex
 }
@@ -58,13 +58,13 @@ func (m *TCP_Port_Manager_Type) unbind(rport, lport uint16, ip *ipv4tps.IPaddres
 
 func (m *TCP_Port_Manager_Type) readAll() {
 	for {
-		rip, lip, _, payload, err := m.tcp_reader.ReadFrom()
+		header, err := m.tcp_reader.ReadFrom()
 		if err != nil {
 			logs.Error.Println("TCP readAll error", err)
 			continue
 		}
 
-		err = m.readDeal(rip, lip, payload)
+		err = m.readDeal(header.Rip, header.Lip, header.Payload)
 		if err != nil {
 			logs.Error.Println(err)
 			continue
@@ -122,9 +122,7 @@ func (m *TCP_Port_Manager_Type) readDeal(rip, lip *ipv4tps.IPaddress, payload []
 }
 
 var TCP_Port_Manager = func() *TCP_Port_Manager_Type {
-	irm := ipv4.GlobalIPReadManager
-
-	ipr, err := ipv4.NewIP_Reader(irm, ipv4tps.IP_ALL, ipv4.TCP_PROTO)
+	ipr, err := ipv4.NewIP_Reader(ipv4tps.IP_ALL, ipv4.TCP_PROTO)
 	if err != nil {
 		logs.Error.Println(err)
 		return nil

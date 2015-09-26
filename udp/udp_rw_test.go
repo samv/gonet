@@ -42,7 +42,7 @@ func read_write_test(t *testing.T, ip *ipv4tps.IPaddress, exp int) {
 			t.Fatal(err)
 		}
 
-		err = w.Write(data)
+		_, err = w.Write(data)
 		if err != nil {
 			t.Fatal(err)
 		} else {

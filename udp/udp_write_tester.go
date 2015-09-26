@@ -17,7 +17,7 @@ func write_tester() {
 	for i := 0; i < 11; i++ {
 		fragmentTest = append(fragmentTest, fragmentTest...)
 	}
-	err = w.Write(fragmentTest)
+	_, err = w.Write(fragmentTest)
 
 	/*data := []byte{'h', 'e', 'l', 'l', 'o'}
 	    for {

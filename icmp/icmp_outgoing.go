@@ -4,11 +4,12 @@ import (
 	"network/ipv4"
 )
 
-func SendICMPPacket(writer *ipv4.IP_Writer, data *ICMP_Header) error {
+func SendICMPPacket(writer ipv4.IPv4_Writer, data *ICMP_Header) error {
 	packet, err := data.MarshalICMPHeader()
 	if err != nil {
 		return err
 	}
 
-	return writer.WriteTo(packet)
+	_, err = writer.WriteTo(packet)
+	return err
 }

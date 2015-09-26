@@ -2,7 +2,7 @@
 
 SHELL = /bin/bash
 
-pkgs = network/ethernet network/arp network/ipv4/arpv4 network/ipv4/ipv4tps network/ipv4/ipv4src network/ipv4 network/udp network/tcp network/icmp network/ping
+pkgs = network/physical network/ethernet network/arp network/ipv4/arpv4 network/ipv4/ipv4tps network/ipv4/ipv4src network/ipv4 network/udp network/tcp network/icmp network/ping
 
 install: clean setup depend build
 depend:
@@ -23,9 +23,12 @@ clean:
 setup:
 	-./tap_setup.sh
 	-./arp_setup.sh
-lines:
-	find ./ -name '*.go' -o -name '*.py' -o -name '*.c' -o -name '*.sh' | xargs wc -l
 
+# line counting
+lines_all:
+	find ./ -name '*.go' -o -name '*.py' -o -name '*.c' -o -name '*.sh' | xargs wc -l
+lines_go:
+	find ./ -name '*.go' | xargs wc -l
 
 # Error Checking
 vet:
@@ -47,7 +50,7 @@ test_tcp:
 	./run_test.sh network/tcp
 test_ping:
 	./run_test.sh network/ping
-test_ethernet:
+test_tap:
 	# for testing water
 	./run_test.sh network/ethernet
 

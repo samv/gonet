@@ -2,35 +2,46 @@ package ipv4
 
 import (
 	"network/ipv4/ipv4tps"
-	"time"
 
 	"github.com/hsheth2/logs"
 
+	"errors"
 	"sync"
 )
 
-type IP_Reader struct {
+type IP_Read_Header struct {
+	Rip, Lip   *ipv4tps.IPaddress
+	B, Payload []byte
+}
+
+type ipv4_reader struct {
 	incomingPackets chan []byte
-	irm             *IP_Read_Manager
+	processed       chan *IP_Read_Header
+	irm             *ip_read_manager
 	protocol        uint8
 	ip              *ipv4tps.IPaddress
 	fragBuf         map[string](chan []byte)
 	fragBufMutex    *sync.Mutex
 }
 
-func NewIP_Reader(irm *IP_Read_Manager, ip *ipv4tps.IPaddress, protocol uint8) (*IP_Reader, error) {
-	c, err := irm.Bind(ip, protocol)
+func NewIP_Reader(ip *ipv4tps.IPaddress, protocol uint8) (*ipv4_reader, error) {
+	c, err := globalIP_Read_Manager.Bind(ip, protocol)
 	if err != nil {
 		return nil, err
 	}
 
-	return &IP_Reader{
+	ipr := &ipv4_reader{
 		incomingPackets: c,
+		processed:       make(chan *IP_Read_Header, IP_READ_MANAGER_BUFFER_SIZE),
 		protocol:        protocol,
 		ip:              ip,
 		fragBuf:         make(map[string](chan []byte)),
 		fragBufMutex:    &sync.Mutex{},
-	}, nil
+	}
+
+	go ipr.readAll()
+
+	return ipr, nil
 }
 
 func slicePacket(b []byte) (hrd, payload []byte) {
@@ -39,135 +50,51 @@ func slicePacket(b []byte) (hrd, payload []byte) {
 	return b[:hdrLen], b[hdrLen:]
 }
 
-func (ipr *IP_Reader) fragAssembler(in <-chan []byte, quit <-chan bool, didQuit chan<- bool, done chan bool) {
-	payload := make([]byte, 0)
-	extraFrags := make(map[uint64]([]byte))
-	recvLast := false
-
+func (ipr *ipv4_reader) readAll() {
 	for {
-		select {
-		case <-quit:
-			//Trace.Println("quitting upon quit signal")
-			didQuit <- true
-			return
-		case frag := <-in:
-			//Trace.Println("got a fragment packet. len:", len(frag))
-			hdr, p := slicePacket(frag)
-			//offset := 8 * (uint64(hdr[6]&0x1f)<<8 + uint64(hdr[7]))
-			//fmt.Println("RECEIVED FRAG")
-			//fmt.Println("Offset:", offset)
-			//fmt.Println(len(payload))
-
-			// add to map
-			offset := 8 * (uint64(hdr[6]&0x1F)<<8 + uint64(hdr[7]))
-			//Trace.Println("Offset:", offset)
-			extraFrags[offset] = p
-
-			// check more fragments flag
-			if (hdr[6]>>5)&0x01 == 0 {
-				recvLast = true
-			}
-
-			// add to payload
-			//Trace.Println("Begin to add to the payload")
-			for {
-				if storedFrag, found := extraFrags[uint64(len(payload))]; found {
-					//Trace.Println("New Payload Len: ", len(payload))
-					delete(extraFrags, uint64(len(payload)))
-					payload = append(payload, storedFrag...)
-				} else {
-					break
-				}
-			}
-			//Trace.Println("Finished add to the payload")
-
-			// deal with the payload
-			if recvLast && len(extraFrags) == 0 {
-				//Trace.Println("Done")
-				// correct the header
-				fullPacketHdr := hdr
-				totalLen := uint16(fullPacketHdr[0]&0x0F)*4 + uint16(len(payload))
-				fullPacketHdr[2] = byte(totalLen >> 8)
-				fullPacketHdr[3] = byte(totalLen)
-				fullPacketHdr[6] = 0
-				fullPacketHdr[7] = 0
-
-				// update the checksum
-				check := calculateIPChecksum(fullPacketHdr[:20])
-				fullPacketHdr[10] = byte(check >> 8)
-				fullPacketHdr[11] = byte(check)
-
-				// send the packet back into processing
-				//go func() {
-				select {
-				case ipr.incomingPackets <- append(fullPacketHdr, payload...):
-				default:
-					logs.Warn.Println("Dropping defragmented packet, no space in buffer")
-				}
-				//fmt.Println("FINISHED")
-				//}()
-				//Trace.Println("Just wrote back in")
-				done <- true
-				return // from goroutine
-			}
-			//Trace.Println("Looping")
+		//fmt.Println("STARTING READ")
+		b := <-ipr.incomingPackets
+		//	//ch logs.Info.Println("Read IP packet")
+		//fmt.Println("RAW READ COMPLETED")
+		//fmt.Println("Read Length: ", len(b))
+		//fmt.Print(".")
+		//fmt.Println("Full Read Data: ", b)
+		err := ipr.readOne(b)
+		if err != nil {
+			logs.Error.Println(err)
+			continue
 		}
 	}
-
-	// drop the packet upon timeout
-	//Trace.Println(errors.New("Fragments took too long, packet dropped"))
-	//return
 }
 
-func (ipr *IP_Reader) killFragAssembler(quit chan<- bool, didQuit <-chan bool, done <-chan bool, bufID string) {
-	// sends quit to the assembler if it doesn't send done
-	select {
-	case <-time.After(FRAGMENT_TIMEOUT):
-		//Trace.Println("Force quitting packet assembler")
-		quit <- true
-		<-didQuit // will block until it has been received
-	case <-done:
-		//Trace.Println("Received done msg.")
-	}
-
-	//Trace.Println("Frag Assemble Ended, finished")
-	ipr.fragBufMutex.Lock()
-	defer ipr.fragBufMutex.Unlock()
-	delete(ipr.fragBuf, bufID)
-}
-
-func (ipr *IP_Reader) ReadFrom() (rip, lip *ipv4tps.IPaddress, b, payload []byte, e error) {
-	//fmt.Println("STARTING READ")
-	b = <-ipr.incomingPackets
-	//	//ch logs.Info.Println("Read IP packet")
-	//fmt.Println("RAW READ COMPLETED")
-	//fmt.Println("Read Length: ", len(b))
-	//fmt.Print(".")
-	//fmt.Println("Full Read Data: ", b)
-
+func (ipr *ipv4_reader) readOne(b []byte) error {
 	hdr, p := slicePacket(b)
 
 	// extract source IP and protocol
-	rip = &ipv4tps.IPaddress{IP: hdr[12:16]}
-	lip = &ipv4tps.IPaddress{IP: hdr[16:20]}
-	//	proto := uint8(hdr[9])
-	//	if !((bytes.Equal(ipr.ip.IP, rip.IP) || bytes.Equal(ipr.ip.IP, ipv4tps.IP_ALL)) && ipr.protocol == proto) {
-	//		//Info.Println("Not interested in packet: dropping.")
-	//		// TODO should this already have been done in the read manager?
-	//		return ipr.ReadFrom()
-	//	}
+	rip := &ipv4tps.IPaddress{IP: hdr[12:16]}
+	lip := &ipv4tps.IPaddress{IP: hdr[16:20]}
 
 	// verify checksum
 	if !verifyIPChecksum(hdr) {
-		//Info.Println("Header checksum incorrect, packet dropped")
-		return ipr.ReadFrom() // return another packet instead
+		return errors.New("Header checksum incorrect, packet dropped")
 	}
 
 	packetOffset := uint16(hdr[6]&0x1f)<<8 + uint16(hdr[7])
 	//fmt.Println("PACK OFF", packetOffset, "HEADER FLAGS", (hdr[6] >> 5))
 	if ((hdr[6]>>5)&0x01 == 0) && (packetOffset == 0) {
 		// not a fragment
-		return rip, lip, b, p, nil
+		packet := &IP_Read_Header{
+			Rip:     rip,
+			Lip:     lip,
+			B:       b,
+			Payload: p,
+		}
+		select {
+		case ipr.processed <- packet:
+		default:
+			return errors.New("Dropping packet: no space in buffer")
+		}
+		return nil
 	} else {
 		// is a fragment
 		bufID := string([]byte{hdr[12], hdr[13], hdr[14], hdr[15], // the source IP
@@ -200,12 +127,16 @@ func (ipr *IP_Reader) ReadFrom() (rip, lip *ipv4tps.IPaddress, b, payload []byte
 		}
 		ipr.fragBufMutex.Unlock()
 
-		// after dealing with the fragment, try reading again
-		return ipr.ReadFrom()
+		// after dealing with the fragment
+		return nil
 	}
 }
 
-func (ipr *IP_Reader) Close() error {
+func (ipr *ipv4_reader) ReadFrom() (*IP_Read_Header, error) {
+	return <-ipr.processed, nil
+}
+
+func (ipr *ipv4_reader) Close() error {
 	return ipr.irm.Unbind(ipr.ip, ipr.protocol)
 }
 

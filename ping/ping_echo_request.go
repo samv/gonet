@@ -26,7 +26,7 @@ func (pm *Ping_Manager) ping_response_dealer() {
 	}
 }
 
-func sendSinglePing(writer *ipv4.IP_Writer, id, seq uint16, timeout time.Duration, reply chan *icmp.ICMP_In) {
+func sendSinglePing(writer ipv4.IPv4_Writer, id, seq uint16, timeout time.Duration, reply chan *icmp.ICMP_In) {
 	// prepare packet
 	packet := &icmp.ICMP_Header{
 		TypeF: PING_ECHO_REQUEST_TYPE,
@@ -36,18 +36,8 @@ func sendSinglePing(writer *ipv4.IP_Writer, id, seq uint16, timeout time.Duratio
 	}
 
 	// make data
-	data, err := packet.MarshalICMPHeader()
-	if err != nil {
-		logs.Error.Println(err)
-		return
-	}
+	icmp.SendICMPPacket(writer, packet)
 
-	// send
-	err = writer.WriteTo(data)
-	if err != nil {
-		logs.Error.Println(err)
-		return
-	}
 	time1 := time.Now()
 	timeoutTimer := time.NewTimer(timeout)
 	go func(seqChan chan *icmp.ICMP_In, header *icmp.ICMP_Header, time1 *time.Time, timer *time.Timer) {
@@ -98,7 +88,7 @@ func sequenceDealer(idInput chan *icmp.ICMP_In, seqChan map[uint16](chan *icmp.I
 		case packet := <-idInput:
 			// //ch logs.Info.Println("icmp in =", packet.Header.Opt)
 			seqNum := uint16(packet.Header.Opt)
-			if _, ok := seqChan[seqNum]; ok {
+			if _, ok := seqChan[seqNum]; ok { // FIXME data race
 				seqChan[seqNum] <- packet
 			} else {
 				//ch logs.Info.Println("Dropping bad seq num packet with existing identifier")
@@ -126,7 +116,7 @@ func (pm *Ping_Manager) SendPing(ip *ipv4tps.IPaddress, interval, timeout time.D
 	}
 
 	for i := uint16(1); i <= numPings; i++ {
-		seqChannel[i] = make(chan *icmp.ICMP_In)
+		seqChannel[i] = make(chan *icmp.ICMP_In) // FIXME data race
 
 		sendSinglePing(writer, id, i, timeout, seqChannel[i]) // function is non-blocking
 
