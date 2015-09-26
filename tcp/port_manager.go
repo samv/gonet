@@ -58,13 +58,13 @@ func (m *TCP_Port_Manager_Type) unbind(rport, lport uint16, ip *ipv4tps.IPaddres
 
 func (m *TCP_Port_Manager_Type) readAll() {
 	for {
-		rip, lip, _, payload, err := m.tcp_reader.ReadFrom()
+		header, err := m.tcp_reader.ReadFrom()
 		if err != nil {
 			logs.Error.Println("TCP readAll error", err)
 			continue
 		}
 
-		err = m.readDeal(rip, lip, payload)
+		err = m.readDeal(header.Rip, header.Lip, header.Payload)
 		if err != nil {
 			logs.Error.Println(err)
 			continue
