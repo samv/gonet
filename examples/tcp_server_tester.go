@@ -13,7 +13,7 @@ func server_tester() {
 		return
 	}
 
-	err = s.BindListen(20102, ipv4tps.IP_ALL)
+	err = s.BindListen(20102, ipv4tps.IPAll)
 	if err != nil {
 		logs.Error.Println(err)
 		return

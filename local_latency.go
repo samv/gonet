@@ -9,7 +9,7 @@ import (
 )
 
 func main() {
-	err := ping.GlobalPingManager.SendPing(&ipv4tps.IPaddress{IP: []byte{127, 0, 0, 1}}, ping.FLOOD_INTERVAL, time.Second, 500)
+	err := ping.GlobalPingManager.SendPing(&ipv4tps.IPAddress{IP: []byte{127, 0, 0, 1}}, ping.FLOOD_INTERVAL, time.Second, 500)
 	if err != nil {
 		logs.Error.Println(err)
 	} else {

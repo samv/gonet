@@ -8,28 +8,26 @@ import (
 	"github.com/hsheth2/logs"
 )
 
-const IP_READ_MANAGER_BUFFER_SIZE = 5000
-
-type ip_read_manager struct {
+type ipReadManager struct {
 	read    ethernet.Reader
 	buffers map[uint8](map[ipv4tps.IPhash](chan []byte))
 }
 
-var globalIP_Read_Manager = func() *ip_read_manager {
-	irm, err := NewIP_Read_Manager(ethernet.GlobalNetworkReadManager)
+var globalIPReadManager = func() *ipReadManager {
+	irm, err := newIPReadManager(ethernet.GlobalNetworkReadManager)
 	if err != nil {
 		logs.Error.Fatal(err)
 	}
 	return irm
 }()
 
-func NewIP_Read_Manager(in *ethernet.NetworkReadManager) (*ip_read_manager, error) {
+func newIPReadManager(in *ethernet.NetworkReadManager) (*ipReadManager, error) {
 	r, err := in.Bind(ethernet.EtherTypeIP)
 	if err != nil {
 		return nil, err
 	}
 
-	irm := &ip_read_manager{
+	irm := &ipReadManager{
 		read:    r,
 		buffers: make(map[uint8](map[ipv4tps.IPhash](chan []byte))),
 	}
@@ -39,24 +37,24 @@ func NewIP_Read_Manager(in *ethernet.NetworkReadManager) (*ip_read_manager, erro
 	return irm, nil
 }
 
-func (nr *ip_read_manager) readAll() {
+func (irm *ipReadManager) readAll() {
 	for {
 		//logs.Trace.Println("IP read manager readAll starting")
-		eth_packet, err := nr.read.Read()
+		ethPacket, err := irm.read.Read()
 		if err != nil {
 			logs.Error.Println(err)
 			continue
 		}
 		//logs.Info.Println("IP read_manager recvd packet:", eth_packet.Packet)
-		buf := eth_packet.Packet
+		buf := ethPacket.Packet
 
-		if len(buf) <= IP_HEADER_LEN {
-			logs.Warn.Println("Dropping IP Packet for bogus length <=", IP_HEADER_LEN)
+		if len(buf) <= ipHeaderLength {
+			logs.Warn.Println("Dropping IP Packet for bogus length <=", ipHeaderLength)
 			logs.Warn.Println("Data being dropped:", buf)
 			continue
 		}
 
-		err = nr.processOne(buf)
+		err = irm.processOne(buf)
 		if err != nil {
 			logs.Warn.Println(err)
 			continue
@@ -64,9 +62,9 @@ func (nr *ip_read_manager) readAll() {
 	}
 }
 
-func (nr *ip_read_manager) processOne(buf []byte) error {
+func (irm *ipReadManager) processOne(buf []byte) error {
 	protocol := uint8(buf[9])
-	rip := &ipv4tps.IPaddress{IP: buf[12:16]}
+	rip := &ipv4tps.IPAddress{IP: buf[12:16]}
 
 	//fmt.Println(ln)
 	//fmt.Println(protocol, ip)
@@ -74,13 +72,13 @@ func (nr *ip_read_manager) processOne(buf []byte) error {
 		fmt.Println(buf)
 	}*/
 	//fmt.Println(protocol, ip)
-	if protoBuf, foundProto := nr.buffers[protocol]; foundProto {
+	if protoBuf, foundProto := irm.buffers[protocol]; foundProto {
 		//fmt.Println("Dealing with packet")
-		var output chan []byte = nil
+		var output chan []byte
 		if c, foundIP := protoBuf[rip.Hash()]; foundIP {
 			//fmt.Println("Found exact")
 			output = c
-		} else if c, foundAll := protoBuf[ipv4tps.IP_ALL_HASH]; foundAll {
+		} else if c, foundAll := protoBuf[ipv4tps.IPAllHash]; foundAll {
 			//fmt.Println("Found global")
 			output = c
 		} else {
@@ -97,7 +95,7 @@ func (nr *ip_read_manager) processOne(buf []byte) error {
 	return nil
 }
 
-func (irm *ip_read_manager) Bind(ip *ipv4tps.IPaddress, protocol uint8) (chan []byte, error) {
+func (irm *ipReadManager) bind(ip *ipv4tps.IPAddress, protocol uint8) (chan []byte, error) {
 	// create the protocol buffer if it doesn't exist already
 	_, protoOk := irm.buffers[protocol]
 	if !protoOk {
@@ -106,16 +104,16 @@ func (irm *ip_read_manager) Bind(ip *ipv4tps.IPaddress, protocol uint8) (chan []
 	}
 
 	// add the IP binding, if possible
-	if _, IP_exists := irm.buffers[protocol][ip.Hash()]; !IP_exists {
+	if _, exists := irm.buffers[protocol][ip.Hash()]; !exists {
 		// doesn't exist in map already
-		buf := make(chan []byte, IP_READ_MANAGER_BUFFER_SIZE)
+		buf := make(chan []byte, ipReadBufferSize)
 		irm.buffers[protocol][ip.Hash()] = buf
 		return buf, nil
 	}
-	return nil, errors.New("IP already bound to.")
+	return nil, errors.New("IP already bound to")
 }
 
-func (irm *ip_read_manager) Unbind(ip *ipv4tps.IPaddress, protocol uint8) error {
+func (irm *ipReadManager) unbind(ip *ipv4tps.IPAddress, protocol uint8) error {
 	ipBuf, protoOk := irm.buffers[protocol]
 	if !protoOk {
 		return errors.New("IP not bound, cannot unbind")

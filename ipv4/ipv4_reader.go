@@ -10,29 +10,29 @@ import (
 )
 
 type IP_Read_Header struct {
-	Rip, Lip   *ipv4tps.IPaddress
+	Rip, Lip   *ipv4tps.IPAddress
 	B, Payload []byte
 }
 
-type ipv4_reader struct {
+type ipReader struct {
 	incomingPackets chan []byte
 	processed       chan *IP_Read_Header
-	irm             *ip_read_manager
+	irm             *ipReadManager
 	protocol        uint8
-	ip              *ipv4tps.IPaddress
+	ip              *ipv4tps.IPAddress
 	fragBuf         map[string](chan []byte)
 	fragBufMutex    *sync.Mutex
 }
 
-func NewIP_Reader(ip *ipv4tps.IPaddress, protocol uint8) (*ipv4_reader, error) {
-	c, err := globalIP_Read_Manager.Bind(ip, protocol)
+func NewIP_Reader(ip *ipv4tps.IPAddress, protocol uint8) (*ipReader, error) {
+	c, err := globalIPReadManager.bind(ip, protocol)
 	if err != nil {
 		return nil, err
 	}
 
-	ipr := &ipv4_reader{
+	ipr := &ipReader{
 		incomingPackets: c,
-		processed:       make(chan *IP_Read_Header, IP_READ_MANAGER_BUFFER_SIZE),
+		processed:       make(chan *IP_Read_Header, ipReadBufferSize),
 		protocol:        protocol,
 		ip:              ip,
 		fragBuf:         make(map[string](chan []byte)),
@@ -50,7 +50,7 @@ func slicePacket(b []byte) (hrd, payload []byte) {
 	return b[:hdrLen], b[hdrLen:]
 }
 
-func (ipr *ipv4_reader) readAll() {
+func (ipr *ipReader) readAll() {
 	for {
 		//fmt.Println("STARTING READ")
 		b := <-ipr.incomingPackets
@@ -67,12 +67,12 @@ func (ipr *ipv4_reader) readAll() {
 	}
 }
 
-func (ipr *ipv4_reader) readOne(b []byte) error {
+func (ipr *ipReader) readOne(b []byte) error {
 	hdr, p := slicePacket(b)
 
 	// extract source IP and protocol
-	rip := &ipv4tps.IPaddress{IP: hdr[12:16]}
-	lip := &ipv4tps.IPaddress{IP: hdr[16:20]}
+	rip := &ipv4tps.IPAddress{IP: hdr[12:16]}
+	lip := &ipv4tps.IPAddress{IP: hdr[16:20]}
 
 	// verify checksum
 	if !verifyIPChecksum(hdr) {
@@ -108,7 +108,7 @@ func (ipr *ipv4_reader) readOne(b []byte) error {
 		if _, ok := ipr.fragBuf[bufID]; !ok {
 			// create the fragment buffer and quit
 			//Trace.Printf("creating a new buffer for %x\n", bufID)
-			ipr.fragBuf[bufID] = make(chan []byte, FRAGMENT_ASSEMBLER_BUFFER_SIZE)
+			ipr.fragBuf[bufID] = make(chan []byte, fragmentAssemblerBufferSize)
 
 			quit := make(chan bool, 1)
 			done := make(chan bool, 1)
@@ -132,12 +132,12 @@ func (ipr *ipv4_reader) readOne(b []byte) error {
 	}
 }
 
-func (ipr *ipv4_reader) ReadFrom() (*IP_Read_Header, error) {
+func (ipr *ipReader) ReadFrom() (*IP_Read_Header, error) {
 	return <-ipr.processed, nil
 }
 
-func (ipr *ipv4_reader) Close() error {
-	return ipr.irm.Unbind(ipr.ip, ipr.protocol)
+func (ipr *ipReader) Close() error {
+	return ipr.irm.unbind(ipr.ip, ipr.protocol)
 }
 
 /* h := &ipv4.Header{

@@ -41,7 +41,7 @@ func main() {
 		return
 	}
 
-	err = s.BindListenWithQueueSize(throughput_port, ipv4tps.IP_ALL, 10+3*int(numConn))
+	err = s.BindListenWithQueueSize(throughput_port, ipv4tps.IPAll, 10+3*int(numConn))
 	if err != nil {
 		logs.Error.Println(err)
 		return

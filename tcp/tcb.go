@@ -16,9 +16,9 @@ import (
 
 type TCB struct {
 	read             chan *TCP_Packet    // input
-	writer           ipv4.IPv4_Writer    // output
-	ipAddress        *ipv4tps.IPaddress  // destination ip address
-	srcIP            *ipv4tps.IPaddress  // src ip address
+	writer           ipv4.Writer    // output
+	ipAddress        *ipv4tps.IPAddress  // destination ip address
+	srcIP            *ipv4tps.IPAddress  // src ip address
 	lport, rport     uint16              // ports
 	seqNum           uint32              // seq number (SND.NXT)
 	ackNum           uint32              // ack number (RCV.NXT)
@@ -46,7 +46,7 @@ type TCB struct {
 	maxSegSize       uint16              // MSS (MTU)
 }
 
-func New_TCB(local, remote uint16, dstIP *ipv4tps.IPaddress, read chan *TCP_Packet, write ipv4.IPv4_Writer, kind uint) (*TCB, error) {
+func New_TCB(local, remote uint16, dstIP *ipv4tps.IPAddress, read chan *TCP_Packet, write ipv4.Writer, kind uint) (*TCB, error) {
 	//ch logs.Trace.Println("New_TCB")
 
 	seq, err := genRandSeqNum()
@@ -81,7 +81,7 @@ func New_TCB(local, remote uint16, dstIP *ipv4tps.IPaddress, read chan *TCP_Pack
 		IRS:              0,
 		recentAckNum:     0,
 		recentAckUpdate:  notifiers.NewNotifier(),
-		maxSegSize:       ipv4.MTU - TCP_BASIC_HEADER_SZ,
+		maxSegSize:       ipv4.IPMTU - TCP_BASIC_HEADER_SZ,
 	}
 	////ch logs.Trace.Println("Starting the packet dealer")
 

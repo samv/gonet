@@ -9,14 +9,14 @@ import (
 const UDP_HEADER_SZ = 8
 
 type UDP_Writer struct {
-	rip      *ipv4tps.IPaddress // destination ip address
-	lip      *ipv4tps.IPaddress // source ip address
-	writer   ipv4.IPv4_Writer
+	rip      *ipv4tps.IPAddress // destination ip address
+	lip      *ipv4tps.IPAddress // source ip address
+	writer   ipv4.Writer
 	src, dst uint16 // ports
 }
 
-func NewUDP_Writer(src, dest uint16, dstIP *ipv4tps.IPaddress) (*UDP_Writer, error) {
-	write, err := ipv4.NewIP_Writer(dstIP, ipv4.UDP_PROTO)
+func NewUDP_Writer(src, dest uint16, dstIP *ipv4tps.IPAddress) (*UDP_Writer, error) {
+	write, err := ipv4.NewIP_Writer(dstIP, ipv4.IPProtoUDP)
 	if err != nil {
 		return nil, err
 	}
@@ -40,7 +40,7 @@ func (c *UDP_Writer) Write(x []byte) (int, error) {
 	}
 
 	data := append(UDPHeader, x...)
-	cksum := ipv4.CalcTransportChecksum(data, c.lip, c.rip, headerLen, ipv4.UDP_PROTO)
+	cksum := ipv4.CalcTransportChecksum(data, c.lip, c.rip, headerLen, ipv4.IPProtoUDP)
 	data[6] = uint8(cksum >> 8)
 	data[7] = uint8(cksum)
 

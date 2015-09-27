@@ -18,7 +18,7 @@ type ICMP_Header struct {
 type ICMP_In struct {
 	Header         *ICMP_Header
 	OriginalPacket []byte
-	LIP, RIP       *ipv4tps.IPaddress
+	LIP, RIP       *ipv4tps.IPAddress
 }
 
 func (h *ICMP_Header) MarshalICMPHeader() ([]byte, error) {
@@ -43,7 +43,7 @@ func (h *ICMP_Header) MarshalICMPHeaderGivenSlice(base []byte) error {
 	return nil
 }
 
-func ExtractICMPHeader(dat []byte, lip, rip *ipv4tps.IPaddress) (*ICMP_In, error) {
+func ExtractICMPHeader(dat []byte, lip, rip *ipv4tps.IPAddress) (*ICMP_In, error) {
 	// TODO: ICMP checksum validation
 	return &ICMP_In{
 		Header: &ICMP_Header{

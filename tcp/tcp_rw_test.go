@@ -21,7 +21,7 @@ func TestReadWriteOverNetwork(t *testing.T) {
 	read_write_test(t, ipv4src.External_ip_address)
 }
 
-func read_write_test(t *testing.T, ip *ipv4tps.IPaddress) {
+func read_write_test(t *testing.T, ip *ipv4tps.IPAddress) {
 	// TODO make both server and client read and write
 	success := make(chan bool, 1)
 

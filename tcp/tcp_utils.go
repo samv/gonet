@@ -86,7 +86,7 @@ func (c *TCB) timeWaitTimer(restart chan bool) error {
 type TCP_Packet struct {
 	header   *TCP_Header
 	payload  []byte
-	rip, lip *ipv4tps.IPaddress
+	rip, lip *ipv4tps.IPAddress
 }
 
 func (p *TCP_Packet) Marshal_TCP_Packet() ([]byte, error) {
@@ -113,7 +113,7 @@ type TCP_Header struct {
 	options []byte
 }
 
-func (h *TCP_Header) Marshal_TCP_Header(dstIP, srcIP *ipv4tps.IPaddress, data []byte) ([]byte, error) {
+func (h *TCP_Header) Marshal_TCP_Header(dstIP, srcIP *ipv4tps.IPAddress, data []byte) ([]byte, error) {
 	// pad options with 0's
 	for len(h.options)%4 != 0 {
 		h.options = append(h.options, 0)
@@ -138,14 +138,14 @@ func (h *TCP_Header) Marshal_TCP_Header(dstIP, srcIP *ipv4tps.IPaddress, data []
 	}, h.options...)
 
 	// insert the checksum
-	cksum := ipv4.CalcTransportChecksum(append(header, data...), srcIP, dstIP, headerLen+uint16(len(data)), ipv4.TCP_PROTO)
+	cksum := ipv4.CalcTransportChecksum(append(header, data...), srcIP, dstIP, headerLen+uint16(len(data)), ipv4.IPProtoTCP)
 	header[16] = byte(cksum >> 8)
 	header[17] = byte(cksum)
 
 	return header, nil
 }
 
-func Extract_TCP_Packet(d []byte, rip, lip *ipv4tps.IPaddress) (*TCP_Packet, error) {
+func Extract_TCP_Packet(d []byte, rip, lip *ipv4tps.IPAddress) (*TCP_Packet, error) {
 	// TODO: test this function fully
 
 	// header length

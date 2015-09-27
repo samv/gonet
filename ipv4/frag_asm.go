@@ -6,8 +6,8 @@ import (
 	"github.com/hsheth2/logs"
 )
 
-func (ipr *ipv4_reader) fragAssembler(in <-chan []byte, quit <-chan bool, didQuit chan<- bool, done chan bool) {
-	payload := make([]byte, 0)
+func (ipr *ipReader) fragAssembler(in <-chan []byte, quit <-chan bool, didQuit chan<- bool, done chan bool) {
+	payload := []byte{}
 	extraFrags := make(map[uint64]([]byte))
 	recvLast := false
 
@@ -86,10 +86,10 @@ func (ipr *ipv4_reader) fragAssembler(in <-chan []byte, quit <-chan bool, didQui
 	//return
 }
 
-func (ipr *ipv4_reader) killFragAssembler(quit chan<- bool, didQuit <-chan bool, done <-chan bool, bufID string) {
+func (ipr *ipReader) killFragAssembler(quit chan<- bool, didQuit <-chan bool, done <-chan bool, bufID string) {
 	// sends quit to the assembler if it doesn't send done
 	select {
-	case <-time.After(FRAGMENT_TIMEOUT):
+	case <-time.After(fragmentationTimeout):
 		//Trace.Println("Force quitting packet assembler")
 		quit <- true
 		<-didQuit // will block until it has been received

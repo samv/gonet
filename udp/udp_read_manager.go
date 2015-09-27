@@ -10,7 +10,7 @@ import (
 )
 
 type UDP_Read_Manager struct {
-	reader ipv4.IPv4_Reader
+	reader ipv4.Reader
 	buff   map[uint16](map[ipv4tps.IPhash](chan []byte))
 }
 
@@ -23,7 +23,7 @@ var GlobalUDP_Read_Manager *UDP_Read_Manager = func() *UDP_Read_Manager {
 }()
 
 func NewUDP_Read_Manager() (*UDP_Read_Manager, error) {
-	ipr, err := ipv4.NewIP_Reader(ipv4tps.IP_ALL, ipv4.UDP_PROTO)
+	ipr, err := ipv4.NewIP_Reader(ipv4tps.IPAll, ipv4.IPProtoUDP)
 	if err != nil {
 		return nil, err
 	}
@@ -57,7 +57,7 @@ func (x *UDP_Read_Manager) readAll() {
 		}
 
 		headerLen := uint16(header.Payload[4])<<8 | uint16(header.Payload[5])
-		if !ipv4.VerifyTransportChecksum(header.Payload[:UDP_HEADER_SZ], header.Rip, header.Lip, headerLen, ipv4.UDP_PROTO) {
+		if !ipv4.VerifyTransportChecksum(header.Payload[:UDP_HEADER_SZ], header.Rip, header.Lip, headerLen, ipv4.IPProtoUDP) {
 			//ch logs.Info.Println("Dropping UDP Packet for bad checksum:", payload)
 			continue
 		}
@@ -70,7 +70,7 @@ func (x *UDP_Read_Manager) readAll() {
 			if c, ok := portBuf[header.Rip.Hash()]; ok {
 				//fmt.Println("Found exact IP match for port", dst)
 				output = c
-			} else if c, ok := portBuf[ipv4tps.IP_ALL_HASH]; ok {
+			} else if c, ok := portBuf[ipv4tps.IPAllHash]; ok {
 				//fmt.Println("Found default IP match for port", dst)
 				output = c
 			} else {
@@ -88,7 +88,7 @@ func (x *UDP_Read_Manager) readAll() {
 	}
 }
 
-func (x *UDP_Read_Manager) Bind(port uint16, ip *ipv4tps.IPaddress) (chan []byte, error) {
+func (x *UDP_Read_Manager) Bind(port uint16, ip *ipv4tps.IPAddress) (chan []byte, error) {
 	// add the port if not already there
 	if _, found := x.buff[port]; !found {
 		x.buff[port] = make(map[ipv4tps.IPhash](chan []byte))
@@ -104,7 +104,7 @@ func (x *UDP_Read_Manager) Bind(port uint16, ip *ipv4tps.IPaddress) (chan []byte
 	}
 }
 
-func (x *UDP_Read_Manager) Unbind(port uint16, ip *ipv4tps.IPaddress) error {
+func (x *UDP_Read_Manager) Unbind(port uint16, ip *ipv4tps.IPAddress) error {
 	delete(x.buff[port], ip.Hash()) // TODO verify that it will succeed
 	return nil
 }

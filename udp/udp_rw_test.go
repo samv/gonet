@@ -22,7 +22,7 @@ func TestReadWriteExternal(t *testing.T) {
 	read_write_test(t, ipv4src.External_ip_address, 0)
 }
 
-func read_write_test(t *testing.T, ip *ipv4tps.IPaddress, exp int) {
+func read_write_test(t *testing.T, ip *ipv4tps.IPAddress, exp int) {
 	success := make(chan bool, 1)
 
 	r, err := NewUDP(GlobalUDP_Read_Manager, rwport, ip)

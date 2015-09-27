@@ -26,7 +26,7 @@ func (pm *Ping_Manager) ping_response_dealer() {
 	}
 }
 
-func sendSinglePing(writer ipv4.IPv4_Writer, id, seq uint16, timeout time.Duration, reply chan *icmp.ICMP_In) {
+func sendSinglePing(writer ipv4.Writer, id, seq uint16, timeout time.Duration, reply chan *icmp.ICMP_In) {
 	// prepare packet
 	packet := &icmp.ICMP_Header{
 		TypeF: PING_ECHO_REQUEST_TYPE,
@@ -99,7 +99,7 @@ func sequenceDealer(idInput chan *icmp.ICMP_In, seqChan map[uint16](chan *icmp.I
 
 const FLOOD_INTERVAL = 0
 
-func (pm *Ping_Manager) SendPing(ip *ipv4tps.IPaddress, interval, timeout time.Duration, numPings uint16) error {
+func (pm *Ping_Manager) SendPing(ip *ipv4tps.IPAddress, interval, timeout time.Duration, numPings uint16) error {
 	terminate := make(chan bool)
 	id, seqChannel, err := pm.initIdentifier(terminate)
 	if err != nil {

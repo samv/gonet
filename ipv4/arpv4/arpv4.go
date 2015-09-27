@@ -29,7 +29,7 @@ func NewARP_Table() (*ARPv4_Table, error) {
 func (table *ARPv4_Table) Lookup(ip arp.ARP_Protocol_Address) (*ethernet.MACAddress, error) {
 	table.tableMutex.RLock()
 	defer table.tableMutex.RUnlock()
-	if ans, ok := table.table[ip.(*ipv4tps.IPaddress).Hash()]; ok {
+	if ans, ok := table.table[ip.(*ipv4tps.IPAddress).Hash()]; ok {
 		return ans, nil
 	}
 	//	d, _ := ip.Marshal()
@@ -53,7 +53,7 @@ func (table *ARPv4_Table) Add(ip arp.ARP_Protocol_Address, addr *ethernet.MACAdd
 	// if _, ok := table.table[ip]; ok {
 	// 	return errors.New("Cannot overwrite existing entry")
 	// }
-	d := ip.(*ipv4tps.IPaddress)
+	d := ip.(*ipv4tps.IPAddress)
 	// //ch logs.Trace.Printf("ARPv4 table: add: %v (%v)\n", addr.Data, *d)
 	table.tableMutex.Lock()
 	table.table[d.Hash()] = addr
@@ -67,7 +67,7 @@ func (table *ARPv4_Table) GetReplyNotifier() *notifiers.Notifier {
 }
 
 func (table *ARPv4_Table) Unmarshal(d []byte) arp.ARP_Protocol_Address {
-	return &ipv4tps.IPaddress{IP: d}
+	return &ipv4tps.IPAddress{IP: d}
 }
 
 func (table *ARPv4_Table) GetAddress() arp.ARP_Protocol_Address {
