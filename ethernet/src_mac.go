@@ -19,8 +19,8 @@ const ethLoadFileStaticMAC = "external_mac.static"
 
 // Static MAC addresses and broadcast addresses
 var (
-	LoopbackMACAddress *MACAddress
-	ExternalMACAddress *MACAddress
+	LoopbackMACAddress       *MACAddress
+	ExternalMACAddress       *MACAddress
 	LoopbackBroadcastAddress *MACAddress
 	ExternalBroadcastAddress *MACAddress
 )

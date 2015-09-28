@@ -5,23 +5,22 @@ import (
 	"testing"
 	"time"
 
-	"network/ipv4/ipv4src"
-	"network/ipv4/ipv4tps"
+	"network/ipv4"
 )
 
 const server_port = 20102
 const client_port = 20101
 
 func TestReadWriteLocal(t *testing.T) {
-	read_write_test(t, ipv4tps.MakeIP("127.0.0.1"))
+	read_write_test(t, ipv4.MakeIP("127.0.0.1"))
 }
 
 func TestReadWriteOverNetwork(t *testing.T) {
 	t.Skip("External tests actually don't work")
-	read_write_test(t, ipv4src.External_ip_address)
+	read_write_test(t, ipv4.External_ip_address)
 }
 
-func read_write_test(t *testing.T, ip *ipv4tps.IPAddress) {
+func read_write_test(t *testing.T, ip *ipv4.IPAddress) {
 	// TODO make both server and client read and write
 	success := make(chan bool, 1)
 

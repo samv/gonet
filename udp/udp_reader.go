@@ -1,7 +1,7 @@
 package udp
 
 import (
-	"network/ipv4/ipv4tps"
+	"network/ipv4"
 )
 
 const MAX_UDP_PACKET_LEN = 65507
@@ -11,10 +11,10 @@ type UDP_Reader struct {
 	manager   *UDP_Read_Manager
 	bytes     <-chan []byte
 	port      uint16 // ports
-	ipAddress *ipv4tps.IPAddress
+	ipAddress *ipv4.IPAddress
 }
 
-func NewUDP(x *UDP_Read_Manager, port uint16, ip *ipv4tps.IPAddress) (*UDP_Reader, error) {
+func NewUDP(x *UDP_Read_Manager, port uint16, ip *ipv4.IPAddress) (*UDP_Reader, error) {
 	bts, err := x.Bind(port, ip)
 	if err != nil {
 		return nil, err

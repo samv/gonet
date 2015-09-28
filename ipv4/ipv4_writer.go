@@ -2,9 +2,6 @@ package ipv4
 
 import (
 	"network/ethernet"
-	"network/ipv4/arpv4"
-	"network/ipv4/ipv4src"
-	"network/ipv4/ipv4tps"
 
 	"sync"
 
@@ -15,7 +12,7 @@ import (
 type ipv4_writer struct {
 	nw          ethernet.Writer
 	version     uint8
-	dst, src    *ipv4tps.IPAddress
+	dst, src    *IPAddress
 	headerLen   uint16
 	ttl         uint8
 	protocol    uint8
@@ -24,9 +21,9 @@ type ipv4_writer struct {
 	maxFragSize uint16
 }
 
-func NewIP_Writer(dst *ipv4tps.IPAddress, protocol uint8) (*ipv4_writer, error) {
-	gateway := ipv4src.GlobalSource_IP_Table.Gateway(dst)
-	dst_mac, err := arpv4.GlobalARPv4_Table.LookupRequest(gateway)
+func NewIP_Writer(dst *IPAddress, protocol uint8) (*ipv4_writer, error) {
+	gateway := GlobalSource_IP_Table.Gateway(dst)
+	dst_mac, err := GlobalARPv4_Table.LookupRequest(gateway)
 	if err != nil {
 		return nil, err
 	}
@@ -56,7 +53,7 @@ func NewIP_Writer(dst *ipv4tps.IPAddress, protocol uint8) (*ipv4_writer, error) 
 		version:     ipv4.Version,
 		headerLen:   ipHeaderLength,
 		dst:         dst,
-		src:         ipv4src.GlobalSource_IP_Table.Query(dst),
+		src:         GlobalSource_IP_Table.Query(dst),
 		ttl:         defaultTimeToLive,
 		protocol:    protocol,
 		identifier:  20000, // TODO generate this properly
@@ -188,13 +185,13 @@ func (ipw *ipv4_writer) Close() error {
 	return ipw.nw.Close()
 }
 
-/* h := &ipv4.Header{
-	Version:  ipv4.Version,      // protocol version
+/* h := &Header{
+	Version:  Version,      // protocol version
 	Len:      20,                // header length
 	TOS:      0,                 // type-of-service (0 is everything normal)
 	TotalLen: len(x) + 20,       // packet total length (octets)
 	ID:       0,                 // identification
-	Flags:    ipv4.DontFragment, // flags
+	Flags:    DontFragment, // flags
 	FragOff:  0,                 // fragment offset
 	TTL:      8,                 // time-to-live (maximum lifespan in seconds)
 	Protocol: 17,                // next protocol (17 is UDP)

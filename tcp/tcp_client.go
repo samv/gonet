@@ -5,11 +5,9 @@ import (
 	"network/ipv4"
 
 	"github.com/hsheth2/logs"
-
-	"network/ipv4/ipv4tps"
 )
 
-func New_TCB_From_Client(local, remote uint16, dstIP *ipv4tps.IPAddress) (*TCB, error) {
+func New_TCB_From_Client(local, remote uint16, dstIP *ipv4.IPAddress) (*TCB, error) {
 	/*write, err := NewIP_Writer(dstIP, TCP_PROTO)
 	if err != nil {
 		return nil, err

@@ -2,7 +2,7 @@ package udp
 
 import (
 	"fmt"
-	"network/ipv4/ipv4src"
+	"network/ipv4"
 	"os/exec"
 	"testing"
 	"time"
@@ -16,7 +16,7 @@ func TestBasic(t *testing.T) {
 
 	succeed := make(chan bool, 1)
 	go func() {
-		outpt := make(chan []byte, 1)
+		output := make(chan []byte, 1)
 		go func() {
 			cmd := exec.Command("python", "./udp_write_test_helper.py", fmt.Sprint(port))
 			out, err := cmd.Output()
@@ -25,11 +25,11 @@ func TestBasic(t *testing.T) {
 				fmt.Println(out)
 				t.Fatal(err)
 			}
-			outpt <- out
+			output <- out
 		}()
 
 		fmt.Println("Creating UDP Writer")
-		w, err := NewUDP_Writer(20000, port, ipv4src.Loopback_ip_address)
+		w, err := NewUDP_Writer(20000, port, ipv4.Loopback_ip_address)
 		if err != nil {
 			t.Fatal(err)
 		}
@@ -51,7 +51,7 @@ func TestBasic(t *testing.T) {
 		}
 
 		fmt.Println("Waiting")
-		result := <-outpt
+		result := <-output
 		fmt.Println("Got output")
 		if len(result) != len(data) {
 			t.Fatal(len(result), "not equal to", len(data))

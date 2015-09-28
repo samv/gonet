@@ -2,8 +2,13 @@ package ipv4
 
 import (
 	"io"
-	"network/ipv4/ipv4tps"
 )
+
+func init() {
+	initTypes()
+	GlobalSource_IP_Table = initSourceIPTable()
+	GlobalARPv4_Table = initARPv4Table()
+}
 
 type ipReadT interface {
 	ReadFrom() (*IP_Read_Header, error)
@@ -38,7 +43,7 @@ type ipv4_read_writer struct {
 	write *ipv4_writer
 }
 
-func NewIPv4_RW(ip *ipv4tps.IPAddress, protocol uint8) (ReadWriter, error) {
+func NewIPv4_RW(ip *IPAddress, protocol uint8) (ReadWriter, error) {
 	read, err := NewIP_Reader(ip, protocol)
 	if err != nil {
 		return nil, err

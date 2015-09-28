@@ -1,8 +1,6 @@
 package ipv4
 
 import (
-	"network/ipv4/ipv4tps"
-
 	"github.com/hsheth2/logs"
 
 	"errors"
@@ -10,7 +8,7 @@ import (
 )
 
 type IP_Read_Header struct {
-	Rip, Lip   *ipv4tps.IPAddress
+	Rip, Lip   *IPAddress
 	B, Payload []byte
 }
 
@@ -19,12 +17,12 @@ type ipReader struct {
 	processed       chan *IP_Read_Header
 	irm             *ipReadManager
 	protocol        uint8
-	ip              *ipv4tps.IPAddress
+	ip              *IPAddress
 	fragBuf         map[string](chan []byte)
 	fragBufMutex    *sync.Mutex
 }
 
-func NewIP_Reader(ip *ipv4tps.IPAddress, protocol uint8) (*ipReader, error) {
+func NewIP_Reader(ip *IPAddress, protocol uint8) (*ipReader, error) {
 	c, err := globalIPReadManager.bind(ip, protocol)
 	if err != nil {
 		return nil, err
@@ -71,8 +69,8 @@ func (ipr *ipReader) readOne(b []byte) error {
 	hdr, p := slicePacket(b)
 
 	// extract source IP and protocol
-	rip := &ipv4tps.IPAddress{IP: hdr[12:16]}
-	lip := &ipv4tps.IPAddress{IP: hdr[16:20]}
+	rip := &IPAddress{IP: hdr[12:16]}
+	lip := &IPAddress{IP: hdr[16:20]}
 
 	// verify checksum
 	if !verifyIPChecksum(hdr) {
@@ -140,13 +138,13 @@ func (ipr *ipReader) Close() error {
 	return ipr.irm.unbind(ipr.ip, ipr.protocol)
 }
 
-/* h := &ipv4.Header{
-	Version:  ipv4.Version,      // protocol version
+/* h := &Header{
+	Version:  Version,      // protocol version
 	Len:      20,                // header length
 	TOS:      0,                 // type-of-service (0 is everything normal)
 	TotalLen: len(x) + 20,       // packet total length (octets)
 	ID:       0,                 // identification
-	Flags:    ipv4.DontFragment, // flags
+	Flags:    DontFragment, // flags
 	FragOff:  0,                 // fragment offset
 	TTL:      8,                 // time-to-live (maximum lifespan in seconds)
 	Protocol: 17,                // next protocol (17 is UDP)

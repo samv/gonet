@@ -1,26 +1,52 @@
-package arpv4
+package ipv4
 
 import (
 	"errors"
 	"network/arp"
 	"network/ethernet"
-	"network/ipv4/ipv4src"
-	"network/ipv4/ipv4tps"
 
 	"sync"
 
+	"github.com/hsheth2/logs"
 	"github.com/hsheth2/notifiers"
 )
 
 type ARPv4_Table struct {
-	table         map[ipv4tps.IPhash](*ethernet.MACAddress)
+	table         map[IPhash](*ethernet.MACAddress)
 	tableMutex    *sync.RWMutex
 	replyNotifier *notifiers.Notifier
 }
 
+var GlobalARPv4_Table *ARPv4_Table
+
+func initARPv4Table() *ARPv4_Table {
+	// create ARP table
+	table, err := NewARP_Table()
+	if err != nil {
+		logs.Error.Fatalln(err)
+	}
+
+	// add loopback ARP entry
+	err = table.Add(Loopback_ip_address, ethernet.LoopbackMACAddress)
+	if err != nil {
+		logs.Error.Fatalln(err)
+	}
+
+	// add external loopback entry to ARP
+	err = table.Add(External_ip_address, ethernet.ExternalMACAddress)
+	if err != nil {
+		logs.Error.Fatalln(err)
+	}
+
+	// register to get packets
+	arp.GlobalARP_Manager.Register(ethernet.EtherTypeIP, table)
+
+	return table
+}
+
 func NewARP_Table() (*ARPv4_Table, error) {
 	return &ARPv4_Table{
-		table:         make(map[ipv4tps.IPhash](*ethernet.MACAddress)),
+		table:         make(map[IPhash](*ethernet.MACAddress)),
 		replyNotifier: notifiers.NewNotifier(),
 		tableMutex:    &sync.RWMutex{},
 	}, nil
@@ -29,7 +55,7 @@ func NewARP_Table() (*ARPv4_Table, error) {
 func (table *ARPv4_Table) Lookup(ip arp.ARP_Protocol_Address) (*ethernet.MACAddress, error) {
 	table.tableMutex.RLock()
 	defer table.tableMutex.RUnlock()
-	if ans, ok := table.table[ip.(*ipv4tps.IPAddress).Hash()]; ok {
+	if ans, ok := table.table[ip.(*IPAddress).Hash()]; ok {
 		return ans, nil
 	}
 	//	d, _ := ip.Marshal()
@@ -53,7 +79,7 @@ func (table *ARPv4_Table) Add(ip arp.ARP_Protocol_Address, addr *ethernet.MACAdd
 	// if _, ok := table.table[ip]; ok {
 	// 	return errors.New("Cannot overwrite existing entry")
 	// }
-	d := ip.(*ipv4tps.IPAddress)
+	d := ip.(*IPAddress)
 	// //ch logs.Trace.Printf("ARPv4 table: add: %v (%v)\n", addr.Data, *d)
 	table.tableMutex.Lock()
 	table.table[d.Hash()] = addr
@@ -67,9 +93,9 @@ func (table *ARPv4_Table) GetReplyNotifier() *notifiers.Notifier {
 }
 
 func (table *ARPv4_Table) Unmarshal(d []byte) arp.ARP_Protocol_Address {
-	return &ipv4tps.IPAddress{IP: d}
+	return &IPAddress{IP: d}
 }
 
 func (table *ARPv4_Table) GetAddress() arp.ARP_Protocol_Address {
-	return ipv4src.External_ip_address
+	return External_ip_address
 }

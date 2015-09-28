@@ -3,17 +3,16 @@ package ipv4
 import (
 	"time"
 	//"github.com/hsheth2/logs"
-	"network/ipv4/ipv4tps"
 )
 
 const (
 	IPProtoICMP = 1
-	IPProtoUDP = 17
-	IPProtoTCP = 6
+	IPProtoUDP  = 17
+	IPProtoTCP  = 6
 )
 
 const (
-	ipHeaderLength = 20
+	ipHeaderLength    = 20
 	maxIPPacketLength = 65535
 )
 
@@ -27,7 +26,7 @@ const (
 )
 
 const (
-	fragmentationTimeout = time.Second * 5
+	fragmentationTimeout        = time.Second * 5
 	fragmentAssemblerBufferSize = 35
 )
 
@@ -70,13 +69,13 @@ func verifyIPChecksum(header []byte) bool {
 	return Checksum(header) == 0
 }
 
-func CalcTransportChecksum(header []byte, srcIP, dstIP *ipv4tps.IPAddress, headerLen uint16, proto uint8) uint16 {
+func CalcTransportChecksum(header []byte, srcIP, dstIP *IPAddress, headerLen uint16, proto uint8) uint16 {
 	////ch logs.Trace.Println("Transport Checksum")
 	ips := append(srcIP.IP, dstIP.IP...)
 	return Checksum(append(append(ips, []byte{0, byte(proto), byte(headerLen >> 8), byte(headerLen)}...), header...))
 }
 
-func VerifyTransportChecksum(header []byte, srcIP, dstIP *ipv4tps.IPAddress, headerLen uint16, proto uint8) bool {
+func VerifyTransportChecksum(header []byte, srcIP, dstIP *IPAddress, headerLen uint16, proto uint8) bool {
 	// TODO: do TCP/UDP checksum verification
 	return true
 }

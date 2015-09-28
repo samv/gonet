@@ -1,11 +1,11 @@
-package ipv4tps
+package ipv4
 
 import (
 	"encoding/binary"
 	"net"
 )
 
-func init() {
+func initTypes() {
 	allIP := []byte{0, 0, 0, 0}
 	IPAll = &IPAddress{IP: allIP}
 	IPAllHash = IPAll.Hash()
@@ -21,7 +21,7 @@ type IPAddress struct {
 const IPv4AddressLength = 4
 
 var (
-	IPAll *IPAddress
+	IPAll     *IPAddress
 	IPAllHash IPhash
 )
 
