@@ -17,15 +17,15 @@ type ARP_Manager struct {
 }
 
 var GlobalARP_Manager *ARP_Manager = func() *ARP_Manager {
-	am, err := NewARP_Manager(ethernet.GlobalNetworkReadManager)
+	am, err := NewARP_Manager()
 	if err != nil {
 		logs.Error.Fatalln(err)
 	}
 	return am
 }()
 
-func NewARP_Manager(in *ethernet.NetworkReadManager) (*ARP_Manager, error) {
-	read, err := in.Bind(ethernet.EtherTypeARP)
+func NewARP_Manager() (*ARP_Manager, error) {
+	read, err := ethernet.Bind(ethernet.EtherTypeARP)
 	if err != nil {
 		return nil, err
 	}
