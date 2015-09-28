@@ -2,9 +2,6 @@ package ipv4
 
 import (
 	"network/ethernet"
-	"network/ipv4/arpv4"
-	"network/ipv4/ipv4src"
-	"network/ipv4/ipv4tps"
 
 	"sync"
 
@@ -15,7 +12,7 @@ import (
 type ipv4_writer struct {
 	nw          ethernet.Writer
 	version     uint8
-	dst, src    *ipv4tps.IPaddress
+	dst, src    *IPAddress
 	headerLen   uint16
 	ttl         uint8
 	protocol    uint8
@@ -24,9 +21,9 @@ type ipv4_writer struct {
 	maxFragSize uint16
 }
 
-func NewIP_Writer(dst *ipv4tps.IPaddress, protocol uint8) (*ipv4_writer, error) {
-	gateway := ipv4src.GlobalSource_IP_Table.Gateway(dst)
-	dst_mac, err := arpv4.GlobalARPv4_Table.LookupRequest(gateway)
+func NewIP_Writer(dst *IPAddress, protocol uint8) (*ipv4_writer, error) {
+	gateway := GlobalSource_IP_Table.Gateway(dst)
+	dst_mac, err := GlobalARPv4_Table.LookupRequest(gateway)
 	if err != nil {
 		return nil, err
 	}
@@ -54,14 +51,14 @@ func NewIP_Writer(dst *ipv4tps.IPaddress, protocol uint8) (*ipv4_writer, error) 
 		//sockAddr:    addr,
 		nw:          nw,
 		version:     ipv4.Version,
-		headerLen:   IP_HEADER_LEN,
+		headerLen:   ipHeaderLength,
 		dst:         dst,
-		src:         ipv4src.GlobalSource_IP_Table.Query(dst),
-		ttl:         DEFAULT_TTL,
+		src:         GlobalSource_IP_Table.Query(dst),
+		ttl:         defaultTimeToLive,
 		protocol:    protocol,
 		identifier:  20000, // TODO generate this properly
 		idLock:      &sync.Mutex{},
-		maxFragSize: MTU, // TODO determine this dynamically with LLDP
+		maxFragSize: IPMTU, // TODO determine this dynamically with LLDP
 	}, nil
 }
 
@@ -125,7 +122,7 @@ func (ipw *ipv4_writer) WriteTo(p []byte) (int, error) {
 		// Payload
 		var newPacket []byte
 		if len(p) <= maxFragSize*(i+1) {
-			newPacket = make([]byte, IP_HEADER_LEN+len(p[maxPaySize*i:]))
+			newPacket = make([]byte, ipHeaderLength+len(p[maxPaySize*i:]))
 			////ch logs.Trace.Println("IP Writing Entire Packet:", p[maxPaySize*i:], "i:", i)
 			totalLen = uint16(ipw.headerLen) + uint16(len(p[maxPaySize*i:]))
 			//fmt.Println("Full Pack")
@@ -143,12 +140,12 @@ func (ipw *ipv4_writer) WriteTo(p []byte) (int, error) {
 			header[10] = byte(checksum >> 8)
 			header[11] = byte(checksum)
 
-			copy(newPacket[:IP_HEADER_LEN], header)
-			copy(newPacket[IP_HEADER_LEN:], p[maxPaySize*i:])
+			copy(newPacket[:ipHeaderLength], header)
+			copy(newPacket[ipHeaderLength:], p[maxPaySize*i:])
 			////ch logs.Trace.Println("Full Packet to Send in IPv4 Writer:", newPacket, "(len ", len(newPacket), ")")
 			//fmt.Println("CALCULATED LEN:", i*maxFragSize+len(p[maxPaySize*i:]))
 		} else {
-			newPacket = make([]byte, IP_HEADER_LEN+len(p[maxPaySize*i:maxPaySize*(i+1)]))
+			newPacket = make([]byte, ipHeaderLength+len(p[maxPaySize*i:maxPaySize*(i+1)]))
 			////ch logs.Trace.Println("IP Writer Fragmenting Packet")
 			totalLen = uint16(ipw.headerLen) + uint16(len(p[maxPaySize*i:maxPaySize*(i+1)]))
 			//fmt.Println("Partial packet")
@@ -166,8 +163,8 @@ func (ipw *ipv4_writer) WriteTo(p []byte) (int, error) {
 			header[10] = byte(checksum >> 8)
 			header[11] = byte(checksum)
 
-			copy(newPacket[:IP_HEADER_LEN], header)
-			copy(newPacket[IP_HEADER_LEN:], p[maxPaySize*i:maxPaySize*(i+1)])
+			copy(newPacket[:ipHeaderLength], header)
+			copy(newPacket[ipHeaderLength:], p[maxPaySize*i:maxPaySize*(i+1)])
 			////ch logs.Trace.Println("Full Packet Frag to Send in IPv4 Writer:", newPacket, "(len ", len(newPacket), ")")
 		}
 
@@ -188,13 +185,13 @@ func (ipw *ipv4_writer) Close() error {
 	return ipw.nw.Close()
 }
 
-/* h := &ipv4.Header{
-	Version:  ipv4.Version,      // protocol version
+/* h := &Header{
+	Version:  Version,      // protocol version
 	Len:      20,                // header length
 	TOS:      0,                 // type-of-service (0 is everything normal)
 	TotalLen: len(x) + 20,       // packet total length (octets)
 	ID:       0,                 // identification
-	Flags:    ipv4.DontFragment, // flags
+	Flags:    DontFragment, // flags
 	FragOff:  0,                 // fragment offset
 	TTL:      8,                 // time-to-live (maximum lifespan in seconds)
 	Protocol: 17,                // next protocol (17 is UDP)

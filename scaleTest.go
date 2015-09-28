@@ -4,7 +4,7 @@ import (
 	//	"log"
 	//	"net/http"
 	//	_ "net/http/pprof"
-	"network/ipv4/ipv4tps"
+	"network/ipv4/ipv4"
 	"network/tcp"
 
 	"os"
@@ -41,7 +41,7 @@ func main() {
 		return
 	}
 
-	err = s.BindListenWithQueueSize(throughput_port, ipv4tps.IP_ALL, 10+3*int(numConn))
+	err = s.BindListenWithQueueSize(throughput_port, ipv4.IPAll, 10+3*int(numConn))
 	if err != nil {
 		logs.Error.Println(err)
 		return

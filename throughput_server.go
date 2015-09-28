@@ -4,7 +4,7 @@ import (
 	//	"log"
 	//	"net/http"
 	//	_ "net/http/pprof"
-	"network/ipv4/ipv4tps"
+	"network/ipv4/ipv4"
 	"network/tcp"
 
 	"github.com/hsheth2/logs"
@@ -21,7 +21,7 @@ func main() {
 		return
 	}
 
-	err = s.BindListen(49230, ipv4tps.IP_ALL)
+	err = s.BindListen(49230, ipv4.IPAll)
 	if err != nil {
 		logs.Error.Println(err)
 		return

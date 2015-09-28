@@ -6,14 +6,12 @@ import (
 	"sync"
 
 	"github.com/hsheth2/logs"
-
-	"network/ipv4/ipv4tps"
 )
 
 type Server_TCB struct {
 	listener        chan *TCP_Packet
 	listenPort      uint16
-	listenIP        *ipv4tps.IPaddress
+	listenIP        *ipv4.IPAddress
 	state           uint
 	kind            uint
 	connQueue       chan *TCB
@@ -24,7 +22,7 @@ func New_Server_TCB() (*Server_TCB, error) {
 	x := &Server_TCB{
 		listener:        nil,
 		listenPort:      0,
-		listenIP:        ipv4tps.IP_ALL,
+		listenIP:        ipv4.IPAll,
 		state:           CLOSED,
 		kind:            TCP_SERVER,
 		connQueueUpdate: sync.NewCond(&sync.Mutex{}),
@@ -33,11 +31,11 @@ func New_Server_TCB() (*Server_TCB, error) {
 	return x, nil
 }
 
-func (s *Server_TCB) BindListen(port uint16, ip *ipv4tps.IPaddress) error {
+func (s *Server_TCB) BindListen(port uint16, ip *ipv4.IPAddress) error {
 	return s.BindListenWithQueueSize(port, ip, TCP_LISTEN_DEFAULT_QUEUE_SZ)
 }
 
-func (s *Server_TCB) BindListenWithQueueSize(port uint16, ip *ipv4tps.IPaddress, queue_sz int) error {
+func (s *Server_TCB) BindListenWithQueueSize(port uint16, ip *ipv4.IPAddress, queue_sz int) error {
 	s.listenPort = port
 	s.listenIP = ip
 	read, err := TCP_Port_Manager.bind(0, port, ip)
@@ -78,7 +76,7 @@ func (s *Server_TCB) LongListener() {
 				return
 			}
 
-			r, err := ipv4.NewIP_Writer(rIP, ipv4.TCP_PROTO)
+			r, err := ipv4.NewIP_Writer(rIP, ipv4.IPProtoTCP)
 			if err != nil {
 				logs.Error.Println(err)
 				return
@@ -132,7 +130,7 @@ func (s *Server_TCB) LongListener() {
 	}
 }
 
-func (s *Server_TCB) Accept() (c *TCB, rip *ipv4tps.IPaddress, rport uint16, err error) {
+func (s *Server_TCB) Accept() (c *TCB, rip *ipv4.IPAddress, rport uint16, err error) {
 	s.connQueueUpdate.L.Lock()
 	defer s.connQueueUpdate.L.Unlock()
 	for {

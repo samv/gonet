@@ -1,4 +1,4 @@
-package ipv4src
+package ipv4
 
 import (
 	"io/ioutil"
@@ -7,8 +7,6 @@ import (
 	"strings"
 
 	"github.com/hsheth2/logs"
-
-	"network/ipv4/ipv4tps"
 )
 
 const (
@@ -18,29 +16,31 @@ const (
 const IPv4_DEFAULT_NETMASK = 24
 
 var (
-	Loopback_ip_address *ipv4tps.IPaddress = ipv4tps.MakeIP("127.0.0.1")
-	External_ip_address *ipv4tps.IPaddress
-	external_gateway    *ipv4tps.IPaddress = func() *ipv4tps.IPaddress {
+	Loopback_ip_address *IPAddress = MakeIP("127.0.0.1")
+	External_ip_address *IPAddress
+	external_gateway    *IPAddress = func() *IPAddress {
 		_, filename, _, _ := runtime.Caller(1)
 		data, err := ioutil.ReadFile(path.Join(path.Dir(filename), IPv4_STATIC_GATEWAY_LOAD_FILE))
 		if err != nil {
 			logs.Error.Fatalln(err)
 		}
 		str := strings.TrimSpace(string(data))
-		return ipv4tps.MakeIP(str)
+		return MakeIP(str)
 	}()
 )
 
 type Source_IP_Table struct {
 	// TODO make this thread safe
-	table []*ipv4tps.IPaddress // ordered by precedence, last one is default
+	table []*IPAddress // ordered by precedence, last one is default
 }
 
 func NewSource_IP_Table() (*Source_IP_Table, error) {
 	return &Source_IP_Table{}, nil
 }
 
-var GlobalSource_IP_Table = func() *Source_IP_Table {
+var GlobalSource_IP_Table *Source_IP_Table
+
+func initSourceIPTable() *Source_IP_Table {
 	table, err := NewSource_IP_Table()
 	if err != nil {
 		logs.Error.Fatalln(err)
@@ -53,7 +53,7 @@ var GlobalSource_IP_Table = func() *Source_IP_Table {
 		logs.Error.Fatalln(err)
 	}
 	str := strings.TrimSpace(string(data))
-	External_ip_address = ipv4tps.MakeIP(str)
+	External_ip_address = MakeIP(str)
 	// //ch logs.Info.Println("using ext ip:", External_ip_address)
 
 	err = table.add(Loopback_ip_address)
@@ -66,14 +66,14 @@ var GlobalSource_IP_Table = func() *Source_IP_Table {
 	}
 
 	return table
-}()
+}
 
-func (sipt *Source_IP_Table) add(ip *ipv4tps.IPaddress) error {
+func (sipt *Source_IP_Table) add(ip *IPAddress) error {
 	sipt.table = append(sipt.table, ip) // TODO ensure the entry has not already been inserted
 	return nil
 }
 
-func ipCompare(baseS, cmpS *ipv4tps.IPaddress, netm ipv4tps.Netmask) bool {
+func ipCompare(baseS, cmpS *IPAddress, netm Netmask) bool {
 	base := baseS.IP
 	cmp := cmpS.IP
 
@@ -86,7 +86,7 @@ func ipCompare(baseS, cmpS *ipv4tps.IPaddress, netm ipv4tps.Netmask) bool {
 	return true
 }
 
-func (sipt *Source_IP_Table) Query(dst *ipv4tps.IPaddress) (src *ipv4tps.IPaddress) {
+func (sipt *Source_IP_Table) Query(dst *IPAddress) (src *IPAddress) {
 	if len(sipt.table) == 0 {
 		logs.Error.Fatalln("sipt Query: no entries in table")
 	}
@@ -100,7 +100,7 @@ func (sipt *Source_IP_Table) Query(dst *ipv4tps.IPaddress) (src *ipv4tps.IPaddre
 	return sipt.table[len(sipt.table)-1]
 }
 
-func (sipt *Source_IP_Table) Gateway(dst *ipv4tps.IPaddress) *ipv4tps.IPaddress {
+func (sipt *Source_IP_Table) Gateway(dst *IPAddress) *IPAddress {
 	for _, base := range sipt.table {
 		if ipCompare(base, dst, IPv4_DEFAULT_NETMASK) { // TODO determine dynamically
 			return dst
