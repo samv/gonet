@@ -13,15 +13,15 @@ type ipReadManager struct {
 }
 
 var globalIPReadManager = func() *ipReadManager {
-	irm, err := newIPReadManager(ethernet.GlobalNetworkReadManager)
+	irm, err := newIPReadManager()
 	if err != nil {
 		logs.Error.Fatal(err)
 	}
 	return irm
 }()
 
-func newIPReadManager(in *ethernet.NetworkReadManager) (*ipReadManager, error) {
-	r, err := in.Bind(ethernet.EtherTypeIP)
+func newIPReadManager() (*ipReadManager, error) {
+	r, err := ethernet.Bind(ethernet.EtherTypeIP)
 	if err != nil {
 		return nil, err
 	}

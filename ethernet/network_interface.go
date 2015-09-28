@@ -3,7 +3,7 @@ package ethernet
 import "io"
 
 func init() {
-	GlobalNetworkReadManager = initNetworkReadManager()
+	initNetworkReadManager()
 	globalSourceMACTable = initSourceTable()
 }
 

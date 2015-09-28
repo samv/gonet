@@ -7,32 +7,16 @@ import (
 	"github.com/hsheth2/logs"
 )
 
-var GlobalNetworkReadManager *NetworkReadManager
-
-func initNetworkReadManager() *NetworkReadManager {
-	x, err := newNetworkReadManager()
-	if err != nil {
-		logs.Error.Fatal(err)
-	}
-	return x
+func initNetworkReadManager() {
+	protoBufs = make(map[EtherType]*ethernetReader)
+	go readAll()
 }
 
-type NetworkReadManager struct {
-	protoBufs map[EtherType](*ethernetReader)
-}
+var protoBufs map[EtherType](*ethernetReader)
 
-func newNetworkReadManager() (*NetworkReadManager, error) {
-	nr := &NetworkReadManager{
-		protoBufs: make(map[EtherType]*ethernetReader),
-	}
-	go nr.readAll()
-
-	return nr, nil
-}
-
-func (nr *NetworkReadManager) readAll() { // TODO terminate (using notifiers)
+func readAll() { // TODO terminate (using notifiers)
 	for {
-		data, err := nr.readFrame()
+		data, err := readFrame()
 		// //ch logs.Info.Println("Recv ethernet packet")
 		if err != nil {
 			// logs.Error.Println("ReadFrame failed:", err)
@@ -42,7 +26,7 @@ func (nr *NetworkReadManager) readAll() { // TODO terminate (using notifiers)
 
 		ethProto := EtherType(uint16(data[12])<<8 | uint16(data[13]))
 		// //ch logs.Trace.Println("Eth frame with protocol:", eth_protocol)
-		if c, ok := nr.protoBufs[ethProto]; ok {
+		if c, ok := protoBufs[ethProto]; ok {
 			//logs.Trace.Println("Something binded to protocol:", eth_protocol)
 			//logs.Info.Println("Found that ethernet protocol is registered")
 
@@ -58,8 +42,8 @@ func (nr *NetworkReadManager) readAll() { // TODO terminate (using notifiers)
 	}
 }
 
-func (nr *NetworkReadManager) Bind(proto EtherType) (Reader, error) {
-	if _, exists := nr.protoBufs[proto]; exists {
+func Bind(proto EtherType) (Reader, error) {
+	if _, exists := protoBufs[proto]; exists {
 		return nil, errors.New("Protocol already registered")
 	}
 
@@ -67,16 +51,16 @@ func (nr *NetworkReadManager) Bind(proto EtherType) (Reader, error) {
 	if err != nil {
 		return nil, err
 	}
-	nr.protoBufs[proto] = c
+	protoBufs[proto] = c
 	return c, nil
 }
 
-func (nr *NetworkReadManager) Unbind(proto EtherType) error {
+func Unbind(proto EtherType) error {
 	// TODO write the unbind ethernet proto function
 	return nil
 }
 
-func (nr *NetworkReadManager) readFrame() (d []byte, err error) {
+func readFrame() (d []byte, err error) {
 	d, _, err = physical.Read()
 	return
 }
