@@ -4,6 +4,7 @@ import (
 	"github.com/hsheth2/logs"
 )
 
+// A FrameHeader is used when returning data from Reader.Read() calls
 type FrameHeader struct {
 	//Rmac, Lmac *MAC_Address
 	Packet []byte

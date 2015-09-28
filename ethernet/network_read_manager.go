@@ -12,7 +12,7 @@ func initNetworkReadManager() {
 	go readAll()
 }
 
-var protoBufs map[EtherType](*ethernetReader)
+var protoBufs map[EtherType](*ethernetReader) // TODO protect with sync.Mutex
 
 func readAll() { // TODO terminate (using notifiers)
 	for {
@@ -42,6 +42,7 @@ func readAll() { // TODO terminate (using notifiers)
 	}
 }
 
+// Bind allows clients to bind to specific EtherTypes
 func Bind(proto EtherType) (Reader, error) {
 	if _, exists := protoBufs[proto]; exists {
 		return nil, errors.New("Protocol already registered")
@@ -55,6 +56,7 @@ func Bind(proto EtherType) (Reader, error) {
 	return c, nil
 }
 
+// Unbind allows clients to unbind from specific EtherTypes
 func Unbind(proto EtherType) error {
 	// TODO write the unbind ethernet proto function
 	return nil

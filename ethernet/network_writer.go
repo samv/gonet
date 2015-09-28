@@ -11,6 +11,7 @@ type ethernetWriter struct {
 	index          physical.InternalIndex
 }
 
+// NewEthernetWriter allows for the writing to a given MAC Address and EtherType
 func NewEthernetWriter(dstMAC *MACAddress, ethertype EtherType) (Writer, error) {
 	index := getInternalIndex(dstMAC)
 	//	//ch logs.Info.Println("Found internal index")
@@ -27,7 +28,7 @@ func NewEthernetWriter(dstMAC *MACAddress, ethertype EtherType) (Writer, error) 
 	}, nil
 }
 
-// blocking write call
+// Write is a blocking write call
 func (nw *ethernetWriter) Write(data []byte) (int, error) {
 	// build the ethernet header
 	//	//ch logs.Info.Println("Ethernet write request")
@@ -52,7 +53,7 @@ func (nw *ethernetWriter) Close() error {
 	return nil
 }
 
-// helper method for one-time sends
+// WriteSingle is a helper method that is used for one-time sends that do not require a full Writer
 func WriteSingle(dstMAC *MACAddress, ethertype EtherType, data []byte) (int, error) {
 	nw, err := NewEthernetWriter(dstMAC, ethertype)
 	if err != nil {
