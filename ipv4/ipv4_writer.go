@@ -21,15 +21,16 @@ type ipWriter struct {
 	maxFragSize uint16
 }
 
+// NewWriter creates a new IPv4 Writer, given an Address and a protocol
 func NewWriter(dst *Address, protocol uint8) (Writer, error) {
 	gateway := globalRoutingTable.Gateway(dst)
-	dst_mac, err := globalARPv4Table.LookupRequest(gateway)
+	dstMAC, err := globalARPv4Table.LookupRequest(gateway)
 	if err != nil {
 		return nil, err
 	}
 
 	// create its own network_writer
-	nw, err := ethernet.NewEthernetWriter(dst_mac, ethernet.EtherTypeIP)
+	nw, err := ethernet.NewEthernetWriter(dstMAC, ethernet.EtherTypeIP)
 	if err != nil {
 		return nil, err
 	}

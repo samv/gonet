@@ -23,6 +23,7 @@ type ipReader struct {
 	fragBufMutex    *sync.Mutex
 }
 
+// NewReader creates a new IPv4 Reader given an IP Address and an IP protocol number
 func NewReader(ip *Address, protocol uint8) (Reader, error) {
 	c, err := globalIPReadManager.bind(ip, protocol)
 	if err != nil {
