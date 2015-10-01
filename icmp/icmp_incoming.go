@@ -13,7 +13,7 @@ type ICMP_Read_Manager struct {
 }
 
 func NewICMP_Read_Manager() (*ICMP_Read_Manager, error) {
-	ipr, err := ipv4.NewIP_Reader(ipv4.IPAll, ipv4.IPProtoICMP)
+	ipr, err := ipv4.NewReader(ipv4.IPAll, ipv4.IPProtoICMP)
 	if err != nil {
 		return nil, err
 	}

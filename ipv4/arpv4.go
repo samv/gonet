@@ -11,29 +11,29 @@ import (
 	"github.com/hsheth2/notifiers"
 )
 
-type ARPv4_Table struct {
-	table         map[IPhash](*ethernet.MACAddress)
+type arpv4Table struct {
+	table         map[Hash](*ethernet.MACAddress)
 	tableMutex    *sync.RWMutex
 	replyNotifier *notifiers.Notifier
 }
 
-var GlobalARPv4_Table *ARPv4_Table
+var globalARPv4Table *arpv4Table
 
-func initARPv4Table() *ARPv4_Table {
+func initARPv4Table() *arpv4Table {
 	// create ARP table
-	table, err := NewARP_Table()
+	table, err := newARPv4Table()
 	if err != nil {
 		logs.Error.Fatalln(err)
 	}
 
 	// add loopback ARP entry
-	err = table.Add(Loopback_ip_address, ethernet.LoopbackMACAddress)
+	err = table.Add(LoopbackIPAddress, ethernet.LoopbackMACAddress)
 	if err != nil {
 		logs.Error.Fatalln(err)
 	}
 
 	// add external loopback entry to ARP
-	err = table.Add(External_ip_address, ethernet.ExternalMACAddress)
+	err = table.Add(ExternalIPAddress, ethernet.ExternalMACAddress)
 	if err != nil {
 		logs.Error.Fatalln(err)
 	}
@@ -44,18 +44,18 @@ func initARPv4Table() *ARPv4_Table {
 	return table
 }
 
-func NewARP_Table() (*ARPv4_Table, error) {
-	return &ARPv4_Table{
-		table:         make(map[IPhash](*ethernet.MACAddress)),
+func newARPv4Table() (*arpv4Table, error) {
+	return &arpv4Table{
+		table:         make(map[Hash](*ethernet.MACAddress)),
 		replyNotifier: notifiers.NewNotifier(),
 		tableMutex:    &sync.RWMutex{},
 	}, nil
 }
 
-func (table *ARPv4_Table) Lookup(ip arp.ARP_Protocol_Address) (*ethernet.MACAddress, error) {
+func (table *arpv4Table) Lookup(ip arp.ARP_Protocol_Address) (*ethernet.MACAddress, error) {
 	table.tableMutex.RLock()
 	defer table.tableMutex.RUnlock()
-	if ans, ok := table.table[ip.(*IPAddress).Hash()]; ok {
+	if ans, ok := table.table[ip.(*Address).Hash()]; ok {
 		return ans, nil
 	}
 	//	d, _ := ip.Marshal()
@@ -63,7 +63,7 @@ func (table *ARPv4_Table) Lookup(ip arp.ARP_Protocol_Address) (*ethernet.MACAddr
 	return nil, errors.New("ARP lookup into table failed")
 }
 
-func (table *ARPv4_Table) LookupRequest(ip arp.ARP_Protocol_Address) (*ethernet.MACAddress, error) {
+func (table *arpv4Table) LookupRequest(ip arp.ARP_Protocol_Address) (*ethernet.MACAddress, error) {
 	x, err := table.Lookup(ip)
 	if err == nil {
 		return x, nil
@@ -71,15 +71,15 @@ func (table *ARPv4_Table) LookupRequest(ip arp.ARP_Protocol_Address) (*ethernet.
 	return table.Request(ip)
 }
 
-func (table *ARPv4_Table) Request(rip arp.ARP_Protocol_Address) (*ethernet.MACAddress, error) {
+func (table *arpv4Table) Request(rip arp.ARP_Protocol_Address) (*ethernet.MACAddress, error) {
 	return arp.GlobalARP_Manager.Request(ethernet.EtherTypeIP, rip)
 }
 
-func (table *ARPv4_Table) Add(ip arp.ARP_Protocol_Address, addr *ethernet.MACAddress) error {
+func (table *arpv4Table) Add(ip arp.ARP_Protocol_Address, addr *ethernet.MACAddress) error {
 	// if _, ok := table.table[ip]; ok {
 	// 	return errors.New("Cannot overwrite existing entry")
 	// }
-	d := ip.(*IPAddress)
+	d := ip.(*Address)
 	// //ch logs.Trace.Printf("ARPv4 table: add: %v (%v)\n", addr.Data, *d)
 	table.tableMutex.Lock()
 	table.table[d.Hash()] = addr
@@ -88,14 +88,14 @@ func (table *ARPv4_Table) Add(ip arp.ARP_Protocol_Address, addr *ethernet.MACAdd
 	return nil
 }
 
-func (table *ARPv4_Table) GetReplyNotifier() *notifiers.Notifier {
+func (table *arpv4Table) GetReplyNotifier() *notifiers.Notifier {
 	return table.replyNotifier
 }
 
-func (table *ARPv4_Table) Unmarshal(d []byte) arp.ARP_Protocol_Address {
-	return &IPAddress{IP: d}
+func (table *arpv4Table) Unmarshal(d []byte) arp.ARP_Protocol_Address {
+	return &Address{IP: d}
 }
 
-func (table *ARPv4_Table) GetAddress() arp.ARP_Protocol_Address {
-	return External_ip_address
+func (table *arpv4Table) GetAddress() arp.ARP_Protocol_Address {
+	return ExternalIPAddress
 }

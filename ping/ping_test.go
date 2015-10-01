@@ -9,7 +9,7 @@ import (
 	"network/ipv4"
 )
 
-func ping_tester(t *testing.T, ip *ipv4.IPAddress, num uint16) {
+func ping_tester(t *testing.T, ip *ipv4.Address, num uint16) {
 	err := GlobalPingManager.SendPing(ip, time.Second, time.Second, num)
 	if err != nil {
 		logs.Error.Println(err)

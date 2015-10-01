@@ -9,7 +9,7 @@ import (
 
 type ipReadManager struct {
 	read    ethernet.Reader
-	buffers map[uint8](map[IPhash](chan []byte))
+	buffers map[uint8](map[Hash](chan []byte))
 }
 
 var globalIPReadManager = func() *ipReadManager {
@@ -28,7 +28,7 @@ func newIPReadManager() (*ipReadManager, error) {
 
 	irm := &ipReadManager{
 		read:    r,
-		buffers: make(map[uint8](map[IPhash](chan []byte))),
+		buffers: make(map[uint8](map[Hash](chan []byte))),
 	}
 
 	go irm.readAll()
@@ -63,7 +63,7 @@ func (irm *ipReadManager) readAll() {
 
 func (irm *ipReadManager) processOne(buf []byte) error {
 	protocol := uint8(buf[9])
-	rip := &IPAddress{IP: buf[12:16]}
+	rip := &Address{IP: buf[12:16]}
 
 	//fmt.Println(ln)
 	//fmt.Println(protocol, ip)
@@ -94,11 +94,11 @@ func (irm *ipReadManager) processOne(buf []byte) error {
 	return nil
 }
 
-func (irm *ipReadManager) bind(ip *IPAddress, protocol uint8) (chan []byte, error) {
+func (irm *ipReadManager) bind(ip *Address, protocol uint8) (chan []byte, error) {
 	// create the protocol buffer if it doesn't exist already
 	_, protoOk := irm.buffers[protocol]
 	if !protoOk {
-		irm.buffers[protocol] = make(map[IPhash](chan []byte))
+		irm.buffers[protocol] = make(map[Hash](chan []byte))
 		//Trace.Println("Bound to", protocol)
 	}
 
@@ -112,7 +112,7 @@ func (irm *ipReadManager) bind(ip *IPAddress, protocol uint8) (chan []byte, erro
 	return nil, errors.New("IP already bound to")
 }
 
-func (irm *ipReadManager) unbind(ip *IPAddress, protocol uint8) error {
+func (irm *ipReadManager) unbind(ip *Address, protocol uint8) error {
 	ipBuf, protoOk := irm.buffers[protocol]
 	if !protoOk {
 		return errors.New("IP not bound, cannot unbind")

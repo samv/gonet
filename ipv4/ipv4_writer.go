@@ -12,7 +12,7 @@ import (
 type ipv4_writer struct {
 	nw          ethernet.Writer
 	version     uint8
-	dst, src    *IPAddress
+	dst, src    *Address
 	headerLen   uint16
 	ttl         uint8
 	protocol    uint8
@@ -21,9 +21,9 @@ type ipv4_writer struct {
 	maxFragSize uint16
 }
 
-func NewIP_Writer(dst *IPAddress, protocol uint8) (*ipv4_writer, error) {
+func NewWriter(dst *Address, protocol uint8) (*ipv4_writer, error) {
 	gateway := GlobalSource_IP_Table.Gateway(dst)
-	dst_mac, err := GlobalARPv4_Table.LookupRequest(gateway)
+	dst_mac, err := globalARPv4Table.LookupRequest(gateway)
 	if err != nil {
 		return nil, err
 	}
@@ -102,7 +102,7 @@ func (ipw *ipv4_writer) WriteTo(p []byte) (int, error) {
 	maxFragSize := int(ipw.maxFragSize)
 	maxPaySize := maxFragSize - int(ipw.headerLen)
 
-	for i := 0; i < len(p)/maxPaySize+1; i += 1 {
+	for i := 0; i < len(p)/maxPaySize+1; i++ {
 		//fmt.Println("Looping fragmenting")
 		if len(p) <= maxPaySize*(i+1) {
 			header[6] = byte(0)

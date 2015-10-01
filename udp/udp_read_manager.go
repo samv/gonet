@@ -10,7 +10,7 @@ import (
 
 type UDP_Read_Manager struct {
 	reader ipv4.Reader
-	buff   map[uint16](map[ipv4.IPhash](chan []byte))
+	buff   map[uint16](map[ipv4.Hash](chan []byte))
 }
 
 var GlobalUDP_Read_Manager *UDP_Read_Manager = func() *UDP_Read_Manager {
@@ -22,14 +22,14 @@ var GlobalUDP_Read_Manager *UDP_Read_Manager = func() *UDP_Read_Manager {
 }()
 
 func NewUDP_Read_Manager() (*UDP_Read_Manager, error) {
-	ipr, err := ipv4.NewIP_Reader(ipv4.IPAll, ipv4.IPProtoUDP)
+	ipr, err := ipv4.NewReader(ipv4.IPAll, ipv4.IPProtoUDP)
 	if err != nil {
 		return nil, err
 	}
 
 	x := &UDP_Read_Manager{
 		reader: ipr,
-		buff:   make(map[uint16](map[ipv4.IPhash](chan []byte))),
+		buff:   make(map[uint16](map[ipv4.Hash](chan []byte))),
 	}
 
 	go x.readAll()
@@ -87,10 +87,10 @@ func (x *UDP_Read_Manager) readAll() {
 	}
 }
 
-func (x *UDP_Read_Manager) Bind(port uint16, ip *ipv4.IPAddress) (chan []byte, error) {
+func (x *UDP_Read_Manager) Bind(port uint16, ip *ipv4.Address) (chan []byte, error) {
 	// add the port if not already there
 	if _, found := x.buff[port]; !found {
-		x.buff[port] = make(map[ipv4.IPhash](chan []byte))
+		x.buff[port] = make(map[ipv4.Hash](chan []byte))
 	}
 
 	// add the ip to the port's list
@@ -103,7 +103,7 @@ func (x *UDP_Read_Manager) Bind(port uint16, ip *ipv4.IPAddress) (chan []byte, e
 	}
 }
 
-func (x *UDP_Read_Manager) Unbind(port uint16, ip *ipv4.IPAddress) error {
+func (x *UDP_Read_Manager) Unbind(port uint16, ip *ipv4.Address) error {
 	delete(x.buff[port], ip.Hash()) // TODO verify that it will succeed
 	return nil
 }

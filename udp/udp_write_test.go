@@ -29,7 +29,7 @@ func TestBasic(t *testing.T) {
 		}()
 
 		fmt.Println("Creating UDP Writer")
-		w, err := NewUDP_Writer(20000, port, ipv4.Loopback_ip_address)
+		w, err := NewUDP_Writer(20000, port, ipv4.LoopbackIPAddress)
 		if err != nil {
 			t.Fatal(err)
 		}

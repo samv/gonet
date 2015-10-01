@@ -11,10 +11,10 @@ type UDP_Reader struct {
 	manager   *UDP_Read_Manager
 	bytes     <-chan []byte
 	port      uint16 // ports
-	ipAddress *ipv4.IPAddress
+	ipAddress *ipv4.Address
 }
 
-func NewUDP(x *UDP_Read_Manager, port uint16, ip *ipv4.IPAddress) (*UDP_Reader, error) {
+func NewUDP(x *UDP_Read_Manager, port uint16, ip *ipv4.Address) (*UDP_Reader, error) {
 	bts, err := x.Bind(port, ip)
 	if err != nil {
 		return nil, err

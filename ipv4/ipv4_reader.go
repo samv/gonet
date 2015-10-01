@@ -8,7 +8,7 @@ import (
 )
 
 type IP_Read_Header struct {
-	Rip, Lip   *IPAddress
+	Rip, Lip   *Address
 	B, Payload []byte
 }
 
@@ -17,12 +17,12 @@ type ipReader struct {
 	processed       chan *IP_Read_Header
 	irm             *ipReadManager
 	protocol        uint8
-	ip              *IPAddress
+	ip              *Address
 	fragBuf         map[string](chan []byte)
 	fragBufMutex    *sync.Mutex
 }
 
-func NewIP_Reader(ip *IPAddress, protocol uint8) (*ipReader, error) {
+func NewReader(ip *Address, protocol uint8) (Reader, error) {
 	c, err := globalIPReadManager.bind(ip, protocol)
 	if err != nil {
 		return nil, err
@@ -69,8 +69,8 @@ func (ipr *ipReader) readOne(b []byte) error {
 	hdr, p := slicePacket(b)
 
 	// extract source IP and protocol
-	rip := &IPAddress{IP: hdr[12:16]}
-	lip := &IPAddress{IP: hdr[16:20]}
+	rip := &Address{IP: hdr[12:16]}
+	lip := &Address{IP: hdr[16:20]}
 
 	// verify checksum
 	if !verifyIPChecksum(hdr) {

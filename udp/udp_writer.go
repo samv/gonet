@@ -7,14 +7,14 @@ import (
 const UDP_HEADER_SZ = 8
 
 type UDP_Writer struct {
-	rip      *ipv4.IPAddress // destination ip address
-	lip      *ipv4.IPAddress // source ip address
+	rip      *ipv4.Address // destination ip address
+	lip      *ipv4.Address // source ip address
 	writer   ipv4.Writer
 	src, dst uint16 // ports
 }
 
-func NewUDP_Writer(src, dest uint16, dstIP *ipv4.IPAddress) (*UDP_Writer, error) {
-	write, err := ipv4.NewIP_Writer(dstIP, ipv4.IPProtoUDP)
+func NewUDP_Writer(src, dest uint16, dstIP *ipv4.Address) (*UDP_Writer, error) {
+	write, err := ipv4.NewWriter(dstIP, ipv4.IPProtoUDP)
 	if err != nil {
 		return nil, err
 	}

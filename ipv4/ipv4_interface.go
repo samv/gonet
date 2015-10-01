@@ -7,7 +7,7 @@ import (
 func init() {
 	initTypes()
 	GlobalSource_IP_Table = initSourceIPTable()
-	GlobalARPv4_Table = initARPv4Table()
+	globalARPv4Table = initARPv4Table()
 }
 
 type ipReadT interface {
@@ -22,54 +22,57 @@ type ipCloseT interface {
 	io.Closer
 }
 
+// Reader allows reading from a specific IP protocol and address
 type Reader interface {
 	ipReadT
 	ipCloseT
 }
 
+// Writer allows writing to a specific IP protocol and address
 type Writer interface {
 	ipWriteT
 	ipCloseT
 }
 
+// ReadWriter allows a bidirectional IP "connection": one that allows both reading and writing
 type ReadWriter interface {
 	ipReadT
 	ipWriteT
 	ipCloseT
 }
 
-type ipv4_read_writer struct {
-	read  *ipReader
-	write *ipv4_writer
+type ipv4ReadWriter struct {
+	read  Reader
+	write Writer
 }
 
-func NewIPv4_RW(ip *IPAddress, protocol uint8) (ReadWriter, error) {
-	read, err := NewIP_Reader(ip, protocol)
+func NewReadWriter(ip *Address, protocol uint8) (ReadWriter, error) {
+	read, err := NewReader(ip, protocol)
 	if err != nil {
 		return nil, err
 	}
 
-	write, err := NewIP_Writer(ip, protocol)
+	write, err := NewWriter(ip, protocol)
 	if err != nil {
 		read.Close()
 		return nil, err
 	}
 
-	return &ipv4_read_writer{
+	return &ipv4ReadWriter{
 		read:  read,
 		write: write,
 	}, nil
 }
 
-func (irw *ipv4_read_writer) ReadFrom() (*IP_Read_Header, error) {
+func (irw *ipv4ReadWriter) ReadFrom() (*IP_Read_Header, error) {
 	return irw.ReadFrom()
 }
 
-func (irw *ipv4_read_writer) WriteTo(data []byte) (int, error) {
+func (irw *ipv4ReadWriter) WriteTo(data []byte) (int, error) {
 	return irw.write.WriteTo(data)
 }
 
-func (irw *ipv4_read_writer) Close() error {
+func (irw *ipv4ReadWriter) Close() error {
 	err1 := irw.write.Close()
 	err2 := irw.read.Close()
 

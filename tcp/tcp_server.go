@@ -11,7 +11,7 @@ import (
 type Server_TCB struct {
 	listener        chan *TCP_Packet
 	listenPort      uint16
-	listenIP        *ipv4.IPAddress
+	listenIP        *ipv4.Address
 	state           uint
 	kind            uint
 	connQueue       chan *TCB
@@ -31,11 +31,11 @@ func New_Server_TCB() (*Server_TCB, error) {
 	return x, nil
 }
 
-func (s *Server_TCB) BindListen(port uint16, ip *ipv4.IPAddress) error {
+func (s *Server_TCB) BindListen(port uint16, ip *ipv4.Address) error {
 	return s.BindListenWithQueueSize(port, ip, TCP_LISTEN_DEFAULT_QUEUE_SZ)
 }
 
-func (s *Server_TCB) BindListenWithQueueSize(port uint16, ip *ipv4.IPAddress, queue_sz int) error {
+func (s *Server_TCB) BindListenWithQueueSize(port uint16, ip *ipv4.Address, queue_sz int) error {
 	s.listenPort = port
 	s.listenIP = ip
 	read, err := TCP_Port_Manager.bind(0, port, ip)
@@ -76,7 +76,7 @@ func (s *Server_TCB) LongListener() {
 				return
 			}
 
-			r, err := ipv4.NewIP_Writer(rIP, ipv4.IPProtoTCP)
+			r, err := ipv4.NewWriter(rIP, ipv4.IPProtoTCP)
 			if err != nil {
 				logs.Error.Println(err)
 				return
@@ -130,7 +130,7 @@ func (s *Server_TCB) LongListener() {
 	}
 }
 
-func (s *Server_TCB) Accept() (c *TCB, rip *ipv4.IPAddress, rport uint16, err error) {
+func (s *Server_TCB) Accept() (c *TCB, rip *ipv4.Address, rport uint16, err error) {
 	s.connQueueUpdate.L.Lock()
 	defer s.connQueueUpdate.L.Unlock()
 	for {

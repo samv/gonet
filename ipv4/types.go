@@ -7,38 +7,47 @@ import (
 
 func initTypes() {
 	allIP := []byte{0, 0, 0, 0}
-	IPAll = &IPAddress{IP: allIP}
+	IPAll = &Address{IP: allIP}
 	IPAllHash = IPAll.Hash()
 }
 
-type Netmask uint8
-
-type IPhash uint32
-type IPAddress struct {
+// Address represents an IP address
+type Address struct {
 	IP []byte
 }
 
+// Netmask is a network's netmask
+type Netmask uint8
+
+// Hash is the type that is returned from an Address.Hash() call
+type Hash uint32
+
 const IPv4AddressLength = 4
 
+// Utilities for binding to all IP addresses
 var (
-	IPAll     *IPAddress
-	IPAllHash IPhash
+	IPAll     *Address
+	IPAllHash Hash
 )
 
-func (ip *IPAddress) Marshal() ([]byte, error) {
+// Marshal turns an IP Address into a slice of bytes
+func (ip *Address) Marshal() ([]byte, error) {
 	return ip.IP, nil
 }
 
-func (ip *IPAddress) Hash() IPhash {
-	return IPhash(binary.BigEndian.Uint32(ip.IP))
+// Hash converts an IP Address into a uint32 for hashing purposes
+func (ip *Address) Hash() Hash {
+	return Hash(binary.BigEndian.Uint32(ip.IP))
 }
 
-func (ip *IPAddress) Len() uint8 {
+// Len returns the length of a marshaled IP address
+func (ip *Address) Len() uint8 {
 	return IPv4AddressLength
 }
 
-func MakeIP(ip string) *IPAddress {
-	return &IPAddress{
+// MakeIP converts a string into an Address
+func MakeIP(ip string) *Address {
+	return &Address{
 		IP: net.ParseIP(ip)[12:],
 	}
 }
