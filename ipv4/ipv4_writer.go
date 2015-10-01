@@ -9,7 +9,7 @@ import (
 	"golang.org/x/net/ipv4"
 )
 
-type ipv4_writer struct {
+type ipWriter struct {
 	nw          ethernet.Writer
 	version     uint8
 	dst, src    *Address
@@ -21,15 +21,16 @@ type ipv4_writer struct {
 	maxFragSize uint16
 }
 
-func NewWriter(dst *Address, protocol uint8) (*ipv4_writer, error) {
-	gateway := GlobalSource_IP_Table.Gateway(dst)
-	dst_mac, err := globalARPv4Table.LookupRequest(gateway)
+// NewWriter creates a new IPv4 Writer, given an Address and a protocol
+func NewWriter(dst *Address, protocol uint8) (Writer, error) {
+	gateway := globalRoutingTable.Gateway(dst)
+	dstMAC, err := globalARPv4Table.LookupRequest(gateway)
 	if err != nil {
 		return nil, err
 	}
 
 	// create its own network_writer
-	nw, err := ethernet.NewEthernetWriter(dst_mac, ethernet.EtherTypeIP)
+	nw, err := ethernet.NewEthernetWriter(dstMAC, ethernet.EtherTypeIP)
 	if err != nil {
 		return nil, err
 	}
@@ -46,14 +47,14 @@ func NewWriter(dst *Address, protocol uint8) (*ipv4_writer, error) {
 		return nil, errors.New("Failed to connect.")
 	}*/
 
-	return &ipv4_writer{
+	return &ipWriter{
 		//fd:          fd,
 		//sockAddr:    addr,
 		nw:          nw,
 		version:     ipv4.Version,
 		headerLen:   ipHeaderLength,
 		dst:         dst,
-		src:         GlobalSource_IP_Table.Query(dst),
+		src:         globalRoutingTable.Query(dst),
 		ttl:         defaultTimeToLive,
 		protocol:    protocol,
 		identifier:  20000, // TODO generate this properly
@@ -62,7 +63,7 @@ func NewWriter(dst *Address, protocol uint8) (*ipv4_writer, error) {
 	}, nil
 }
 
-func (ipw *ipv4_writer) getID() uint16 {
+func (ipw *ipWriter) getID() uint16 {
 	ipw.idLock.Lock()
 	defer ipw.idLock.Unlock()
 	id := ipw.identifier
@@ -70,7 +71,7 @@ func (ipw *ipv4_writer) getID() uint16 {
 	return id
 }
 
-func (ipw *ipv4_writer) WriteTo(p []byte) (int, error) {
+func (ipw *ipWriter) WriteTo(p []byte) (int, error) {
 	////ch logs.Trace.Println("IP Preparing to Write:", p)
 	//	//ch logs.Info.Println("IPv4 WriteTo request")
 
@@ -181,7 +182,7 @@ func (ipw *ipv4_writer) WriteTo(p []byte) (int, error) {
 	return len(p), nil
 }
 
-func (ipw *ipv4_writer) Close() error {
+func (ipw *ipWriter) Close() error {
 	return ipw.nw.Close()
 }
 

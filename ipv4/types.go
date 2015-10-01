@@ -22,6 +22,7 @@ type Netmask uint8
 // Hash is the type that is returned from an Address.Hash() call
 type Hash uint32
 
+// The length of an IPv4 Address
 const IPv4AddressLength = 4
 
 // Utilities for binding to all IP addresses

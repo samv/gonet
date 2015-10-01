@@ -7,14 +7,15 @@ import (
 	"sync"
 )
 
-type IP_Read_Header struct {
+// IPReadHeader contains the fields that are passed to transport layer protocols.
+type IPReadHeader struct {
 	Rip, Lip   *Address
 	B, Payload []byte
 }
 
 type ipReader struct {
 	incomingPackets chan []byte
-	processed       chan *IP_Read_Header
+	processed       chan *IPReadHeader
 	irm             *ipReadManager
 	protocol        uint8
 	ip              *Address
@@ -22,6 +23,7 @@ type ipReader struct {
 	fragBufMutex    *sync.Mutex
 }
 
+// NewReader creates a new IPv4 Reader given an IP Address and an IP protocol number
 func NewReader(ip *Address, protocol uint8) (Reader, error) {
 	c, err := globalIPReadManager.bind(ip, protocol)
 	if err != nil {
@@ -30,7 +32,7 @@ func NewReader(ip *Address, protocol uint8) (Reader, error) {
 
 	ipr := &ipReader{
 		incomingPackets: c,
-		processed:       make(chan *IP_Read_Header, ipReadBufferSize),
+		processed:       make(chan *IPReadHeader, ipReadBufferSize),
 		protocol:        protocol,
 		ip:              ip,
 		fragBuf:         make(map[string](chan []byte)),
@@ -81,7 +83,7 @@ func (ipr *ipReader) readOne(b []byte) error {
 	//fmt.Println("PACK OFF", packetOffset, "HEADER FLAGS", (hdr[6] >> 5))
 	if ((hdr[6]>>5)&0x01 == 0) && (packetOffset == 0) {
 		// not a fragment
-		packet := &IP_Read_Header{
+		packet := &IPReadHeader{
 			Rip:     rip,
 			Lip:     lip,
 			B:       b,
@@ -130,7 +132,7 @@ func (ipr *ipReader) readOne(b []byte) error {
 	}
 }
 
-func (ipr *ipReader) ReadFrom() (*IP_Read_Header, error) {
+func (ipr *ipReader) ReadFrom() (*IPReadHeader, error) {
 	return <-ipr.processed, nil
 }
 

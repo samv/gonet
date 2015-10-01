@@ -16,8 +16,9 @@ const (
 
 const ipv4DefaultNetmask Netmask = 24
 
+// The stack's IP addresses, which are used when sending data
 var (
-	LoopbackIPAddress *Address = MakeIP("127.0.0.1")
+	LoopbackIPAddress *Address
 	ExternalIPAddress *Address
 )
 
@@ -25,16 +26,16 @@ var (
 	externalGateway *Address
 )
 
-type Source_IP_Table struct {
+type routingTable struct {
 	// TODO make this thread safe
 	table []*Address // ordered by precedence, last one is default
 }
 
-func NewSource_IP_Table() (*Source_IP_Table, error) {
-	return &Source_IP_Table{}, nil
+func newRoutingTable() (*routingTable, error) {
+	return &routingTable{}, nil
 }
 
-var GlobalSource_IP_Table *Source_IP_Table
+var globalRoutingTable *routingTable
 
 func initExternalGateway() *Address {
 	_, filename, _, _ := runtime.Caller(1)
@@ -46,14 +47,11 @@ func initExternalGateway() *Address {
 	return MakeIP(str)
 }
 
-func initSourceIPTable() *Source_IP_Table {
-	externalGateway = initExternalGateway()
+func initLoopbackIP() *Address {
+	return MakeIP("127.0.0.1")
+}
 
-	table, err := NewSource_IP_Table()
-	if err != nil {
-		logs.Error.Fatalln(err)
-	}
-
+func initExternalIP() *Address {
 	// Load preferences and defaults file
 	_, filename, _, _ := runtime.Caller(1)
 	data, err := ioutil.ReadFile(path.Join(path.Dir(filename), ipv4StaticRouteLoadFile))
@@ -61,8 +59,18 @@ func initSourceIPTable() *Source_IP_Table {
 		logs.Error.Fatalln(err)
 	}
 	str := strings.TrimSpace(string(data))
-	ExternalIPAddress = MakeIP(str)
-	// //ch logs.Info.Println("using ext ip:", External_ip_address)
+	return MakeIP(str)
+}
+
+func initSourceIPTable() *routingTable {
+	externalGateway = initExternalGateway()
+	LoopbackIPAddress = initLoopbackIP()
+	ExternalIPAddress = initExternalIP()
+
+	table, err := newRoutingTable()
+	if err != nil {
+		logs.Error.Fatalln(err)
+	}
 
 	err = table.add(LoopbackIPAddress)
 	if err != nil {
@@ -76,7 +84,7 @@ func initSourceIPTable() *Source_IP_Table {
 	return table
 }
 
-func (sipt *Source_IP_Table) add(ip *Address) error {
+func (sipt *routingTable) add(ip *Address) error {
 	sipt.table = append(sipt.table, ip) // TODO ensure the entry has not already been inserted
 	return nil
 }
@@ -94,7 +102,7 @@ func ipCompare(baseS, cmpS *Address, netm Netmask) bool {
 	return true
 }
 
-func (sipt *Source_IP_Table) Query(dst *Address) (src *Address) {
+func (sipt *routingTable) Query(dst *Address) (src *Address) {
 	if len(sipt.table) == 0 {
 		logs.Error.Fatalln("sipt Query: no entries in table")
 	}
@@ -108,7 +116,7 @@ func (sipt *Source_IP_Table) Query(dst *Address) (src *Address) {
 	return sipt.table[len(sipt.table)-1]
 }
 
-func (sipt *Source_IP_Table) Gateway(dst *Address) *Address {
+func (sipt *routingTable) Gateway(dst *Address) *Address {
 	for _, base := range sipt.table {
 		if ipCompare(base, dst, ipv4DefaultNetmask) { // TODO determine dynamically
 			return dst

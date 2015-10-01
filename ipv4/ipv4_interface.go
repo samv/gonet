@@ -6,39 +6,27 @@ import (
 
 func init() {
 	initTypes()
-	GlobalSource_IP_Table = initSourceIPTable()
+	globalRoutingTable = initSourceIPTable()
 	globalARPv4Table = initARPv4Table()
-}
-
-type ipReadT interface {
-	ReadFrom() (*IP_Read_Header, error)
-}
-
-type ipWriteT interface {
-	WriteTo(data []byte) (int, error)
-}
-
-type ipCloseT interface {
-	io.Closer
 }
 
 // Reader allows reading from a specific IP protocol and address
 type Reader interface {
-	ipReadT
-	ipCloseT
+	ReadFrom() (*IPReadHeader, error)
+	io.Closer
 }
 
 // Writer allows writing to a specific IP protocol and address
 type Writer interface {
-	ipWriteT
-	ipCloseT
+	WriteTo(data []byte) (int, error)
+	io.Closer
 }
 
 // ReadWriter allows a bidirectional IP "connection": one that allows both reading and writing
 type ReadWriter interface {
-	ipReadT
-	ipWriteT
-	ipCloseT
+	ReadFrom() (*IPReadHeader, error)
+	WriteTo(data []byte) (int, error)
+	io.Closer
 }
 
 type ipv4ReadWriter struct {
@@ -46,6 +34,7 @@ type ipv4ReadWriter struct {
 	write Writer
 }
 
+// NewReadWriter creates a ReadWriter given an IP Address and an IP protocol
 func NewReadWriter(ip *Address, protocol uint8) (ReadWriter, error) {
 	read, err := NewReader(ip, protocol)
 	if err != nil {
@@ -64,7 +53,7 @@ func NewReadWriter(ip *Address, protocol uint8) (ReadWriter, error) {
 	}, nil
 }
 
-func (irw *ipv4ReadWriter) ReadFrom() (*IP_Read_Header, error) {
+func (irw *ipv4ReadWriter) ReadFrom() (*IPReadHeader, error) {
 	return irw.ReadFrom()
 }
 
