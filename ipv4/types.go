@@ -52,3 +52,16 @@ func MakeIP(ip string) *Address {
 		IP: net.ParseIP(ip)[12:],
 	}
 }
+
+func ipCompare(baseS, cmpS *Address, netm Netmask) bool {
+	base := baseS.IP
+	cmp := cmpS.IP
+
+	// TODO take netmask into account
+	for i := 0; i < len(base); i++ {
+		if base[i] != cmp[i] && base[i] != 0 {
+			return false
+		}
+	}
+	return true
+}

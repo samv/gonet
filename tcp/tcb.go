@@ -55,7 +55,7 @@ func New_TCB(local, remote uint16, dstIP *ipv4.Address, read chan *TCP_Packet, w
 		lport:            local,
 		rport:            remote,
 		ipAddress:        dstIP,
-		srcIP:            ipv4.globalRoutingTable.Query(dstIP),
+		srcIP:            ipv4.GlobalRoutingTable.Query(dstIP),
 		read:             read,
 		writer:           write,
 		seqNum:           seq,

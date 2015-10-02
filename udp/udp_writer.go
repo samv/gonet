@@ -23,7 +23,7 @@ func NewUDP_Writer(src, dest uint16, dstIP *ipv4.Address) (*UDP_Writer, error) {
 		src:    src,
 		dst:    dest,
 		rip:    dstIP,
-		lip:    ipv4.globalRoutingTable.Query(dstIP),
+		lip:    ipv4.GlobalRoutingTable.Query(dstIP),
 		writer: write,
 	}, nil
 }

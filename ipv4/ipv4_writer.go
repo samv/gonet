@@ -23,7 +23,7 @@ type ipWriter struct {
 
 // NewWriter creates a new IPv4 Writer, given an Address and a protocol
 func NewWriter(dst *Address, protocol uint8) (Writer, error) {
-	gateway := globalRoutingTable.Gateway(dst)
+	gateway := GlobalRoutingTable.gateway(dst)
 	dstMAC, err := globalARPv4Table.LookupRequest(gateway)
 	if err != nil {
 		return nil, err
@@ -54,7 +54,7 @@ func NewWriter(dst *Address, protocol uint8) (Writer, error) {
 		version:     ipv4.Version,
 		headerLen:   ipHeaderLength,
 		dst:         dst,
-		src:         globalRoutingTable.Query(dst),
+		src:         GlobalRoutingTable.Query(dst),
 		ttl:         defaultTimeToLive,
 		protocol:    protocol,
 		identifier:  20000, // TODO generate this properly

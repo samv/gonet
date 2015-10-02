@@ -26,17 +26,6 @@ var (
 	externalGateway *Address
 )
 
-type routingTable struct {
-	// TODO make this thread safe
-	table []*Address // ordered by precedence, last one is default
-}
-
-func newRoutingTable() (*routingTable, error) {
-	return &routingTable{}, nil
-}
-
-var globalRoutingTable *routingTable
-
 func initExternalGateway() *Address {
 	_, filename, _, _ := runtime.Caller(1)
 	data, err := ioutil.ReadFile(path.Join(path.Dir(filename), ipv4StaticGatewayLoadFile))
@@ -62,7 +51,20 @@ func initExternalIP() *Address {
 	return MakeIP(str)
 }
 
-func initSourceIPTable() *routingTable {
+// RoutingTable stores the different routes that may be used
+type RoutingTable struct {
+	// TODO make this thread safe
+	table []*Address // ordered by precedence, last one is default
+}
+
+// GlobalRoutingTable is the routing table that is used by IPv4 and all transport layer protocols
+var GlobalRoutingTable *RoutingTable
+
+func newRoutingTable() (*RoutingTable, error) {
+	return &RoutingTable{}, nil
+}
+
+func initSourceIPTable() *RoutingTable {
 	externalGateway = initExternalGateway()
 	LoopbackIPAddress = initLoopbackIP()
 	ExternalIPAddress = initExternalIP()
@@ -84,40 +86,29 @@ func initSourceIPTable() *routingTable {
 	return table
 }
 
-func (sipt *routingTable) add(ip *Address) error {
-	sipt.table = append(sipt.table, ip) // TODO ensure the entry has not already been inserted
+func (table *RoutingTable) add(ip *Address) error {
+	table.table = append(table.table, ip) // TODO ensure the entry has not already been inserted
 	return nil
 }
 
-func ipCompare(baseS, cmpS *Address, netm Netmask) bool {
-	base := baseS.IP
-	cmp := cmpS.IP
-
-	// TODO take netmask into account
-	for i := 0; i < len(base); i++ {
-		if base[i] != cmp[i] && base[i] != 0 {
-			return false
-		}
-	}
-	return true
-}
-
-func (sipt *routingTable) Query(dst *Address) (src *Address) {
-	if len(sipt.table) == 0 {
+// Query returns the source IP address that will be sent from
+// given the IP address that should be sent to.
+func (table *RoutingTable) Query(dst *Address) (src *Address) {
+	if len(table.table) == 0 {
 		logs.Error.Fatalln("sipt Query: no entries in table")
 	}
 	//	//ch logs.Trace.Println("Query:", "table:", sipt.table, "len:", len(sipt.table))
-	for _, base := range sipt.table {
+	for _, base := range table.table {
 		//		//ch logs.Trace.Println("Trying query:", base, "compared to", dst)
 		if ipCompare(base, dst, ipv4DefaultNetmask) { // TODO determine netmask dynamically
 			return base
 		}
 	}
-	return sipt.table[len(sipt.table)-1]
+	return table.table[len(table.table)-1]
 }
 
-func (sipt *routingTable) Gateway(dst *Address) *Address {
-	for _, base := range sipt.table {
+func (table *RoutingTable) gateway(dst *Address) *Address {
+	for _, base := range table.table {
 		if ipCompare(base, dst, ipv4DefaultNetmask) { // TODO determine dynamically
 			return dst
 		}

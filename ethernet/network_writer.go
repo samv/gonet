@@ -46,7 +46,7 @@ func (nw *ethernetWriter) Write(data []byte) (int, error) {
 
 	// send packet
 	//logs.Trace.Println("Ethernet sending packet:", packet)
-	return physical.Write(nw.index, packet) // TODO do not use directly?
+	return physical.Write(nw.index, packet)
 }
 
 func (nw *ethernetWriter) Close() error {

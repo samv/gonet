@@ -6,7 +6,7 @@ import (
 
 func init() {
 	initTypes()
-	globalRoutingTable = initSourceIPTable()
+	GlobalRoutingTable = initSourceIPTable()
 	globalARPv4Table = initARPv4Table()
 }
 
