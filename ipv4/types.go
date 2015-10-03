@@ -1,9 +1,9 @@
 package ipv4
 
 import (
+	"bytes"
 	"encoding/binary"
 	"net"
-	"bytes"
 )
 
 func initTypes() {

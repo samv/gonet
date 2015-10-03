@@ -2,9 +2,13 @@ package arp
 
 import (
 	"network/ethernet"
+
 	"github.com/hsheth2/notifiers"
 )
 
+// The ProtocolDealer is provided by a client during Registration
+// for an EtherType. It provides this ARP package with all
+// the EtherType specific address settings and functions.
 type ProtocolDealer interface {
 	Lookup(ProtocolAddress) (*ethernet.MACAddress, error)
 	Request(ProtocolAddress) (*ethernet.MACAddress, error)
@@ -16,6 +20,7 @@ type ProtocolDealer interface {
 	GetAddress() ProtocolAddress
 }
 
+// The ProtocolAddress represents a protocol address.
 type ProtocolAddress interface {
 	Marshal() ([]byte, error)
 	Len() uint8

@@ -10,7 +10,7 @@ import (
 )
 
 var (
-	read          ethernet.Reader
+	read                    ethernet.Reader
 	ethernetProtocolDealers map[ethernet.EtherType](ProtocolDealer)
 	// TODO add mutex for protection
 )
@@ -27,6 +27,8 @@ func init() {
 	go dealer()
 }
 
+// Register registers a ProtocolDealer to be the ARP manager for a
+// specific EtherType.
 func Register(tp ethernet.EtherType, arppd ProtocolDealer) error {
 	if tp == ethernet.EtherTypeARP {
 		return errors.New("ARP Manager: cannot bind to ARP ethertype")
@@ -93,6 +95,9 @@ func dealer() {
 	}
 }
 
+// Request will send an ARP request for a given EtherType and ProtocolAddress.
+// It will then block until it receives a response, or until a timeout occurs. To
+// function properly, a ProtocolDealer must be Registered for the EtherType.
 func Request(tp ethernet.EtherType, raddr ProtocolAddress) (*ethernet.MACAddress, error) {
 	if pd, ok := ethernetProtocolDealers[tp]; ok {
 		// prepare request
