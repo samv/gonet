@@ -3,18 +3,17 @@ package icmp
 import (
 	"errors"
 	"network/ipv4"
-	"network/ipv4/ipv4tps"
 
 	"github.com/hsheth2/logs"
 )
 
 type ICMP_Read_Manager struct {
-	reader ipv4.IPv4_Reader
+	reader ipv4.Reader
 	buff   map[uint8](chan *ICMP_In)
 }
 
 func NewICMP_Read_Manager() (*ICMP_Read_Manager, error) {
-	ipr, err := ipv4.NewIP_Reader(ipv4tps.IP_ALL, ipv4.ICMP_PROTO)
+	ipr, err := ipv4.NewReader(ipv4.IPAll, ipv4.IPProtoICMP)
 	if err != nil {
 		return nil, err
 	}

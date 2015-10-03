@@ -5,59 +5,61 @@ import (
 	//"github.com/hsheth2/logs"
 )
 
-type ethernet_writer struct {
-	dst_mac, src_mac *MAC_Address
-	ethertype        EtherType
-	index            physical.InternalIndex
+type ethernetWriter struct {
+	dstMAC, srcMAC *MACAddress
+	ethertype      EtherType
+	index          physical.InternalIndex
 }
 
-func NewEthernet_Writer(dst_mac *MAC_Address, ethertype EtherType) (Ethernet_Writer, error) {
-	index := getInternalIndex(dst_mac)
+// NewEthernetWriter allows for the writing to a given MAC Address and EtherType
+func NewEthernetWriter(dstMAC *MACAddress, ethertype EtherType) (Writer, error) {
+	index := getInternalIndex(dstMAC)
 	//	//ch logs.Info.Println("Found internal index")
-	src_mac, err := globalSource_MAC_Table.search(index)
+	srcMAC, err := globalSourceMACTable.search(index)
 	if err != nil {
 		return nil, err
 	}
 
-	return &ethernet_writer{
-		dst_mac:   dst_mac,
-		src_mac:   src_mac,
+	return &ethernetWriter{
+		dstMAC:    dstMAC,
+		srcMAC:    srcMAC,
 		ethertype: ethertype,
 		index:     index,
 	}, nil
 }
 
-// blocking write call
-func (nw *ethernet_writer) Write(data []byte) (int, error) {
+// Write is a blocking write call
+func (nw *ethernetWriter) Write(data []byte) (int, error) {
 	// build the ethernet header
 	//	//ch logs.Info.Println("Ethernet write request")
-	packet := make([]byte, ETH_HEADER_SZ+len(data))
+	packet := make([]byte, ethHeaderSize+len(data))
 
 	//	//ch logs.Info.Println("Finished ARP lookup stuff")
-	copy(packet, nw.dst_mac.Data[:ETH_MAC_ADDR_SZ])
-	copy(packet[ETH_MAC_ADDR_SZ:], nw.src_mac.Data[:ETH_MAC_ADDR_SZ])
-	packet[2*ETH_MAC_ADDR_SZ] = byte(nw.ethertype >> 8)
-	packet[2*ETH_MAC_ADDR_SZ+1] = byte(nw.ethertype)
+	copy(packet, nw.dstMAC.Data[:ethMACAddressSize])
+	copy(packet[ethMACAddressSize:], nw.srcMAC.Data[:ethMACAddressSize])
+	packet[2*ethMACAddressSize] = byte(nw.ethertype >> 8)
+	packet[2*ethMACAddressSize+1] = byte(nw.ethertype)
 	//fmt.Println("My header:", etherHead)
 
 	// add on the ethernet header
-	copy(packet[ETH_HEADER_SZ:], data)
+	copy(packet[ethHeaderSize:], data)
 
 	// send packet
 	//logs.Trace.Println("Ethernet sending packet:", packet)
-	return physical.Write(nw.index, packet) // TODO do not use directly?
+	return physical.Write(nw.index, packet)
 }
 
-func (nw *ethernet_writer) Close() error {
+func (nw *ethernetWriter) Close() error {
 	return nil
 }
 
-// helper method for one-time sends
-func EthernetWriteOne(dst_mac *MAC_Address, ethertype EtherType, data []byte) (int, error) {
-	nw, err := NewEthernet_Writer(dst_mac, ethertype)
+// WriteSingle is a helper method that is used for one-time sends that do not require a full Writer
+func WriteSingle(dstMAC *MACAddress, ethertype EtherType, data []byte) (int, error) {
+	nw, err := NewEthernetWriter(dstMAC, ethertype)
 	if err != nil {
 		return 0, err
 	}
+	defer nw.Close()
 
 	return nw.Write(data)
 }

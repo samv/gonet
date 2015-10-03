@@ -2,21 +2,19 @@ package udp
 
 import (
 	"network/ipv4"
-	"network/ipv4/ipv4src"
-	"network/ipv4/ipv4tps"
 )
 
 const UDP_HEADER_SZ = 8
 
 type UDP_Writer struct {
-	rip      *ipv4tps.IPaddress // destination ip address
-	lip      *ipv4tps.IPaddress // source ip address
-	writer   ipv4.IPv4_Writer
+	rip      *ipv4.Address // destination ip address
+	lip      *ipv4.Address // source ip address
+	writer   ipv4.Writer
 	src, dst uint16 // ports
 }
 
-func NewUDP_Writer(src, dest uint16, dstIP *ipv4tps.IPaddress) (*UDP_Writer, error) {
-	write, err := ipv4.NewIP_Writer(dstIP, ipv4.UDP_PROTO)
+func NewUDP_Writer(src, dest uint16, dstIP *ipv4.Address) (*UDP_Writer, error) {
+	write, err := ipv4.NewWriter(dstIP, ipv4.IPProtoUDP)
 	if err != nil {
 		return nil, err
 	}
@@ -25,7 +23,7 @@ func NewUDP_Writer(src, dest uint16, dstIP *ipv4tps.IPaddress) (*UDP_Writer, err
 		src:    src,
 		dst:    dest,
 		rip:    dstIP,
-		lip:    ipv4src.GlobalSource_IP_Table.Query(dstIP),
+		lip:    ipv4.GlobalRoutingTable.Query(dstIP),
 		writer: write,
 	}, nil
 }
@@ -40,7 +38,7 @@ func (c *UDP_Writer) Write(x []byte) (int, error) {
 	}
 
 	data := append(UDPHeader, x...)
-	cksum := ipv4.CalcTransportChecksum(data, c.lip, c.rip, headerLen, ipv4.UDP_PROTO)
+	cksum := ipv4.CalcTransportChecksum(data, c.lip, c.rip, headerLen, ipv4.IPProtoUDP)
 	data[6] = uint8(cksum >> 8)
 	data[7] = uint8(cksum)
 

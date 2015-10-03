@@ -15,25 +15,30 @@ import (
 	"bytes"
 )
 
-const ETH_STATIC_MAC_LOAD_FILE = "external_mac.static"
+const ethLoadFileStaticMAC = "external_mac.static"
 
-var Loopback_mac_address *MAC_Address = &MAC_Address{Data: []byte{0, 0, 0, 0, 0, 0}}
-var External_mac_address *MAC_Address
-var Loopback_bcast_address *MAC_Address = &MAC_Address{Data: []byte{0, 0, 0, 0, 0, 0}}
-var External_bcast_address *MAC_Address = &MAC_Address{Data: []byte{0xff, 0xff, 0xff, 0xff, 0xff, 0xff}}
+// Static MAC addresses and broadcast addresses
+var (
+	LoopbackMACAddress       *MACAddress
+	ExternalMACAddress       *MACAddress
+	LoopbackBroadcastAddress *MACAddress
+	ExternalBroadcastAddress *MACAddress
+)
 
-type source_MAC_Table struct {
-	table map[physical.InternalIndex](*MAC_Address)
+type sourceMACTable struct {
+	table map[physical.InternalIndex](*MACAddress)
 }
 
-var globalSource_MAC_Table = func() *source_MAC_Table {
-	table, err := newSource_MAC_Table()
+var globalSourceMACTable *sourceMACTable
+
+func initSourceTable() *sourceMACTable {
+	table, err := newSourceMACTable()
 	if err != nil {
 		logs.Error.Fatal(err)
 	}
 
 	_, filename, _, _ := runtime.Caller(1)
-	data, err := ioutil.ReadFile(path.Join(path.Dir(filename), ETH_STATIC_MAC_LOAD_FILE))
+	data, err := ioutil.ReadFile(path.Join(path.Dir(filename), ethLoadFileStaticMAC))
 	if err != nil {
 		logs.Error.Fatal(err)
 	}
@@ -42,40 +47,43 @@ var globalSource_MAC_Table = func() *source_MAC_Table {
 	if err != nil {
 		logs.Error.Fatal(err)
 	}
-	External_mac_address = &MAC_Address{
-		Data: []byte(hw),
-	}
 
-	table.add(physical.LoopbackInternalIndex, Loopback_mac_address)
-	table.add(physical.ExternalInternalIndex, External_mac_address)
+	// init addresses
+	LoopbackMACAddress = &MACAddress{Data: []byte{0, 0, 0, 0, 0, 0}}
+	ExternalMACAddress = &MACAddress{Data: []byte(hw)}
+	LoopbackBroadcastAddress = &MACAddress{Data: []byte{0, 0, 0, 0, 0, 0}}
+	ExternalBroadcastAddress = &MACAddress{Data: []byte{0xff, 0xff, 0xff, 0xff, 0xff, 0xff}}
+
+	table.add(physical.LoopbackInternalIndex, LoopbackMACAddress)
+	table.add(physical.ExternalInternalIndex, ExternalMACAddress)
 
 	return table
-}()
+}
 
-func newSource_MAC_Table() (*source_MAC_Table, error) {
-	return &source_MAC_Table{
-		table: make(map[physical.InternalIndex](*MAC_Address)),
+func newSourceMACTable() (*sourceMACTable, error) {
+	return &sourceMACTable{
+		table: make(map[physical.InternalIndex](*MACAddress)),
 	}, nil
 }
 
-func (smt *source_MAC_Table) search(in physical.InternalIndex) (*MAC_Address, error) {
+func (smt *sourceMACTable) search(in physical.InternalIndex) (*MACAddress, error) {
 	if ans, ok := smt.table[in]; ok {
 		return ans, nil
 	}
 	return nil, errors.New("Failed to find associated MAC address")
 }
 
-func (smt *source_MAC_Table) add(in physical.InternalIndex, mac *MAC_Address) error {
+func (smt *sourceMACTable) add(in physical.InternalIndex, mac *MACAddress) error {
 	smt.table[in] = mac // TODO should we prevent overwriting?
 	return nil
 }
 
-func getInternalIndex(rmac *MAC_Address) physical.InternalIndex {
-	if rmac == Loopback_mac_address || rmac == Loopback_bcast_address {
+func getInternalIndex(rmac *MACAddress) physical.InternalIndex {
+	if rmac == LoopbackMACAddress || rmac == LoopbackBroadcastAddress {
 		return physical.LoopbackInternalIndex
-	} else if rmac == External_mac_address || rmac == External_bcast_address {
+	} else if rmac == ExternalMACAddress || rmac == ExternalBroadcastAddress {
 		return physical.ExternalInternalIndex
-	} else if bytes.Equal(rmac.Data, Loopback_mac_address.Data) || bytes.Equal(rmac.Data, Loopback_bcast_address.Data) {
+	} else if bytes.Equal(rmac.Data, LoopbackMACAddress.Data) || bytes.Equal(rmac.Data, LoopbackBroadcastAddress.Data) {
 		return physical.LoopbackInternalIndex
 	}
 	return physical.ExternalInternalIndex

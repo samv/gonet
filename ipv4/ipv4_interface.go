@@ -2,69 +2,66 @@ package ipv4
 
 import (
 	"io"
-	"network/ipv4/ipv4tps"
 )
 
-type ip_read_t interface {
-	ReadFrom() (*IP_Read_Header, error)
+func init() {
+	initTypes()
+	GlobalRoutingTable = initSourceIPTable()
+	globalARPv4Table = initARPv4Table()
 }
 
-type ip_write_t interface {
-	WriteTo(data []byte) (int, error)
-}
-
-type ip_close_t interface {
+// Reader allows reading from a specific IP protocol and address
+type Reader interface {
+	ReadFrom() (*IPReadHeader, error)
 	io.Closer
 }
 
-type IPv4_Reader interface {
-	ip_read_t
-	ip_close_t
+// Writer allows writing to a specific IP protocol and address
+type Writer interface {
+	WriteTo(data []byte) (int, error)
+	io.Closer
 }
 
-type IPv4_Writer interface {
-	ip_write_t
-	ip_close_t
+// ReadWriter allows a bidirectional IP "connection": one that allows both reading and writing
+type ReadWriter interface {
+	ReadFrom() (*IPReadHeader, error)
+	WriteTo(data []byte) (int, error)
+	io.Closer
 }
 
-type IPv4_RW interface {
-	ip_read_t
-	ip_write_t
-	ip_close_t
+type ipv4ReadWriter struct {
+	read  Reader
+	write Writer
 }
 
-type ipv4_read_writer struct {
-	read  *ipv4_reader
-	write *ipv4_writer
-}
-
-func NewIPv4_RW(ip *ipv4tps.IPaddress, protocol uint8) (IPv4_RW, error) {
-	read, err := NewIP_Reader(ip, protocol)
+// NewReadWriter creates a ReadWriter given an IP Address and an IP protocol
+func NewReadWriter(ip *Address, protocol uint8) (ReadWriter, error) {
+	read, err := NewReader(ip, protocol)
 	if err != nil {
 		return nil, err
 	}
 
-	write, err := NewIP_Writer(ip, protocol)
+	write, err := NewWriter(ip, protocol)
 	if err != nil {
 		read.Close()
 		return nil, err
 	}
 
-	return &ipv4_read_writer{
+	return &ipv4ReadWriter{
 		read:  read,
 		write: write,
 	}, nil
 }
 
-func (irw *ipv4_read_writer) ReadFrom() (*IP_Read_Header, error) {
+func (irw *ipv4ReadWriter) ReadFrom() (*IPReadHeader, error) {
 	return irw.ReadFrom()
 }
 
-func (irw *ipv4_read_writer) WriteTo(data []byte) (int, error) {
+func (irw *ipv4ReadWriter) WriteTo(data []byte) (int, error) {
 	return irw.write.WriteTo(data)
 }
 
-func (irw *ipv4_read_writer) Close() error {
+func (irw *ipv4ReadWriter) Close() error {
 	err1 := irw.write.Close()
 	err2 := irw.read.Close()
 

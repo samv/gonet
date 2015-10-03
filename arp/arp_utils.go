@@ -25,7 +25,7 @@ type ARP_Packet struct {
 	ptype      ethernet.EtherType
 	hlen, plen uint8
 	oper       uint16
-	sha, tha   *ethernet.MAC_Address
+	sha, tha   *ethernet.MACAddress
 	spa, tpa   ARP_Protocol_Address
 }
 
@@ -41,9 +41,9 @@ func ParseARP_Packet_General(d []byte) *ARP_Packet {
 
 func ParseARP_Packet_Type(d []byte, packet *ARP_Packet, pd ARP_Protocol_Dealer) *ARP_Packet {
 	const offset = 8
-	packet.sha = &ethernet.MAC_Address{Data: d[offset : offset+packet.hlen]}
+	packet.sha = &ethernet.MACAddress{Data: d[offset : offset+packet.hlen]}
 	packet.spa = pd.Unmarshal(d[offset+packet.hlen : offset+packet.hlen+packet.plen])
-	packet.tha = &ethernet.MAC_Address{Data: d[offset+packet.hlen+packet.plen : offset+2*packet.hlen+packet.plen]}
+	packet.tha = &ethernet.MACAddress{Data: d[offset+packet.hlen+packet.plen : offset+2*packet.hlen+packet.plen]}
 	packet.tpa = pd.Unmarshal(d[offset+2*packet.hlen+packet.plen : offset+2*packet.hlen+2*packet.plen])
 	return packet
 }
