@@ -11,7 +11,7 @@ import (
 
 var (
 	read          ethernet.Reader
-	ethtp_manager map[ethernet.EtherType](ARP_Protocol_Dealer)
+	ethernetProtocolDealers map[ethernet.EtherType](ProtocolDealer)
 	// TODO add mutex for protection
 )
 
@@ -22,19 +22,19 @@ func init() {
 	}
 
 	read = r
-	ethtp_manager = make(map[ethernet.EtherType](ARP_Protocol_Dealer))
+	ethernetProtocolDealers = make(map[ethernet.EtherType](ProtocolDealer))
 
 	go dealer()
 }
 
-func Register(tp ethernet.EtherType, arppd ARP_Protocol_Dealer) error {
+func Register(tp ethernet.EtherType, arppd ProtocolDealer) error {
 	if tp == ethernet.EtherTypeARP {
 		return errors.New("ARP Manager: cannot bind to ARP ethertype")
 	}
-	if _, ok := ethtp_manager[tp]; ok {
+	if _, ok := ethernetProtocolDealers[tp]; ok {
 		return errors.New("ARP Manager: ethertype already bound to")
 	}
-	ethtp_manager[tp] = arppd
+	ethernetProtocolDealers[tp] = arppd
 	return nil
 }
 
@@ -50,7 +50,7 @@ func dealer() {
 		data := header.Packet
 		p := parsePacket(data)
 
-		if pd, ok := ethtp_manager[p.ptype]; ok && p.htype == ethernetHType {
+		if pd, ok := ethernetProtocolDealers[p.ptype]; ok && p.htype == ethernetHType {
 			p = parsePacketWithType(data, p, pd)
 			//logs.Trace.Println("ARP packet:", packet)
 			pd.Add(p.spa, p.sha)
@@ -93,8 +93,8 @@ func dealer() {
 	}
 }
 
-func Request(tp ethernet.EtherType, raddr ARP_Protocol_Address) (*ethernet.MACAddress, error) {
-	if pd, ok := ethtp_manager[tp]; ok {
+func Request(tp ethernet.EtherType, raddr ProtocolAddress) (*ethernet.MACAddress, error) {
+	if pd, ok := ethernetProtocolDealers[tp]; ok {
 		// prepare request
 		requestPacket := &packet{
 			htype: ethernetHType,

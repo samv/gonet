@@ -3,7 +3,6 @@ package ipv4
 import (
 	"encoding/binary"
 	"net"
-	"network/arp"
 	"bytes"
 )
 
@@ -50,10 +49,6 @@ func (ip *Address) Len() uint8 {
 
 func (ip *Address) Equal(other *Address) bool {
 	return bytes.Equal(ip.IP, other.IP)
-}
-
-func (ip *Address) ARPEqual(other arp.ARP_Protocol_Address) bool {
-	return ip.Equal(other.(*Address))
 }
 
 // MakeIP converts a string into an Address

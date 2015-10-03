@@ -11,7 +11,7 @@ type packet struct {
 	hlen, plen len
 	oper       uint16
 	sha, tha   *ethernet.MACAddress
-	spa, tpa   ARP_Protocol_Address
+	spa, tpa   ProtocolAddress
 }
 
 func parsePacket(d []byte) *packet {
@@ -24,7 +24,7 @@ func parsePacket(d []byte) *packet {
 	}
 }
 
-func parsePacketWithType(d []byte, packet *packet, pd ARP_Protocol_Dealer) *packet {
+func parsePacketWithType(d []byte, packet *packet, pd ProtocolDealer) *packet {
 	const offset = 8
 	packet.sha = &ethernet.MACAddress{Data: d[offset : offset+packet.hlen]}
 	packet.spa = pd.Unmarshal(d[offset+packet.hlen : offset+packet.hlen+packet.plen])

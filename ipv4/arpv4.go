@@ -44,6 +44,10 @@ func initARPv4Table() *arpv4Table {
 	return table
 }
 
+func (ip *Address) ARPEqual(other arp.ProtocolAddress) bool {
+	return ip.Equal(other.(*Address))
+}
+
 func newARPv4Table() (*arpv4Table, error) {
 	return &arpv4Table{
 		table:         make(map[Hash](*ethernet.MACAddress)),
@@ -52,7 +56,7 @@ func newARPv4Table() (*arpv4Table, error) {
 	}, nil
 }
 
-func (table *arpv4Table) Lookup(ip arp.ARP_Protocol_Address) (*ethernet.MACAddress, error) {
+func (table *arpv4Table) Lookup(ip arp.ProtocolAddress) (*ethernet.MACAddress, error) {
 	table.tableMutex.RLock()
 	defer table.tableMutex.RUnlock()
 	if ans, ok := table.table[ip.(*Address).Hash()]; ok {
@@ -63,7 +67,7 @@ func (table *arpv4Table) Lookup(ip arp.ARP_Protocol_Address) (*ethernet.MACAddre
 	return nil, errors.New("ARP lookup into table failed")
 }
 
-func (table *arpv4Table) LookupRequest(ip arp.ARP_Protocol_Address) (*ethernet.MACAddress, error) {
+func (table *arpv4Table) LookupRequest(ip arp.ProtocolAddress) (*ethernet.MACAddress, error) {
 	x, err := table.Lookup(ip)
 	if err == nil {
 		return x, nil
@@ -71,11 +75,11 @@ func (table *arpv4Table) LookupRequest(ip arp.ARP_Protocol_Address) (*ethernet.M
 	return table.Request(ip)
 }
 
-func (table *arpv4Table) Request(rip arp.ARP_Protocol_Address) (*ethernet.MACAddress, error) {
+func (table *arpv4Table) Request(rip arp.ProtocolAddress) (*ethernet.MACAddress, error) {
 	return arp.Request(ethernet.EtherTypeIP, rip)
 }
 
-func (table *arpv4Table) Add(ip arp.ARP_Protocol_Address, addr *ethernet.MACAddress) error {
+func (table *arpv4Table) Add(ip arp.ProtocolAddress, addr *ethernet.MACAddress) error {
 	// if _, ok := table.table[ip]; ok {
 	// 	return errors.New("Cannot overwrite existing entry")
 	// }
@@ -92,10 +96,10 @@ func (table *arpv4Table) GetReplyNotifier() *notifiers.Notifier {
 	return table.replyNotifier
 }
 
-func (table *arpv4Table) Unmarshal(d []byte) arp.ARP_Protocol_Address {
+func (table *arpv4Table) Unmarshal(d []byte) arp.ProtocolAddress {
 	return &Address{IP: d}
 }
 
-func (table *arpv4Table) GetAddress() arp.ARP_Protocol_Address {
+func (table *arpv4Table) GetAddress() arp.ProtocolAddress {
 	return ExternalIPAddress
 }
