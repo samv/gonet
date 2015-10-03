@@ -3,6 +3,8 @@ package ipv4
 import (
 	"encoding/binary"
 	"net"
+	"network/arp"
+	"bytes"
 )
 
 func initTypes() {
@@ -44,6 +46,14 @@ func (ip *Address) Hash() Hash {
 // Len returns the length of a marshaled IP address
 func (ip *Address) Len() uint8 {
 	return IPv4AddressLength
+}
+
+func (ip *Address) Equal(other *Address) bool {
+	return bytes.Equal(ip.IP, other.IP)
+}
+
+func (ip *Address) ARPEqual(other arp.ARP_Protocol_Address) bool {
+	return ip.Equal(other.(*Address))
 }
 
 // MakeIP converts a string into an Address

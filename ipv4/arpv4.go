@@ -39,7 +39,7 @@ func initARPv4Table() *arpv4Table {
 	}
 
 	// register to get packets
-	arp.GlobalARP_Manager.Register(ethernet.EtherTypeIP, table)
+	arp.Register(ethernet.EtherTypeIP, table)
 
 	return table
 }
@@ -72,7 +72,7 @@ func (table *arpv4Table) LookupRequest(ip arp.ARP_Protocol_Address) (*ethernet.M
 }
 
 func (table *arpv4Table) Request(rip arp.ARP_Protocol_Address) (*ethernet.MACAddress, error) {
-	return arp.GlobalARP_Manager.Request(ethernet.EtherTypeIP, rip)
+	return arp.Request(ethernet.EtherTypeIP, rip)
 }
 
 func (table *arpv4Table) Add(ip arp.ARP_Protocol_Address, addr *ethernet.MACAddress) error {

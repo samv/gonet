@@ -4,82 +4,69 @@ import (
 	"errors"
 	"network/ethernet"
 
-	"reflect"
 	"time"
 
 	"github.com/hsheth2/logs"
-	"github.com/hsheth2/notifiers"
 )
 
-type ARP_Manager struct {
+var (
 	read          ethernet.Reader
 	ethtp_manager map[ethernet.EtherType](ARP_Protocol_Dealer)
-}
+	// TODO add mutex for protection
+)
 
-var GlobalARP_Manager *ARP_Manager = func() *ARP_Manager {
-	am, err := NewARP_Manager()
+func init() {
+	r, err := ethernet.Bind(ethernet.EtherTypeARP)
 	if err != nil {
 		logs.Error.Fatalln(err)
 	}
-	return am
-}()
 
-func NewARP_Manager() (*ARP_Manager, error) {
-	read, err := ethernet.Bind(ethernet.EtherTypeARP)
-	if err != nil {
-		return nil, err
-	}
+	read = r
+	ethtp_manager = make(map[ethernet.EtherType](ARP_Protocol_Dealer))
 
-	am := &ARP_Manager{
-		read:          read,
-		ethtp_manager: make(map[ethernet.EtherType](ARP_Protocol_Dealer)),
-	}
-
-	go am.dealer()
-
-	return am, nil
+	go dealer()
 }
 
-func (am *ARP_Manager) Register(tp ethernet.EtherType, arppd ARP_Protocol_Dealer) error {
+func Register(tp ethernet.EtherType, arppd ARP_Protocol_Dealer) error {
 	if tp == ethernet.EtherTypeARP {
 		return errors.New("ARP Manager: cannot bind to ARP ethertype")
 	}
-	if _, ok := am.ethtp_manager[tp]; ok {
+	if _, ok := ethtp_manager[tp]; ok {
 		return errors.New("ARP Manager: ethertype already bound to")
 	}
-	am.ethtp_manager[tp] = arppd
+	ethtp_manager[tp] = arppd
 	return nil
 }
 
 // TODO make unregister function
 
-func (am *ARP_Manager) dealer() {
+func dealer() {
 	for {
-		header, err := am.read.Read()
+		header, err := read.Read()
 		if err != nil {
 			logs.Error.Println(err)
 			continue
 		}
 		data := header.Packet
-		packet := ParseARP_Packet_General(data)
+		p := parsePacket(data)
 
-		if pd, ok := am.ethtp_manager[packet.ptype]; ok && packet.htype == ARP_HTYPE_ETHERNET {
-			packet = ParseARP_Packet_Type(data, packet, pd)
+		if pd, ok := ethtp_manager[p.ptype]; ok && p.htype == ethernetHType {
+			p = parsePacketWithType(data, p, pd)
 			//logs.Trace.Println("ARP packet:", packet)
-			pd.Add(packet.spa, packet.sha)
-			if packet.oper == ARP_OPER_REQUEST {
+			pd.Add(p.spa, p.sha)
+			if p.oper == operationRequest {
 				////ch logs.Trace.Println("Got ARP Request")
-				if reflect.DeepEqual(packet.tpa, pd.GetAddress()) {
-					reply := &ARP_Packet{
-						htype: packet.htype,
-						ptype: packet.ptype,
-						hlen:  packet.hlen,
-						plen:  packet.plen,
-						oper:  ARP_OPER_REPLY,
+				if p.tpa.ARPEqual(pd.GetAddress()) {
+					reply := &packet{
+						htype: p.htype,
+						ptype: p.ptype,
+						hlen:  p.hlen,
+						plen:  p.plen,
+						oper:  operationReply,
 						sha:   ethernet.ExternalMACAddress,
 						spa:   pd.GetAddress(),
-						tha:   packet.sha,
-						tpa:   packet.spa,
+						tha:   p.sha,
+						tpa:   p.spa,
 					}
 					rp, err := reply.MarshalPacket()
 					if err != nil {
@@ -96,7 +83,7 @@ func (am *ARP_Manager) dealer() {
 					logs.Warn.Println("Ignoring ARP request with a different target protocol address")
 					continue
 				}
-			} else if packet.oper == ARP_OPER_REPLY {
+			} else if p.oper == operationReply {
 				//logs.Trace.Println("Got ARP Reply")
 				// signal is sent in the Add function
 			} else {
@@ -106,15 +93,15 @@ func (am *ARP_Manager) dealer() {
 	}
 }
 
-func (am *ARP_Manager) Request(tp ethernet.EtherType, raddr ARP_Protocol_Address) (*ethernet.MACAddress, error) {
-	if pd, ok := am.ethtp_manager[tp]; ok {
+func Request(tp ethernet.EtherType, raddr ARP_Protocol_Address) (*ethernet.MACAddress, error) {
+	if pd, ok := ethtp_manager[tp]; ok {
 		// prepare request
-		requestPacket := &ARP_Packet{
-			htype: ARP_HTYPE_ETHERNET,
+		requestPacket := &packet{
+			htype: ethernetHType,
 			ptype: tp,
-			hlen:  ARP_HLEN_ETHERNET,
-			plen:  raddr.Len(),
-			oper:  ARP_OPER_REQUEST,
+			hlen:  ethernetHLen,
+			plen:  len(raddr.Len()),
+			oper:  operationRequest,
 			sha:   ethernet.ExternalMACAddress,
 			spa:   pd.GetAddress(),
 			tha:   ethernet.ExternalBroadcastAddress,
@@ -138,7 +125,7 @@ func (am *ARP_Manager) Request(tp ethernet.EtherType, raddr ARP_Protocol_Address
 		defer pd.GetReplyNotifier().Unregister(reply)
 
 		// wait for reply
-		timeout := time.NewTimer(ARP_REQUEST_TIMEOUT)
+		timeout := time.NewTimer(requestTimeout)
 		for {
 			select {
 			case <-timeout.C:
@@ -154,20 +141,4 @@ func (am *ARP_Manager) Request(tp ethernet.EtherType, raddr ARP_Protocol_Address
 	} else {
 		return nil, errors.New("No ARP_Protocol_Dealer registered for given EtherType")
 	}
-}
-
-type ARP_Protocol_Dealer interface {
-	Lookup(ARP_Protocol_Address) (*ethernet.MACAddress, error)
-	Request(ARP_Protocol_Address) (*ethernet.MACAddress, error)
-	// TODO add discover (probe) function to broadcast ARP requests
-	// TODO support ARP announcements
-	Add(ARP_Protocol_Address, *ethernet.MACAddress) error
-	GetReplyNotifier() *notifiers.Notifier
-	Unmarshal([]byte) ARP_Protocol_Address
-	GetAddress() ARP_Protocol_Address
-}
-
-type ARP_Protocol_Address interface {
-	Marshal() ([]byte, error)
-	Len() uint8
 }
