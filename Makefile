@@ -2,8 +2,6 @@
 
 SHELL = /bin/bash
 
-pkgs = network/physical network/ethernet network/arp network/ipv4 network/udp network/tcp network/icmp network/ping
-
 install: clean setup depend build
 depend:
 	go get -u github.com/hsheth2/logs
@@ -12,8 +10,8 @@ depend:
 	go get -u github.com/hsheth2/water
 	go get -u github.com/hsheth2/water/waterutil
 build:
-	go clean ${pkgs}
-	go install ${pkgs}
+	go clean ./...
+	go install ./...
 clean:
 	-rm -rf *.static.orig
 	-rm -rf *.static
@@ -21,20 +19,18 @@ clean:
 	-rm -f *.cover
 	-rm -f *.html
 	-rm runStack scaleTest local_latency
-	go clean ${pkgs}
+	go clean ./...
 setup:
 	-./tap_setup.sh
 	-./arp_setup.sh
 
 # line counting
-lines_all:
-	find ./ -name '*.go' -o -name '*.py' -o -name '*.c' -o -name '*.sh' | xargs wc -l
-lines_go:
+lines:
 	find ./ -name '*.go' | xargs wc -l
 
 # Error Checking
 vet:
-	go vet ${pkgs}
+	go vet ./...
 fmt:
 	./auto-format.sh
 	# go fmt ${pkgs}
