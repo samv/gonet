@@ -13,7 +13,7 @@ func New_TCB_From_Client(local, remote uint16, dstIP *ipv4.Address) (*TCB, error
 		return nil, err
 	}*/
 
-	read, err := TCP_Port_Manager.bind(remote, local, dstIP)
+	read, err := portManager.bind(remote, local, dstIP)
 	if err != nil {
 		logs.Error.Println(err, local, remote, dstIP.Hash())
 		return nil, err

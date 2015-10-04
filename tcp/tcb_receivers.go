@@ -1,6 +1,8 @@
 package tcp
 
-import "github.com/hsheth2/logs"
+import (
+	"github.com/hsheth2/logs"
+)
 
 func (c *TCB) packetDealer() {
 	// read each tcp packet and deal with it

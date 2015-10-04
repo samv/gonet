@@ -2,10 +2,9 @@ package tcp
 
 import (
 	"fmt"
+	"network/ipv4"
 	"testing"
 	"time"
-
-	"network/ipv4"
 )
 
 const server_port = 20102

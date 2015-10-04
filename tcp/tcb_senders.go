@@ -71,7 +71,7 @@ func (c *TCB) sendWithRetransmit(data *packet) error {
 		c.listenForAck(ackFound, killAckListen, data.header.seq+data.getPayloadSize())
 
 		// timers and timeouts
-		resendTimerChan := make(chan bool, TCP_RESEND_LIMIT)
+		resendTimerChan := make(chan bool, retransmissionLimit)
 		timeout := make(chan bool, 1)
 		killTimer := make(chan bool, 1)
 		resendTimer(resendTimerChan, timeout, killTimer, c.resendDelay)
@@ -98,7 +98,7 @@ func (c *TCB) sendWithRetransmit(data *packet) error {
 
 func (c *TCB) listenForAck(successOut chan<- bool, end <-chan bool, targetAck uint32) {
 	//ch logs.Trace.Println(c.Hash(), "Listening for ack:", targetAck)
-	in := c.recentAckUpdate.Register(ACK_BUF_SZ)
+	in := c.recentAckUpdate.Register(ackBufferSize)
 	go func(in chan interface{}, successOut chan<- bool, end <-chan bool, targetAck uint32) {
 		defer c.recentAckUpdate.Unregister(in)
 		for {
@@ -118,7 +118,7 @@ func (c *TCB) listenForAck(successOut chan<- bool, end <-chan bool, targetAck ui
 }
 
 func resendTimer(timerOutput, timeout chan<- bool, finished <-chan bool, delay time.Duration) {
-	for i := 0; i < TCP_RESEND_LIMIT; i++ {
+	for i := 0; i < retransmissionLimit; i++ {
 		select {
 		case <-time.After(delay):
 			timerOutput <- true

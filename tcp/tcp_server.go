@@ -32,13 +32,13 @@ func New_Server_TCB() (*Server_TCB, error) {
 }
 
 func (s *Server_TCB) BindListen(port uint16, ip *ipv4.Address) error {
-	return s.BindListenWithQueueSize(port, ip, TCP_LISTEN_DEFAULT_QUEUE_SZ)
+	return s.BindListenWithQueueSize(port, ip, listenQueueSizeDefault)
 }
 
 func (s *Server_TCB) BindListenWithQueueSize(port uint16, ip *ipv4.Address, queue_sz int) error {
 	s.listenPort = port
 	s.listenIP = ip
-	read, err := TCP_Port_Manager.bind(0, port, ip)
+	read, err := portManager.bind(0, port, ip)
 	if err != nil {
 		return err
 	}
@@ -70,7 +70,7 @@ func (s *Server_TCB) LongListener() {
 			rp := in.header.srcport
 			rIP := in.rip
 
-			read, err := TCP_Port_Manager.bind(rp, lp, rIP)
+			read, err := portManager.bind(rp, lp, rIP)
 			if err != nil {
 				logs.Error.Println(err)
 				return

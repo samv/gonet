@@ -2,6 +2,7 @@ package tcp
 
 import (
 	"errors"
+	"math"
 	"network/ipv4"
 	"sync"
 	"time"
@@ -77,7 +78,7 @@ func New_TCB(local, remote uint16, dstIP *ipv4.Address, read chan *packet, write
 		irs:              0,
 		recentAckNum:     0,
 		recentAckUpdate:  notifiers.NewNotifier(),
-		maxSegSize:       ipv4.IPMTU - TCP_BASIC_HEADER_SZ,
+		maxSegSize:       ipv4.IPMTU - basicHeaderSize,
 	}
 	////ch logs.Trace.Println("Starting the packet dealer")
 
@@ -117,9 +118,6 @@ func (c *TCB) Recv(num uint64) ([]byte, error) { // blocking recv call TODO add 
 	//return nil, errors.New("Read failed")
 }
 
-const UINT32_MIN = uint32(0x00000000)
-const UINT32_MAX = uint32(0xffffffff)
-
 func (c *TCB) Close() error {
 	//ch logs.Trace.Println(c.Hash(), "Closing TCB with lport:", c.lport)
 
@@ -145,9 +143,9 @@ func (c *TCB) Close() error {
 	c.stateUpdate.L.Unlock()
 
 	// kill all retransmitters
-	c.recentAckUpdate.Broadcast(UINT32_MIN)
+	c.recentAckUpdate.Broadcast(0)
 	c.recentAckUpdate.Broadcast(c.ackNum)
-	c.recentAckUpdate.Broadcast(UINT32_MAX)
+	c.recentAckUpdate.Broadcast(math.MaxUint32)
 
 	// send FIN
 	//ch logs.Trace.Println(c.Hash(), "Sending FIN within close")
@@ -170,7 +168,7 @@ func (c *TCB) Close() error {
 	//ch logs.Trace.Printf("%s Close of TCB with lport %d finished", c.Hash(), c.lport)
 
 	//ch logs.Trace.Println(c.Hash(), "Unbinding TCB")
-	err := TCP_Port_Manager.unbind(c.rport, c.lport, c.ipAddress)
+	err := portManager.unbind(c.rport, c.lport, c.ipAddress)
 	if err != nil {
 		return err
 	}

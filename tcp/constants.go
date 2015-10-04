@@ -27,18 +27,21 @@ const (
 	clientParent
 )
 
-// Other Consts
-const TCP_INCOMING_BUFF_SZ = 200
-const TCP_BASIC_HEADER_SZ = 20
-const TCP_LISTEN_DEFAULT_QUEUE_SZ = 120
-const TCP_RESEND_LIMIT = 12
-const ACK_BUF_SZ = 100
+// Buffer sizes
+const (
+	incomingBufferSize     = 200
+	listenQueueSizeDefault = 120
+	ackBufferSize          = 100
+)
 
-// Window Sizing
-const MAX_WINDOW_SZ = 65000
-const MIN_WINDOW_SZ = 500
+const basicHeaderSize = 20
+const retransmissionLimit = 12
 
-// TODO: set these properly based on the standard values
+// Window Sizing TODO: set these properly based on the standard values
+const (
+	maxWindowSize = 65000
+	minWindowSize = 500
+)
 
 // Flag type
 type flag uint8
@@ -46,11 +49,11 @@ type flag uint8
 // Flags
 const ( // TODO use iota
 	flagFin flag = 0x01
-	flagSyn = 0x02
-	flagRst = 0x04
-	flagPsh = 0x08
-	flagAck = 0x10
-	flagUrg = 0x20
-	flagEce = 0x40
-	flagCwr = 0x80
+	flagSyn      = 0x02
+	flagRst      = 0x04
+	flagPsh      = 0x08
+	flagAck      = 0x10
+	flagUrg      = 0x20
+	flagEce      = 0x40
+	flagCwr      = 0x80
 )
