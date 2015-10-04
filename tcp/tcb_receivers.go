@@ -50,15 +50,13 @@ func (c *TCB) packetDeal(segment *packet) {
 				c.sendAck(c.seqNum, c.ackNum)
 			}
 			return
-		} else {
-			if !(c.ackNum <= segment.header.seq && segment.header.seq < c.ackNum+uint32(c.getWindow())) {
-				logs.Warn.Println(c.Hash(), "Dropping unacceptable packet")
-				//	if not rst
-				if segment.header.flags&flagRst == 0 {
-					c.sendAck(c.seqNum, c.ackNum)
-				}
-				return
+		} else if !(c.ackNum <= segment.header.seq && segment.header.seq < c.ackNum+uint32(c.getWindow())) {
+			logs.Warn.Println(c.Hash(), "Dropping unacceptable packet")
+			//	if not rst
+			if segment.header.flags&flagRst == 0 {
+				c.sendAck(c.seqNum, c.ackNum)
 			}
+			return
 		}
 	} else if c.getWindow() == 0 {
 		logs.Warn.Println(c.Hash(), "Dropping unacceptable packet")
@@ -115,150 +113,149 @@ func (c *TCB) packetDeal(segment *packet) {
 	if segment.header.flags&flagAck == 0 {
 		logs.Warn.Println(c.Hash(), "Dropping a packet without an ACK flag")
 		return
-	} else {
-		tcpAssert(segment.header.flags&flagAck != 0, "segment missing ACK flag after verification")
+	}
+	tcpAssert(segment.header.flags&flagAck != 0, "segment missing ACK flag after verification")
 
-		switch c.getState() {
-		case fsmSynRcvd:
-			c.dealSynRcvd(segment)
-		case fsmEstablished:
-			if c.recentAckNum < segment.header.ack && segment.header.ack <= c.seqNum {
-				c.updateLastAck(segment.header.ack)
-				// TODO handle retransmission queue
-				// TODO update send window
-			} else if c.recentAckNum > segment.header.ack {
-				// ignore
-				logs.Warn.Println(c.Hash(), "Dropping packet: ACK validation failed")
-				return
-			} else if segment.header.ack > c.seqNum {
-				// TODO send ack, drop segment, return
-				logs.Warn.Println(c.Hash(), "Dropping packet with bad ACK field")
-				return
-			}
-		case fsmFinWait1:
-			// TODO check if acknowledging FIN
-			c.updateState(fsmFinWait2)
-		case fsmFinWait2:
-			//defer c.UpdateState(fsmClosed)
-			// TODO if retransmission queue empty, acknowledge user's close with ok
-		case fsmCloseWait:
-			if c.recentAckNum < segment.header.ack && segment.header.ack <= c.seqNum {
-				c.recentAckNum = segment.header.ack
-				// TODO handle retransmission queue
-				// TODO update send window
-			} else if c.recentAckNum > segment.header.ack {
-				// ignore
-				return
-			} else if segment.header.ack > c.seqNum {
-				// TODO send ack, drop segment, return
-				return
-			}
-		case fsmClosing:
-			// TODO if ack is acknowledging our fin
-			c.updateState(fsmTimeWait)
-		// TODO else drop segment
-		case fsmLastAck:
-			// TODO if fin acknowledged
-			c.updateState(fsmClosed)
+	switch c.getState() {
+	case fsmSynRcvd:
+		c.dealSynRcvd(segment)
+	case fsmEstablished:
+		if c.recentAckNum < segment.header.ack && segment.header.ack <= c.seqNum {
+			c.updateLastAck(segment.header.ack)
+			// TODO handle retransmission queue
+			// TODO update send window
+		} else if c.recentAckNum > segment.header.ack {
+			// ignore
+			logs.Warn.Println(c.Hash(), "Dropping packet: ACK validation failed")
 			return
-		case fsmTimeWait:
-			// TODO handle remote fin
-			c.updateState(fsmTimeWait)
-			// This might be wrong
-			err := c.sendAck(c.seqNum, c.ackNum)
-			//ch logs.Trace.Println(c.Hash(), "Sent ACK data in response to retrans FIN")
-			if err != nil {
-				logs.Error.Println(c.Hash(), err)
-				return
-			}
-		}
-
-		if segment.header.flags&flagUrg != 0 {
-			switch c.getState() {
-			case fsmEstablished, fsmFinWait1, fsmFinWait2:
-				// TODO handle urg
-			}
+		} else if segment.header.ack > c.seqNum {
+			// TODO send ack, drop segment, return
+			logs.Warn.Println(c.Hash(), "Dropping packet with bad ACK field")
 			return
 		}
+	case fsmFinWait1:
+		// TODO check if acknowledging FIN
+		c.updateState(fsmFinWait2)
+	case fsmFinWait2:
+		//defer c.UpdateState(fsmClosed)
+		// TODO if retransmission queue empty, acknowledge user's close with ok
+	case fsmCloseWait:
+		if c.recentAckNum < segment.header.ack && segment.header.ack <= c.seqNum {
+			c.recentAckNum = segment.header.ack
+			// TODO handle retransmission queue
+			// TODO update send window
+		} else if c.recentAckNum > segment.header.ack {
+			// ignore
+			return
+		} else if segment.header.ack > c.seqNum {
+			// TODO send ack, drop segment, return
+			return
+		}
+	case fsmClosing:
+		// TODO if ack is acknowledging our fin
+		c.updateState(fsmTimeWait)
+	// TODO else drop segment
+	case fsmLastAck:
+		// TODO if fin acknowledged
+		c.updateState(fsmClosed)
+		return
+	case fsmTimeWait:
+		// TODO handle remote fin
+		c.updateState(fsmTimeWait)
+		// This might be wrong
+		err := c.sendAck(c.seqNum, c.ackNum)
+		//ch logs.Trace.Println(c.Hash(), "Sent ACK data in response to retrans FIN")
+		if err != nil {
+			logs.Error.Println(c.Hash(), err)
+			return
+		}
+	}
 
-		// TODO step 6, check URG bit
-
-		// step 7 (?)
+	if segment.header.flags&flagUrg != 0 {
 		switch c.getState() {
 		case fsmEstablished, fsmFinWait1, fsmFinWait2:
-			//ch logs.Trace.Println(c.Hash(), "Received data of len:", len(segment.payload))
-			c.recvBuffer = append(c.recvBuffer, segment.payload...)
-			// TODO adjust rcv.wnd, for now just multiplying by 2
-			if uint32(c.getWindow())*2 >= uint32(1)<<16 {
-				c.windowMutex.Lock()
-				c.curWindow *= 2
-				c.windowMutex.Unlock()
-			}
-			pay_size := segment.getPayloadSize()
-			//ch logs.Trace.Println(c.Hash(), "Payload Size is ", pay_size)
+			// TODO handle urg
+		}
+		return
+	}
 
-			// TODO piggyback this
+	// TODO step 6, check URG bit
 
-			if segment.header.flags&flagPsh != 0 {
-				//ch logs.Trace.Println(c.Hash(), "Pushing new data to client")
-				c.pushData()
-			}
+	// step 7 (?)
+	switch c.getState() {
+	case fsmEstablished, fsmFinWait1, fsmFinWait2:
+		//ch logs.Trace.Println(c.Hash(), "Received data of len:", len(segment.payload))
+		c.recvBuffer = append(c.recvBuffer, segment.payload...)
+		// TODO adjust rcv.wnd, for now just multiplying by 2
+		if uint32(c.getWindow())*2 >= uint32(1)<<16 {
+			c.windowMutex.Lock()
+			c.curWindow *= 2
+			c.windowMutex.Unlock()
+		}
+		payloadSize := segment.getPayloadSize()
+		//ch logs.Trace.Println(c.Hash(), "Payload Size is ", pay_size)
 
-			if pay_size > 1 { // TODO make this correct
-				c.seqAckMutex.Lock()
-				c.ackNum += pay_size
-				c.seqAckMutex.Unlock()
-				c.seqAckMutex.RLock()
-				err := c.sendAck(c.seqNum, c.ackNum)
-				c.seqAckMutex.RUnlock()
-				//ch logs.Trace.Println(c.Hash(), "Sent ACK data")
-				if err != nil {
-					logs.Error.Println(c.Hash(), err)
-					return
-				}
-			}
-			//return
-		case fsmCloseWait, fsmClosing, fsmLastAck, fsmTimeWait:
-			// should not occur, so drop packet
-			return
+		// TODO piggyback this
+
+		if segment.header.flags&flagPsh != 0 {
+			//ch logs.Trace.Println(c.Hash(), "Pushing new data to client")
+			c.pushData()
 		}
 
-		// eighth, check the FIN bit,
-		if segment.header.flags&flagFin != 0 {
-			switch c.getState() {
-			case fsmClosed, fsmListen, fsmSynSent:
-				// drop segment
-				return
-			}
-
-			// TODO notify user of the connection closing
+		if payloadSize > 1 { // TODO make this correct
 			c.seqAckMutex.Lock()
-			c.ackNum += segment.getPayloadSize()
+			c.ackNum += payloadSize
 			c.seqAckMutex.Unlock()
-
 			c.seqAckMutex.RLock()
 			err := c.sendAck(c.seqNum, c.ackNum)
 			c.seqAckMutex.RUnlock()
-			//ch logs.Trace.Println(c.Hash(), "Sent ACK data in response to FIN")
+			//ch logs.Trace.Println(c.Hash(), "Sent ACK data")
 			if err != nil {
 				logs.Error.Println(c.Hash(), err)
 				return
 			}
+		}
+		//return
+	case fsmCloseWait, fsmClosing, fsmLastAck, fsmTimeWait:
+		// should not occur, so drop packet
+		return
+	}
 
-			// FIN implies PSH
-			//ch logs.Trace.Println(c.Hash(), "Pushing data to client because of FIN")
-			c.pushData()
-
-			switch c.getState() {
-			case fsmSynRcvd, fsmEstablished:
-				c.updateState(fsmCloseWait)
-			case fsmFinWait1:
-				c.updateState(fsmTimeWait)
-			case fsmFinWait2:
-				c.updateState(fsmTimeWait)
-			}
+	// eighth, check the FIN bit,
+	if segment.header.flags&flagFin != 0 {
+		switch c.getState() {
+		case fsmClosed, fsmListen, fsmSynSent:
+			// drop segment
 			return
 		}
+
+		// TODO notify user of the connection closing
+		c.seqAckMutex.Lock()
+		c.ackNum += segment.getPayloadSize()
+		c.seqAckMutex.Unlock()
+
+		c.seqAckMutex.RLock()
+		err := c.sendAck(c.seqNum, c.ackNum)
+		c.seqAckMutex.RUnlock()
+		//ch logs.Trace.Println(c.Hash(), "Sent ACK data in response to FIN")
+		if err != nil {
+			logs.Error.Println(c.Hash(), err)
+			return
+		}
+
+		// FIN implies PSH
+		//ch logs.Trace.Println(c.Hash(), "Pushing data to client because of FIN")
+		c.pushData()
+
+		switch c.getState() {
+		case fsmSynRcvd, fsmEstablished:
+			c.updateState(fsmCloseWait)
+		case fsmFinWait1:
+			c.updateState(fsmTimeWait)
+		case fsmFinWait2:
+			c.updateState(fsmTimeWait)
+		}
+		return
 	}
 }
 
@@ -333,7 +330,7 @@ func (c *TCB) rcvListen(d *packet) {
 		c.updateState(fsmSynRcvd)
 
 		// send syn-ack response
-		syn_ack_packet := &packet{
+		synAckPacket := &packet{
 			header: &header{
 				seq:     c.seqNum,
 				ack:     c.ackNum,
@@ -344,7 +341,7 @@ func (c *TCB) rcvListen(d *packet) {
 			payload: []byte{},
 		}
 
-		err := c.sendPacket(syn_ack_packet)
+		err := c.sendPacket(synAckPacket)
 		if err != nil {
 			logs.Error.Println(c.Hash(), err)
 			return

@@ -8,15 +8,15 @@ import (
 )
 
 func TestReadWriteLocal(t *testing.T) {
-	read_write_test(t, ipv4.MakeIP("127.0.0.1"))
+	readWriteTest(t, ipv4.MakeIP("127.0.0.1"))
 }
 
 func TestReadWriteOverNetwork(t *testing.T) {
 	t.Skip("External tests actually don't work")
-	read_write_test(t, ipv4.ExternalIPAddress)
+	readWriteTest(t, ipv4.ExternalIPAddress)
 }
 
-func read_write_test(t *testing.T, ip *ipv4.Address) {
+func readWriteTest(t *testing.T, ip *ipv4.Address) {
 	const serverPort = 20102
 	const clientPort = 20101
 
