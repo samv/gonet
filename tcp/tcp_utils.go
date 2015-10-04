@@ -104,7 +104,7 @@ type header struct {
 	srcport, dstport uint16
 	seq, ack         uint32
 	// will do data offset automatically
-	flags  uint8
+	flags  flag
 	window uint16
 	// checksum will be automatic
 	urg     uint16
@@ -163,7 +163,7 @@ func extractPacket(d []byte, rip, lip *ipv4.Address) (*packet, error) {
 		dstport: uint16(d[2])<<8 | uint16(d[3]),
 		seq:     uint32(d[4])<<24 | uint32(d[5])<<16 | uint32(d[6])<<8 | uint32(d[7]),
 		ack:     uint32(d[8])<<24 | uint32(d[9])<<16 | uint32(d[10])<<8 | uint32(d[11]),
-		flags:   uint8(d[13]),
+		flags:   flag(d[13]),
 		window:  uint16(d[14])<<8 | uint16(d[15]),
 		urg:     uint16(d[18])<<8 | uint16(d[19]),
 		options: d[TCP_BASIC_HEADER_SZ:headerLen],

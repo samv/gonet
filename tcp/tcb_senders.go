@@ -32,10 +32,10 @@ func (c *TCB) packetSender() {
 
 func (c *TCB) sendData(data []byte, push bool) (err error) {
 	//ch logs.Trace.Println(c.Hash(), "Sending Data with len:", len(data))
-	var flags uint8 = TCP_ACK
+	var flags flag = flagAck
 	if push {
 		//ch logs.Trace.Println(c.Hash(), "Data send with PSH flag")
-		flags |= TCP_PSH
+		flags |= flagPsh
 	}
 	psh_packet := &packet{
 		header: &header{
@@ -161,7 +161,7 @@ func (c *TCB) sendPacket(d *packet) error {
 	return nil
 }
 
-func (c *TCB) sendResetFlag(seq, ack uint32, flag uint8) error {
+func (c *TCB) sendResetFlag(seq, ack uint32, flag flag) error {
 	//ch logs.Trace.Println(c.Hash(), "Sending RST with seq: ", seq, " and ack: ", ack)
 	rst := &packet{
 		header: &header{
@@ -178,7 +178,7 @@ func (c *TCB) sendResetFlag(seq, ack uint32, flag uint8) error {
 }
 
 func (c *TCB) sendReset(seq, ack uint32) error {
-	return c.sendResetFlag(seq, ack, TCP_RST)
+	return c.sendResetFlag(seq, ack, flagRst)
 }
 
 func (c *TCB) sendAck(seq, ack uint32) error {
@@ -187,7 +187,7 @@ func (c *TCB) sendAck(seq, ack uint32) error {
 		header: &header{
 			seq:     seq,
 			ack:     ack,
-			flags:   TCP_ACK,
+			flags:   flagAck,
 			urg:     0,
 			options: []byte{},
 		},
@@ -202,7 +202,7 @@ func (c *TCB) sendFin(seq, ack uint32) error {
 		header: &header{
 			seq:     seq,
 			ack:     ack,
-			flags:   TCP_ACK | TCP_FIN,
+			flags:   flagAck | flagFin,
 			urg:     0,
 			options: []byte{},
 		},

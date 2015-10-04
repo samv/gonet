@@ -44,7 +44,7 @@ func (c *TCB) packetDeal(segment *packet) {
 			// TODO special allowances pg 69 rfc
 			logs.Warn.Println(c.Hash(), "Dropping unacceptable packet")
 			//	if not rst
-			if segment.header.flags&TCP_RST == 0 {
+			if segment.header.flags&flagRst == 0 {
 				c.sendAck(c.seqNum, c.ackNum)
 			}
 			return
@@ -52,7 +52,7 @@ func (c *TCB) packetDeal(segment *packet) {
 			if !(c.ackNum <= segment.header.seq && segment.header.seq < c.ackNum+uint32(c.getWindow())) {
 				logs.Warn.Println(c.Hash(), "Dropping unacceptable packet")
 				//	if not rst
-				if segment.header.flags&TCP_RST == 0 {
+				if segment.header.flags&flagRst == 0 {
 					c.sendAck(c.seqNum, c.ackNum)
 				}
 				return
@@ -61,7 +61,7 @@ func (c *TCB) packetDeal(segment *packet) {
 	} else if c.getWindow() == 0 {
 		logs.Warn.Println(c.Hash(), "Dropping unacceptable packet")
 		//	if not rst
-		if segment.header.flags&TCP_RST == 0 {
+		if segment.header.flags&flagRst == 0 {
 			c.sendAck(c.seqNum, c.ackNum)
 		}
 		return
@@ -69,7 +69,7 @@ func (c *TCB) packetDeal(segment *packet) {
 		if !((c.ackNum <= segment.header.seq && segment.header.seq < c.ackNum+uint32(c.getWindow())) || (c.ackNum <= segment.header.seq+uint32(len(segment.payload))-1) && segment.header.seq+uint32(len(segment.payload))-1 < c.ackNum+uint32(c.getWindow())) {
 			logs.Warn.Println(c.Hash(), "Dropping unacceptable packet")
 			//	if not rst
-			if segment.header.flags&TCP_RST == 0 {
+			if segment.header.flags&flagRst == 0 {
 				c.sendAck(c.seqNum, c.ackNum)
 			}
 			return
@@ -77,7 +77,7 @@ func (c *TCB) packetDeal(segment *packet) {
 	}
 
 	// second, check the RST bit
-	if segment.header.flags&TCP_RST != 0 {
+	if segment.header.flags&flagRst != 0 {
 		// TODO finish: page 70
 		switch c.getState() {
 		case fsmSynRcvd:
@@ -96,7 +96,7 @@ func (c *TCB) packetDeal(segment *packet) {
 	// page 71
 
 	// TODO check SYN (SYN bit shouldn't be there)
-	if segment.header.flags&TCP_SYN != 0 {
+	if segment.header.flags&flagSyn != 0 {
 		switch c.getState() {
 		case fsmSynRcvd:
 			if c.recentAckNum <= segment.header.ack && segment.header.ack <= c.seqNum {
@@ -110,11 +110,11 @@ func (c *TCB) packetDeal(segment *packet) {
 	}
 
 	// fifth, check the ACK field
-	if segment.header.flags&TCP_ACK == 0 {
+	if segment.header.flags&flagAck == 0 {
 		logs.Warn.Println(c.Hash(), "Dropping a packet without an ACK flag")
 		return
 	} else {
-		tcpAssert(segment.header.flags&TCP_ACK != 0, "segment missing ACK flag after verification")
+		tcpAssert(segment.header.flags&flagAck != 0, "segment missing ACK flag after verification")
 
 		switch c.getState() {
 		case fsmSynRcvd:
@@ -171,7 +171,7 @@ func (c *TCB) packetDeal(segment *packet) {
 			}
 		}
 
-		if segment.header.flags&TCP_URG != 0 {
+		if segment.header.flags&flagUrg != 0 {
 			switch c.getState() {
 			case fsmEstablished, fsmFinWait1, fsmFinWait2:
 				// TODO handle urg
@@ -197,7 +197,7 @@ func (c *TCB) packetDeal(segment *packet) {
 
 			// TODO piggyback this
 
-			if segment.header.flags&TCP_PSH != 0 {
+			if segment.header.flags&flagPsh != 0 {
 				//ch logs.Trace.Println(c.Hash(), "Pushing new data to client")
 				c.pushData()
 			}
@@ -222,7 +222,7 @@ func (c *TCB) packetDeal(segment *packet) {
 		}
 
 		// eighth, check the FIN bit,
-		if segment.header.flags&TCP_FIN != 0 {
+		if segment.header.flags&flagFin != 0 {
 			switch c.getState() {
 			case fsmClosed, fsmListen, fsmSynSent:
 				// drop segment
@@ -276,7 +276,7 @@ func (c *TCB) pushData() {
 
 func (c *TCB) rcvClosed(d *packet) {
 	//ch logs.Trace.Println(c.Hash(), "Dealing closed")
-	if d.header.flags&TCP_RST != 0 {
+	if d.header.flags&flagRst != 0 {
 		// drop incoming RSTs
 		return
 	}
@@ -284,11 +284,11 @@ func (c *TCB) rcvClosed(d *packet) {
 	// respond with an RST
 	var seqNum uint32
 	var ackNum uint32
-	rstFlags := uint8(TCP_RST)
-	if d.header.flags&TCP_ACK == 0 {
+	var rstFlags flag = flagRst
+	if d.header.flags&flagAck == 0 {
 		seqNum = 0
 		ackNum = d.header.seq + d.getPayloadSize()
-		rstFlags = rstFlags | TCP_ACK
+		rstFlags = rstFlags | flagAck
 	} else {
 		seqNum = d.header.ack
 		ackNum = 0
@@ -305,12 +305,12 @@ func (c *TCB) rcvClosed(d *packet) {
 func (c *TCB) rcvListen(d *packet) {
 	//ch logs.Trace.Println(c.Hash(), "Dealing listen")
 
-	if d.header.flags&TCP_RST != 0 {
+	if d.header.flags&flagRst != 0 {
 		// drop incoming RSTs
 		return
 	}
 
-	if d.header.flags&TCP_ACK != 0 {
+	if d.header.flags&flagAck != 0 {
 		err := c.sendReset(d.header.ack, 0)
 		//ch logs.Trace.Println(c.Hash(), "Sent ACK data")
 		if err != nil {
@@ -319,7 +319,7 @@ func (c *TCB) rcvListen(d *packet) {
 		}
 	}
 
-	if d.header.flags&TCP_SYN != 0 {
+	if d.header.flags&flagSyn != 0 {
 		// TODO check security/compartment, if not match, send <SEQ=SEG.ACK><CTL=RST>
 		// TODO handle SEG.PRC > TCB.PRC stuff
 		// TODO if SEG.PRC < TCP.PRC continue
@@ -335,7 +335,7 @@ func (c *TCB) rcvListen(d *packet) {
 			header: &header{
 				seq:     c.seqNum,
 				ack:     c.ackNum,
-				flags:   TCP_SYN | TCP_ACK,
+				flags:   flagSyn | flagAck,
 				urg:     0,
 				options: []byte{},
 			},
@@ -357,9 +357,9 @@ func (c *TCB) rcvListen(d *packet) {
 
 func (c *TCB) dealSynSent(d *packet) {
 	//ch logs.Trace.Println(c.Hash(), "Dealing state syn-sent")
-	if d.header.flags&TCP_ACK != 0 {
+	if d.header.flags&flagAck != 0 {
 		//ch logs.Trace.Println(c.Hash(), "verifing the ack")
-		if d.header.flags&TCP_RST != 0 {
+		if d.header.flags&flagRst != 0 {
 			return
 		}
 		if d.header.ack <= c.iss || d.header.ack > c.seqNum {
@@ -384,7 +384,7 @@ func (c *TCB) dealSynSent(d *packet) {
 		}
 	}
 
-	if d.header.flags&TCP_RST != 0 {
+	if d.header.flags&flagRst != 0 {
 		logs.Error.Println(c.Hash(), "error: connection reset")
 		c.updateState(fsmClosed)
 		return
@@ -392,12 +392,12 @@ func (c *TCB) dealSynSent(d *packet) {
 
 	// TODO verify security/precedence
 
-	if d.header.flags&TCP_SYN != 0 {
+	if d.header.flags&flagSyn != 0 {
 		//ch logs.Trace.Println(c.Hash(), "rcvd a SYN")
 		c.ackNum = d.header.seq + 1
 		c.irs = d.header.seq
 
-		if d.header.flags&TCP_ACK != 0 {
+		if d.header.flags&flagAck != 0 {
 			c.updateLastAck(d.header.ack)
 			//ch logs.Trace.Println(c.Hash(), "recentAckNum:", c.recentAckNum)
 			//ch logs.Trace.Println(c.Hash(), "ISS:", c.ISS)

@@ -56,11 +56,11 @@ func (s *Server_TCB) LongListener() {
 	for {
 		in := <-s.listener
 		////ch logs.Trace.Println("Server rcvd packet:", in)
-		if in.header.flags&TCP_RST != 0 {
+		if in.header.flags&flagRst != 0 {
 			continue // parent TCB drops the RST
-		} else if in.header.flags&TCP_ACK != 0 {
+		} else if in.header.flags&flagAck != 0 {
 			// TODO send reset
-		} else if in.header.flags&TCP_SYN == 0 {
+		} else if in.header.flags&flagSyn == 0 {
 			// TODO send reset
 		}
 
@@ -99,7 +99,7 @@ func (s *Server_TCB) LongListener() {
 				header: &header{
 					seq:     c.seqNum,
 					ack:     c.ackNum,
-					flags:   TCP_SYN | TCP_ACK,
+					flags:   flagSyn | flagAck,
 					urg:     0,
 					options: []byte{0x02, 0x04, 0xff, 0xd7, 0x04, 0x02, 0x08, 0x0a, 0x02, 0x64, 0x80, 0x8b, 0x0, 0x0, 0x0, 0x0, 0x01, 0x03, 0x03, 0x07},
 					// TODO compute the options of Syn-Ack instead of hardcoding them

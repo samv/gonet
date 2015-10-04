@@ -41,7 +41,7 @@ func (c *TCB) Connect() error {
 			dstport: c.rport,
 			seq:     c.seqNum,
 			ack:     c.ackNum,
-			flags:   TCP_SYN,
+			flags:   flagSyn,
 			window:  c.curWindow, // TODO improve the window size calculation
 			urg:     0,
 			options: []byte{0x02, 0x04, 0xff, 0xd7, 0x04, 0x02, 0x08, 0x0a, 0x02, 0x64, 0x80, 0x8b, 0x0, 0x0, 0x0, 0x0, 0x01, 0x03, 0x03, 0x07}, // TODO compute the options of SYN instead of hardcoding them

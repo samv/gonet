@@ -40,14 +40,17 @@ const MIN_WINDOW_SZ = 500
 
 // TODO: set these properly based on the standard values
 
+// Flag type
+type flag uint8
+
 // Flags
 const ( // TODO use iota
-	TCP_FIN = 0x01
-	TCP_SYN = 0x02
-	TCP_RST = 0x04
-	TCP_PSH = 0x08
-	TCP_ACK = 0x10
-	TCP_URG = 0x20
-	TCP_ECE = 0x40
-	TCP_CWR = 0x80
+	flagFin flag = 0x01
+	flagSyn = 0x02
+	flagRst = 0x04
+	flagPsh = 0x08
+	flagAck = 0x10
+	flagUrg = 0x20
+	flagEce = 0x40
+	flagCwr = 0x80
 )
