@@ -24,6 +24,7 @@ func init() {
 	go readAll()
 }
 
+// Bind allows clients to bind to a specific ICMP type
 func Bind(tp Type) (chan *Packet, error) {
 	// add the port if not already there
 	if _, found := buffers[tp]; !found {
@@ -34,6 +35,8 @@ func Bind(tp Type) (chan *Packet, error) {
 	return buffers[tp], nil
 }
 
+// Unbind allows clients to unbind from ICMP type to stop receiving packets on
+// the channel.
 func Unbind(tp Type) error {
 	// TODO ICMP unbind
 	return nil
@@ -55,7 +58,7 @@ func readAll() {
 
 		// extract header
 		// TODO verify checksum
-		data, err := ExtractICMPHeader(header.Payload, header.Lip, header.Lip)
+		data, err := extractHeader(header.Payload, header.Lip, header.Lip)
 		if err != nil {
 			//ch logs.Info.Println(err)
 			continue

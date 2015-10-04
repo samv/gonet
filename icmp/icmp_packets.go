@@ -4,6 +4,7 @@ import (
 	"network/ipv4"
 )
 
+// Header represents an ICMP header
 type Header struct {
 	Tp    Type
 	Code  uint8
@@ -12,12 +13,16 @@ type Header struct {
 	cksum uint16
 }
 
+// Packet contains an ICMP header and some information from the
+// internet layer protocol header
 type Packet struct {
 	Header         *Header
 	OriginalPacket []byte
 	LIP, RIP       *ipv4.Address
 }
 
+// Marshal converts a Header structure into a slice of bytes,
+// ready for transmission.
 func (h *Header) Marshal() ([]byte, error) {
 	base := make([]byte, HeaderMinSize+len(h.Data))
 	copy(base[HeaderMinSize:], h.Data)
@@ -25,6 +30,8 @@ func (h *Header) Marshal() ([]byte, error) {
 	return base, err
 }
 
+// MarshalGivenSlice populates a given slice of bytes
+// with fields from the Header structure.
 func (h *Header) MarshalGivenSlice(base []byte) error {
 	// basics
 	base[0] = (byte)(h.Tp)
@@ -43,7 +50,7 @@ func (h *Header) MarshalGivenSlice(base []byte) error {
 	return nil
 }
 
-func ExtractICMPHeader(dat []byte, lip, rip *ipv4.Address) (*Packet, error) {
+func extractHeader(dat []byte, lip, rip *ipv4.Address) (*Packet, error) {
 	// TODO: ICMP checksum validation
 	return &Packet{
 		Header: &Header{

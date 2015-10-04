@@ -34,7 +34,7 @@ func sendSinglePing(writer ipv4.Writer, id, seq uint16, timeout time.Duration, r
 	}
 
 	// make data
-	icmp.SendICMPPacket(writer, packet)
+	icmp.SendPacket(writer, packet)
 
 	time1 := time.Now()
 	timeoutTimer := time.NewTimer(timeout)

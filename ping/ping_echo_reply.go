@@ -26,7 +26,7 @@ func (pm *Ping_Manager) respondTo(ping *icmp.Packet) error {
 
 	// send
 	//	//ch logs.Info.Println("Send ping reply")
-	err = icmp.SendICMPPacket(writer, ping.Header)
+	err = icmp.SendPacket(writer, ping.Header)
 	if err != nil {
 		logs.Error.Println(err)
 		return err

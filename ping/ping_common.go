@@ -8,8 +8,8 @@ import (
 )
 
 const (
-	PING_ICMP_CODE         = 0
-	PING_START_ID          = 8000 // TODO choose this randomly
+	PING_ICMP_CODE = 0
+	PING_START_ID  = 8000 // TODO choose this randomly
 )
 
 type Ping_Manager struct {
