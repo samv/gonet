@@ -74,7 +74,7 @@ func (smt *sourceMACTable) search(in physical.InternalIndex) (*MACAddress, error
 }
 
 func (smt *sourceMACTable) add(in physical.InternalIndex, mac *MACAddress) error {
-	smt.table[in] = mac // TODO should we prevent overwriting?
+	smt.table[in] = mac
 	return nil
 }
 
