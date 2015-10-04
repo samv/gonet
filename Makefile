@@ -18,7 +18,6 @@ clean:
 	-rm -f *.test
 	-rm -f *.cover
 	-rm -f *.html
-	-rm runStack scaleTest local_latency
 	go clean ./...
 setup:
 	-./tap_setup.sh

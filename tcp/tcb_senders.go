@@ -52,7 +52,7 @@ func (c *TCB) sendData(data []byte, push bool) (err error) {
 	c.seqAckMutex.Unlock()
 	err = c.sendWithRetransmit(pshPacket)
 	if err != nil {
-		logs.Error.Println(c.Hash(), err)
+		logs.Error.Println(c.hash(), err)
 	}
 	return err
 }
@@ -87,7 +87,7 @@ func (c *TCB) sendWithRetransmit(data *packet) error {
 			case <-timeout:
 				// TODO deal with a resend timeout fully
 				killAckListen <- true
-				logs.Error.Println(c.Hash(), "Resend of packet seq", data.header.seq, "timed out")
+				logs.Error.Println(c.hash(), "Resend of packet seq", data.header.seq, "timed out")
 				return errors.New("Resend timed out")
 			}
 		}
@@ -144,7 +144,7 @@ func (c *TCB) sendPacket(d *packet) error {
 
 	pay, err := d.Marshal()
 	if err != nil {
-		logs.Error.Println(c.Hash(), err)
+		logs.Error.Println(c.hash(), err)
 		return err
 	}
 
@@ -154,7 +154,7 @@ func (c *TCB) sendPacket(d *packet) error {
 	}
 
 	if err != nil {
-		logs.Error.Println(c.Hash(), err)
+		logs.Error.Println(c.hash(), err)
 		return err
 	}
 

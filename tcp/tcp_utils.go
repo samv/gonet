@@ -11,7 +11,7 @@ import (
 	"github.com/hsheth2/notifiers"
 )
 
-func (c *TCB) Hash() string {
+func (c *TCB) hash() string {
 	return fmt.Sprintf("%d%d", c.lport, c.rport)
 }
 

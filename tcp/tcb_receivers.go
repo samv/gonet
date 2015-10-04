@@ -44,14 +44,14 @@ func (c *TCB) packetDeal(segment *packet) {
 	if len(segment.payload) == 0 {
 		if c.getWindow() == 0 {
 			// TODO special allowances pg 69 rfc
-			logs.Warn.Println(c.Hash(), "Dropping unacceptable packet")
+			logs.Warn.Println(c.hash(), "Dropping unacceptable packet")
 			//	if not rst
 			if segment.header.flags&flagRst == 0 {
 				c.sendAck(c.seqNum, c.ackNum)
 			}
 			return
 		} else if !(c.ackNum <= segment.header.seq && segment.header.seq < c.ackNum+uint32(c.getWindow())) {
-			logs.Warn.Println(c.Hash(), "Dropping unacceptable packet")
+			logs.Warn.Println(c.hash(), "Dropping unacceptable packet")
 			//	if not rst
 			if segment.header.flags&flagRst == 0 {
 				c.sendAck(c.seqNum, c.ackNum)
@@ -59,7 +59,7 @@ func (c *TCB) packetDeal(segment *packet) {
 			return
 		}
 	} else if c.getWindow() == 0 {
-		logs.Warn.Println(c.Hash(), "Dropping unacceptable packet")
+		logs.Warn.Println(c.hash(), "Dropping unacceptable packet")
 		//	if not rst
 		if segment.header.flags&flagRst == 0 {
 			c.sendAck(c.seqNum, c.ackNum)
@@ -67,7 +67,7 @@ func (c *TCB) packetDeal(segment *packet) {
 		return
 	} else {
 		if !((c.ackNum <= segment.header.seq && segment.header.seq < c.ackNum+uint32(c.getWindow())) || (c.ackNum <= segment.header.seq+uint32(len(segment.payload))-1) && segment.header.seq+uint32(len(segment.payload))-1 < c.ackNum+uint32(c.getWindow())) {
-			logs.Warn.Println(c.Hash(), "Dropping unacceptable packet")
+			logs.Warn.Println(c.hash(), "Dropping unacceptable packet")
 			//	if not rst
 			if segment.header.flags&flagRst == 0 {
 				c.sendAck(c.seqNum, c.ackNum)
@@ -111,7 +111,7 @@ func (c *TCB) packetDeal(segment *packet) {
 
 	// fifth, check the ACK field
 	if segment.header.flags&flagAck == 0 {
-		logs.Warn.Println(c.Hash(), "Dropping a packet without an ACK flag")
+		logs.Warn.Println(c.hash(), "Dropping a packet without an ACK flag")
 		return
 	}
 	tcpAssert(segment.header.flags&flagAck != 0, "segment missing ACK flag after verification")
@@ -126,11 +126,11 @@ func (c *TCB) packetDeal(segment *packet) {
 			// TODO update send window
 		} else if c.recentAckNum > segment.header.ack {
 			// ignore
-			logs.Warn.Println(c.Hash(), "Dropping packet: ACK validation failed")
+			logs.Warn.Println(c.hash(), "Dropping packet: ACK validation failed")
 			return
 		} else if segment.header.ack > c.seqNum {
 			// TODO send ack, drop segment, return
-			logs.Warn.Println(c.Hash(), "Dropping packet with bad ACK field")
+			logs.Warn.Println(c.hash(), "Dropping packet with bad ACK field")
 			return
 		}
 	case fsmFinWait1:
@@ -166,7 +166,7 @@ func (c *TCB) packetDeal(segment *packet) {
 		err := c.sendAck(c.seqNum, c.ackNum)
 		//ch logs.Trace.Println(c.Hash(), "Sent ACK data in response to retrans FIN")
 		if err != nil {
-			logs.Error.Println(c.Hash(), err)
+			logs.Error.Println(c.hash(), err)
 			return
 		}
 	}
@@ -211,7 +211,7 @@ func (c *TCB) packetDeal(segment *packet) {
 			c.seqAckMutex.RUnlock()
 			//ch logs.Trace.Println(c.Hash(), "Sent ACK data")
 			if err != nil {
-				logs.Error.Println(c.Hash(), err)
+				logs.Error.Println(c.hash(), err)
 				return
 			}
 		}
@@ -239,7 +239,7 @@ func (c *TCB) packetDeal(segment *packet) {
 		c.seqAckMutex.RUnlock()
 		//ch logs.Trace.Println(c.Hash(), "Sent ACK data in response to FIN")
 		if err != nil {
-			logs.Error.Println(c.Hash(), err)
+			logs.Error.Println(c.hash(), err)
 			return
 		}
 
@@ -293,10 +293,10 @@ func (c *TCB) rcvClosed(d *packet) {
 		ackNum = 0
 	}
 
-	logs.Warn.Printf("%s Sending RST data with seq %d and ack %d because packet received in fsmClosed state", c.Hash(), seqNum, ackNum)
+	logs.Warn.Printf("%s Sending RST data with seq %d and ack %d because packet received in fsmClosed state", c.hash(), seqNum, ackNum)
 	err := c.sendResetFlag(seqNum, ackNum, rstFlags)
 	if err != nil {
-		logs.Error.Println(c.Hash(), err)
+		logs.Error.Println(c.hash(), err)
 		return
 	}
 }
@@ -313,7 +313,7 @@ func (c *TCB) rcvListen(d *packet) {
 		err := c.sendReset(d.header.ack, 0)
 		//ch logs.Trace.Println(c.Hash(), "Sent ACK data")
 		if err != nil {
-			logs.Error.Println(c.Hash(), err)
+			logs.Error.Println(c.hash(), err)
 			return
 		}
 	}
@@ -343,7 +343,7 @@ func (c *TCB) rcvListen(d *packet) {
 
 		err := c.sendPacket(synAckPacket)
 		if err != nil {
-			logs.Error.Println(c.Hash(), err)
+			logs.Error.Println(c.hash(), err)
 			return
 		}
 		//ch logs.Trace.Println(c.Hash(), "Sent ACK data")
@@ -362,29 +362,29 @@ func (c *TCB) dealSynSent(d *packet) {
 			return
 		}
 		if d.header.ack <= c.iss || d.header.ack > c.seqNum {
-			logs.Warn.Println(c.Hash(), "Sending reset")
+			logs.Warn.Println(c.hash(), "Sending reset")
 			err := c.sendReset(d.header.ack, 0)
 			if err != nil {
-				logs.Error.Println(c.Hash(), err)
+				logs.Error.Println(c.hash(), err)
 				return
 			}
 			return
 		}
 		if !(c.recentAckNum <= d.header.ack && d.header.ack <= c.seqNum) {
-			logs.Error.Println(c.Hash(), "Incoming packet's ack is bad")
+			logs.Error.Println(c.hash(), "Incoming packet's ack is bad")
 			return
 		}
 
 		// kill the retransmission
 		err := c.updateLastAck(d.header.ack)
 		if err != nil {
-			logs.Error.Println(c.Hash(), err)
+			logs.Error.Println(c.hash(), err)
 			return
 		}
 	}
 
 	if d.header.flags&flagRst != 0 {
-		logs.Error.Println(c.Hash(), "error: connection reset")
+		logs.Error.Println(c.hash(), "error: connection reset")
 		c.updateState(fsmClosed)
 		return
 	}
@@ -411,7 +411,7 @@ func (c *TCB) dealSynSent(d *packet) {
 			err := c.sendAck(c.seqNum, c.ackNum)
 			c.seqAckMutex.RUnlock()
 			if err != nil {
-				logs.Error.Println(c.Hash(), err)
+				logs.Error.Println(c.hash(), err)
 			}
 
 			//ch logs.Trace.Println(c.Hash(), "Connection established")
@@ -428,7 +428,7 @@ func (c *TCB) dealSynSent(d *packet) {
 	}
 
 	// Neither syn nor rst set
-	logs.Warn.Println(c.Hash(), "Dropping packet with seq: ", d.header.seq, "ack: ", d.header.ack)
+	logs.Warn.Println(c.hash(), "Dropping packet with seq: ", d.header.seq, "ack: ", d.header.ack)
 }
 
 func (c *TCB) dealSynRcvd(d *packet) {
@@ -441,9 +441,9 @@ func (c *TCB) dealSynRcvd(d *packet) {
 		c.updateState(fsmEstablished)
 	} else {
 		err := c.sendReset(d.header.ack, 0)
-		logs.Warn.Println(c.Hash(), "Sent RST data")
+		logs.Warn.Println(c.hash(), "Sent RST data")
 		if err != nil {
-			logs.Error.Println(c.Hash(), err)
+			logs.Error.Println(c.hash(), err)
 			return
 		}
 	}

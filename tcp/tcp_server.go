@@ -46,12 +46,12 @@ func (s *Server) BindListenWithQueueSize(port uint16, ip *ipv4.Address, queueSiz
 	s.state = fsmListen
 	s.connQueue = make(chan *TCB, queueSize)
 
-	go s.LongListener()
+	go s.longListener()
 
 	return nil
 }
 
-func (s *Server) LongListener() {
+func (s *Server) longListener() {
 	//ch logs.Trace.Println("Server listener routine")
 	for {
 		in := <-s.listener
