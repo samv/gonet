@@ -26,17 +26,17 @@ func New_TCB_From_Client(local, remote uint16, dstIP *ipv4.Address) (*TCB, error
 	}
 
 	//ch logs.Trace.Println("Finished New TCB from Client")
-	return New_TCB(local, remote, dstIP, read, r, TCP_CLIENT)
+	return New_TCB(local, remote, dstIP, read, r, clientParent)
 }
 
 func (c *TCB) Connect() error {
-	if c.kind != TCP_CLIENT || c.getState() != CLOSED {
+	if c.kind != clientParent || c.getState() != fsmClosed {
 		return errors.New("TCB is not a closed client")
 	}
 
 	// Build the SYN packet
-	SYN := &TCP_Packet{
-		header: &TCP_Header{
+	SYN := &packet{
+		header: &header{
 			srcport: c.lport,
 			dstport: c.rport,
 			seq:     c.seqNum,
@@ -54,17 +54,17 @@ func (c *TCB) Connect() error {
 
 	// Send the SYN packet
 	//ch logs.Trace.Println(c.Hash(), "About to send syn")
-	c.updateState(SYN_SENT)
+	c.updateState(fsmSynSent)
 	go c.sendWithRetransmit(SYN)
 	//ch logs.Trace.Println(c.Hash(), "Sent SYN")
 
 	// wait for the connection to be established
 	c.stateUpdate.L.Lock()
 	defer c.stateUpdate.L.Unlock()
-	for c.state != ESTABLISHED && c.state != CLOSED {
+	for c.state != fsmEstablished && c.state != fsmClosed {
 		c.stateUpdate.Wait()
 	}
-	if c.state == CLOSED {
+	if c.state == fsmClosed {
 		return errors.New("Connection closed by reset or timeout")
 	} else {
 		return nil

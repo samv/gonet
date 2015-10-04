@@ -1,26 +1,30 @@
 package tcp
 
 // Finite State Machine
-const ( // TODO use iota
-	CLOSED      = 1
-	LISTEN      = 2
-	SYN_SENT    = 3
-	SYN_RCVD    = 4
-	ESTABLISHED = 5
-	FIN_WAIT_1  = 6
-	FIN_WAIT_2  = 7
-	CLOSE_WAIT  = 8
-	CLOSING     = 9
-	LAST_ACK    = 10
-	TIME_WAIT   = 11
+type fsmState int
 
-	FSM_NUM_STATES = 11
+const ( // TODO use iota
+	fsmClosed      fsmState = 1
+	fsmListen               = 2
+	fsmSynSent              = 3
+	fsmSynRcvd              = 4
+	fsmEstablished          = 5
+	fsmFinWait1             = 6
+	fsmFinWait2             = 7
+	fsmCloseWait            = 8
+	fsmClosing              = 9
+	fsmLastAck              = 10
+	fsmTimeWait             = 11
+
+	fsmNumStates = 11
 )
 
 // TCB Types
+type tcbParentType int
+
 const (
-	TCP_SERVER = iota
-	TCP_CLIENT
+	serverParent tcbParentType = iota
+	clientParent
 )
 
 // Other Consts

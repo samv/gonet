@@ -11,7 +11,7 @@ import (
 )
 
 type TCB struct {
-	read             chan *TCP_Packet    // input
+	read             chan *packet        // input
 	writer           ipv4.Writer         // output
 	ipAddress        *ipv4.Address       // destination ip address
 	srcIP            *ipv4.Address       // src ip address
@@ -19,10 +19,10 @@ type TCB struct {
 	seqNum           uint32              // seq number (SND.NXT)
 	ackNum           uint32              // ack number (RCV.NXT)
 	seqAckMutex      *sync.RWMutex       // protects the seqNum and ackNum
-	state            uint                // from the FSM
+	state            fsmState            // from the FSM
 	timeWaitRestart  chan bool           // signals when the time_wait timer should restart
 	stateUpdate      *sync.Cond          // signals when the state is changed
-	kind             uint                // type (server or client)
+	kind             tcbParentType       // type (server or client)
 	serverParent     *Server_TCB         // the parent server
 	curWindow        uint16              // the current window size
 	windowMutex      *sync.RWMutex       // protects access to the window size
@@ -35,14 +35,14 @@ type TCB struct {
 	pushBuffer       []byte              // bytes to push to client
 	pushSignal       *sync.Cond          // signals upon push
 	resendDelay      time.Duration       // the delay before resending
-	ISS              uint32              // the initial snd seq number
-	IRS              uint32              // the initial rcv seq number
+	iss              uint32              // the initial snd seq number
+	irs              uint32              // the initial rcv seq number
 	recentAckNum     uint32              // the last ack received (also SND.UNA)
 	recentAckUpdate  *notifiers.Notifier // signals changes in recentAckNum
 	maxSegSize       uint16              // MSS (MTU)
 }
 
-func New_TCB(local, remote uint16, dstIP *ipv4.Address, read chan *TCP_Packet, write ipv4.Writer, kind uint) (*TCB, error) {
+func New_TCB(local, remote uint16, dstIP *ipv4.Address, read chan *packet, write ipv4.Writer, kind tcbParentType) (*TCB, error) {
 	//ch logs.Trace.Println("New_TCB")
 
 	seq, err := genRandSeqNum()
@@ -61,7 +61,7 @@ func New_TCB(local, remote uint16, dstIP *ipv4.Address, read chan *TCP_Packet, w
 		seqNum:           seq,
 		ackNum:           uint32(0), // Always 0 at start
 		seqAckMutex:      &sync.RWMutex{},
-		state:            CLOSED,
+		state:            fsmClosed,
 		stateUpdate:      sync.NewCond(&sync.Mutex{}),
 		timeWaitRestart:  make(chan bool, 1),
 		kind:             kind,
@@ -73,8 +73,8 @@ func New_TCB(local, remote uint16, dstIP *ipv4.Address, read chan *TCP_Packet, w
 		sendFinished:     notifiers.NewNotifier(),
 		pushSignal:       sync.NewCond(&sync.Mutex{}),
 		resendDelay:      250 * time.Millisecond,
-		ISS:              seq,
-		IRS:              0,
+		iss:              seq,
+		irs:              0,
 		recentAckNum:     0,
 		recentAckUpdate:  notifiers.NewNotifier(),
 		maxSegSize:       ipv4.IPMTU - TCP_BASIC_HEADER_SZ,
@@ -135,16 +135,16 @@ func (c *TCB) Close() error {
 
 	// update state for sending FIN packet
 	c.stateUpdate.L.Lock()
-	if c.state == ESTABLISHED {
+	if c.state == fsmEstablished {
 		//ch logs.Trace.Println(c.Hash(), "Entering fin-wait-1")
-		c.updateStateReal(FIN_WAIT_1)
-	} else if c.state == CLOSE_WAIT {
+		c.updateStateReal(fsmFinWait1)
+	} else if c.state == fsmCloseWait {
 		//ch logs.Trace.Println(c.Hash(), "Entering last ack")
-		c.updateStateReal(LAST_ACK)
+		c.updateStateReal(fsmLastAck)
 	}
 	c.stateUpdate.L.Unlock()
 
-	// kill all retransmitter
+	// kill all retransmitters
 	c.recentAckUpdate.Broadcast(UINT32_MIN)
 	c.recentAckUpdate.Broadcast(c.ackNum)
 	c.recentAckUpdate.Broadcast(UINT32_MAX)
@@ -162,7 +162,7 @@ func (c *TCB) Close() error {
 	c.stateUpdate.L.Lock()
 	defer c.stateUpdate.L.Unlock()
 	for {
-		if c.state == CLOSED {
+		if c.state == fsmClosed {
 			break
 		}
 		c.stateUpdate.Wait()

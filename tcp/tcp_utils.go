@@ -18,22 +18,22 @@ func (c *TCB) Hash() string {
 	return fmt.Sprintf("%d%d", c.lport, c.rport)
 }
 
-func (c *TCB) updateState(newState uint) {
+func (c *TCB) updateState(newState fsmState) {
 	c.stateUpdate.L.Lock()
 	defer c.stateUpdate.L.Unlock()
 	c.updateStateReal(newState)
 }
 
-func (c *TCB) updateStateReal(newState uint) {
+func (c *TCB) updateStateReal(newState fsmState) {
 	//ch logs.Trace.Println(c.Hash(), "The New State is", newState)
-	if c.state == TIME_WAIT && newState == TIME_WAIT {
+	if c.state == fsmTimeWait && newState == fsmTimeWait {
 		//		select {
 		//		case c.timeWaitRestart <- true:
 		//		default:
 		//			//ch logs.Trace.Println(c.Hash(), "timeWaitRestart request already in progress; ignoring this request")
 		//		}
 		return
-	} else if newState == TIME_WAIT && c.state != CLOSED {
+	} else if newState == fsmTimeWait && c.state != fsmClosed {
 		// start timer
 		go c.timeWaitTimer(c.timeWaitRestart)
 	}
@@ -44,7 +44,7 @@ func (c *TCB) updateStateReal(newState uint) {
 	}
 }
 
-func (c *TCB) getState() uint {
+func (c *TCB) getState() fsmState {
 	c.stateUpdate.L.Lock()
 	defer c.stateUpdate.L.Unlock()
 	return c.state
@@ -73,7 +73,7 @@ func (c *TCB) timeWaitTimer(restart chan bool) error {
 	select {
 	case <-time.After(2 * time.Millisecond):
 		close(c.timeWaitRestart)
-		c.updateState(CLOSED)
+		c.updateState(fsmClosed)
 		return nil
 	case <-restart:
 		//ch logs.Trace.Println(c.Hash(), "Restarting timeWaitTimer")
@@ -81,26 +81,26 @@ func (c *TCB) timeWaitTimer(restart chan bool) error {
 	}
 }
 
-type TCP_Packet struct {
-	header   *TCP_Header
+type packet struct {
+	header   *header
 	payload  []byte
 	rip, lip *ipv4.Address
 }
 
-func (p *TCP_Packet) Marshal_TCP_Packet() ([]byte, error) {
-	head, err := p.header.Marshal_TCP_Header(p.rip, p.lip, p.payload)
+func (p *packet) Marshal() ([]byte, error) {
+	head, err := p.header.Marshal(p.rip, p.lip, p.payload)
 	packet := append(head, p.payload...)
 	return packet, err
 }
 
-func (p *TCP_Packet) getPayloadSize() uint32 {
+func (p *packet) getPayloadSize() uint32 {
 	if len(p.payload) == 0 {
 		return 1
 	}
 	return uint32(len(p.payload))
 }
 
-type TCP_Header struct {
+type header struct {
 	srcport, dstport uint16
 	seq, ack         uint32
 	// will do data offset automatically
@@ -111,7 +111,7 @@ type TCP_Header struct {
 	options []byte
 }
 
-func (h *TCP_Header) Marshal_TCP_Header(dstIP, srcIP *ipv4.Address, data []byte) ([]byte, error) {
+func (h *header) Marshal(dstIP, srcIP *ipv4.Address, data []byte) ([]byte, error) {
 	// pad options with 0's
 	for len(h.options)%4 != 0 {
 		h.options = append(h.options, 0)
@@ -143,7 +143,7 @@ func (h *TCP_Header) Marshal_TCP_Header(dstIP, srcIP *ipv4.Address, data []byte)
 	return header, nil
 }
 
-func Extract_TCP_Packet(d []byte, rip, lip *ipv4.Address) (*TCP_Packet, error) {
+func extractPacket(d []byte, rip, lip *ipv4.Address) (*packet, error) {
 	// TODO: test this function fully
 
 	// header length
@@ -158,7 +158,7 @@ func Extract_TCP_Packet(d []byte, rip, lip *ipv4.Address) (*TCP_Packet, error) {
 	//	} // TODO comment back in
 
 	// create the header
-	h := &TCP_Header{
+	h := &header{
 		srcport: uint16(d[0])<<8 | uint16(d[1]),
 		dstport: uint16(d[2])<<8 | uint16(d[3]),
 		seq:     uint32(d[4])<<24 | uint32(d[5])<<16 | uint32(d[6])<<8 | uint32(d[7]),
@@ -168,7 +168,7 @@ func Extract_TCP_Packet(d []byte, rip, lip *ipv4.Address) (*TCP_Packet, error) {
 		urg:     uint16(d[18])<<8 | uint16(d[19]),
 		options: d[TCP_BASIC_HEADER_SZ:headerLen],
 	}
-	return &TCP_Packet{header: h, payload: d[headerLen:], rip: rip, lip: lip}, nil
+	return &packet{header: h, payload: d[headerLen:], rip: rip, lip: lip}, nil
 }
 
 func genRandSeqNum() (uint32, error) {

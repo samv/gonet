@@ -9,11 +9,11 @@ import (
 )
 
 type Server_TCB struct {
-	listener        chan *TCP_Packet
+	listener        chan *packet
 	listenPort      uint16
 	listenIP        *ipv4.Address
-	state           uint
-	kind            uint
+	state           fsmState
+	kind            tcbParentType
 	connQueue       chan *TCB
 	connQueueUpdate *sync.Cond
 }
@@ -23,8 +23,8 @@ func New_Server_TCB() (*Server_TCB, error) {
 		listener:        nil,
 		listenPort:      0,
 		listenIP:        ipv4.IPAll,
-		state:           CLOSED,
-		kind:            TCP_SERVER,
+		state:           fsmClosed,
+		kind:            serverParent,
 		connQueueUpdate: sync.NewCond(&sync.Mutex{}),
 	}
 
@@ -43,7 +43,7 @@ func (s *Server_TCB) BindListenWithQueueSize(port uint16, ip *ipv4.Address, queu
 		return err
 	}
 	s.listener = read
-	s.state = LISTEN
+	s.state = fsmListen
 	s.connQueue = make(chan *TCB, queue_sz)
 
 	go s.LongListener()
@@ -65,7 +65,7 @@ func (s *Server_TCB) LongListener() {
 		}
 
 		////ch logs.Trace.Println("Packet rcvd by server has promise: responding with SYN-ACK")
-		go func(s *Server_TCB, in *TCP_Packet) {
+		go func(s *Server_TCB, in *packet) {
 			lp := s.listenPort
 			rp := in.header.srcport
 			rIP := in.rip
@@ -82,7 +82,7 @@ func (s *Server_TCB) LongListener() {
 				return
 			}
 
-			c, err := New_TCB(lp, rp, rIP, read, r, TCP_SERVER)
+			c, err := New_TCB(lp, rp, rIP, read, r, serverParent)
 			if err != nil {
 				logs.Error.Println(err)
 				return
@@ -90,13 +90,13 @@ func (s *Server_TCB) LongListener() {
 			c.serverParent = s
 
 			// update state
-			c.updateState(SYN_RCVD)
+			c.updateState(fsmSynRcvd)
 
 			// send syn-ack
 			c.ackNum = in.header.seq + 1
 			//ch logs.Trace.Printf("%s Server/TCB seq: %d, ack: %d, to rip: %v\n", c.Hash(), c.seqNum, c.ackNum, c.ipAddress.IP)
-			synack := &TCP_Packet{
-				header: &TCP_Header{
+			synack := &packet{
+				header: &header{
 					seq:     c.seqNum,
 					ack:     c.ackNum,
 					flags:   TCP_SYN | TCP_ACK,
@@ -137,7 +137,7 @@ func (s *Server_TCB) Accept() (c *TCB, rip *ipv4.Address, rport uint16, err erro
 		// TODO add a timeout and remove the inner loop
 		for i := 0; i < len(s.connQueue); i++ {
 			next := <-s.connQueue
-			if next.getState() == ESTABLISHED {
+			if next.getState() == fsmEstablished {
 				return next, next.ipAddress, next.rport, nil
 			}
 			s.connQueue <- next

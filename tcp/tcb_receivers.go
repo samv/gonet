@@ -8,7 +8,7 @@ func (c *TCB) packetDealer() {
 	for {
 		////ch logs.Trace.Println(c.Hash(), "Waiting for packets")
 		segment, open := <-c.read
-		if !open || c.getState() == CLOSED {
+		if !open || c.getState() == fsmClosed {
 			//ch logs.Trace.Println(c.Hash(), "Terminating packetdealer")
 			return
 		}
@@ -17,27 +17,27 @@ func (c *TCB) packetDealer() {
 	}
 }
 
-func (c *TCB) packetDeal(segment *TCP_Packet) {
+func (c *TCB) packetDeal(segment *packet) {
 	defer tcpRecover()
 
 	// If the state is CLOSED (i.e., TCB does not exist) then
-	if c.getState() == CLOSED {
+	if c.getState() == fsmClosed {
 		c.rcvClosed(segment)
 		return
 	}
-	tcpAssert(c.getState() != CLOSED, "state is closed")
+	tcpAssert(c.getState() != fsmClosed, "state is closed")
 
 	// Check if listen, or syn-sent state
 	switch c.getState() {
-	case LISTEN:
+	case fsmListen:
 		c.rcvListen(segment)
 		return
-	case SYN_SENT:
+	case fsmSynSent:
 		c.dealSynSent(segment)
 		return
 	}
 
-	tcpAssert(c.getState() != LISTEN && c.getState() != SYN_SENT, "state is listen/synsent")
+	tcpAssert(c.getState() != fsmListen && c.getState() != fsmSynSent, "state is listen/synsent")
 	// first check sequence number pg 69 txt
 	if len(segment.payload) == 0 {
 		if c.getWindow() == 0 {
@@ -80,14 +80,14 @@ func (c *TCB) packetDeal(segment *TCP_Packet) {
 	if segment.header.flags&TCP_RST != 0 {
 		// TODO finish: page 70
 		switch c.getState() {
-		case SYN_RCVD:
+		case fsmSynRcvd:
 			// TODO connection refused
 			return
-		case ESTABLISHED, FIN_WAIT_1, FIN_WAIT_2, CLOSE_WAIT:
+		case fsmEstablished, fsmFinWait1, fsmFinWait2, fsmCloseWait:
 			// TODO not done
 			return
-		case CLOSING, LAST_ACK, TIME_WAIT:
-			c.updateState(CLOSED)
+		case fsmClosing, fsmLastAck, fsmTimeWait:
+			c.updateState(fsmClosed)
 			return
 		}
 	}
@@ -98,7 +98,7 @@ func (c *TCB) packetDeal(segment *TCP_Packet) {
 	// TODO check SYN (SYN bit shouldn't be there)
 	if segment.header.flags&TCP_SYN != 0 {
 		switch c.getState() {
-		case SYN_RCVD:
+		case fsmSynRcvd:
 			if c.recentAckNum <= segment.header.ack && segment.header.ack <= c.seqNum {
 				// in window, so it is an error
 				// TODO send a reset
@@ -117,9 +117,9 @@ func (c *TCB) packetDeal(segment *TCP_Packet) {
 		tcpAssert(segment.header.flags&TCP_ACK != 0, "segment missing ACK flag after verification")
 
 		switch c.getState() {
-		case SYN_RCVD:
+		case fsmSynRcvd:
 			c.dealSynRcvd(segment)
-		case ESTABLISHED:
+		case fsmEstablished:
 			if c.recentAckNum < segment.header.ack && segment.header.ack <= c.seqNum {
 				c.updateLastAck(segment.header.ack)
 				// TODO handle retransmission queue
@@ -133,13 +133,13 @@ func (c *TCB) packetDeal(segment *TCP_Packet) {
 				logs.Warn.Println(c.Hash(), "Dropping packet with bad ACK field")
 				return
 			}
-		case FIN_WAIT_1:
+		case fsmFinWait1:
 			// TODO check if acknowledging FIN
-			c.updateState(FIN_WAIT_2)
-		case FIN_WAIT_2:
-			//defer c.UpdateState(CLOSED)
+			c.updateState(fsmFinWait2)
+		case fsmFinWait2:
+			//defer c.UpdateState(fsmClosed)
 			// TODO if retransmission queue empty, acknowledge user's close with ok
-		case CLOSE_WAIT:
+		case fsmCloseWait:
 			if c.recentAckNum < segment.header.ack && segment.header.ack <= c.seqNum {
 				c.recentAckNum = segment.header.ack
 				// TODO handle retransmission queue
@@ -151,17 +151,17 @@ func (c *TCB) packetDeal(segment *TCP_Packet) {
 				// TODO send ack, drop segment, return
 				return
 			}
-		case CLOSING:
+		case fsmClosing:
 			// TODO if ack is acknowledging our fin
-			c.updateState(TIME_WAIT)
+			c.updateState(fsmTimeWait)
 		// TODO else drop segment
-		case LAST_ACK:
+		case fsmLastAck:
 			// TODO if fin acknowledged
-			c.updateState(CLOSED)
+			c.updateState(fsmClosed)
 			return
-		case TIME_WAIT:
+		case fsmTimeWait:
 			// TODO handle remote fin
-			c.updateState(TIME_WAIT)
+			c.updateState(fsmTimeWait)
 			// This might be wrong
 			err := c.sendAck(c.seqNum, c.ackNum)
 			//ch logs.Trace.Println(c.Hash(), "Sent ACK data in response to retrans FIN")
@@ -173,7 +173,7 @@ func (c *TCB) packetDeal(segment *TCP_Packet) {
 
 		if segment.header.flags&TCP_URG != 0 {
 			switch c.getState() {
-			case ESTABLISHED, FIN_WAIT_1, FIN_WAIT_2:
+			case fsmEstablished, fsmFinWait1, fsmFinWait2:
 				// TODO handle urg
 			}
 			return
@@ -183,7 +183,7 @@ func (c *TCB) packetDeal(segment *TCP_Packet) {
 
 		// step 7 (?)
 		switch c.getState() {
-		case ESTABLISHED, FIN_WAIT_1, FIN_WAIT_2:
+		case fsmEstablished, fsmFinWait1, fsmFinWait2:
 			//ch logs.Trace.Println(c.Hash(), "Received data of len:", len(segment.payload))
 			c.recvBuffer = append(c.recvBuffer, segment.payload...)
 			// TODO adjust rcv.wnd, for now just multiplying by 2
@@ -216,7 +216,7 @@ func (c *TCB) packetDeal(segment *TCP_Packet) {
 				}
 			}
 			//return
-		case CLOSE_WAIT, CLOSING, LAST_ACK, TIME_WAIT:
+		case fsmCloseWait, fsmClosing, fsmLastAck, fsmTimeWait:
 			// should not occur, so drop packet
 			return
 		}
@@ -224,7 +224,7 @@ func (c *TCB) packetDeal(segment *TCP_Packet) {
 		// eighth, check the FIN bit,
 		if segment.header.flags&TCP_FIN != 0 {
 			switch c.getState() {
-			case CLOSED, LISTEN, SYN_SENT:
+			case fsmClosed, fsmListen, fsmSynSent:
 				// drop segment
 				return
 			}
@@ -248,12 +248,12 @@ func (c *TCB) packetDeal(segment *TCP_Packet) {
 			c.pushData()
 
 			switch c.getState() {
-			case SYN_RCVD, ESTABLISHED:
-				c.updateState(CLOSE_WAIT)
-			case FIN_WAIT_1:
-				c.updateState(TIME_WAIT)
-			case FIN_WAIT_2:
-				c.updateState(TIME_WAIT)
+			case fsmSynRcvd, fsmEstablished:
+				c.updateState(fsmCloseWait)
+			case fsmFinWait1:
+				c.updateState(fsmTimeWait)
+			case fsmFinWait2:
+				c.updateState(fsmTimeWait)
 			}
 			return
 		}
@@ -274,7 +274,7 @@ func (c *TCB) pushData() {
 	c.pushSignal.Signal()
 }
 
-func (c *TCB) rcvClosed(d *TCP_Packet) {
+func (c *TCB) rcvClosed(d *packet) {
 	//ch logs.Trace.Println(c.Hash(), "Dealing closed")
 	if d.header.flags&TCP_RST != 0 {
 		// drop incoming RSTs
@@ -294,7 +294,7 @@ func (c *TCB) rcvClosed(d *TCP_Packet) {
 		ackNum = 0
 	}
 
-	logs.Warn.Printf("%s Sending RST data with seq %d and ack %d because packet received in CLOSED state", c.Hash(), seqNum, ackNum)
+	logs.Warn.Printf("%s Sending RST data with seq %d and ack %d because packet received in fsmClosed state", c.Hash(), seqNum, ackNum)
 	err := c.sendResetFlag(seqNum, ackNum, rstFlags)
 	if err != nil {
 		logs.Error.Println(c.Hash(), err)
@@ -302,7 +302,7 @@ func (c *TCB) rcvClosed(d *TCP_Packet) {
 	}
 }
 
-func (c *TCB) rcvListen(d *TCP_Packet) {
+func (c *TCB) rcvListen(d *packet) {
 	//ch logs.Trace.Println(c.Hash(), "Dealing listen")
 
 	if d.header.flags&TCP_RST != 0 {
@@ -324,15 +324,15 @@ func (c *TCB) rcvListen(d *TCP_Packet) {
 		// TODO handle SEG.PRC > TCB.PRC stuff
 		// TODO if SEG.PRC < TCP.PRC continue
 		c.ackNum = d.header.seq + 1
-		c.IRS = d.header.seq
+		c.irs = d.header.seq
 		// TODO queue other controls
 
 		// update state
-		c.updateState(SYN_RCVD)
+		c.updateState(fsmSynRcvd)
 
 		// send syn-ack response
-		syn_ack_packet := &TCP_Packet{
-			header: &TCP_Header{
+		syn_ack_packet := &packet{
+			header: &header{
 				seq:     c.seqNum,
 				ack:     c.ackNum,
 				flags:   TCP_SYN | TCP_ACK,
@@ -350,19 +350,19 @@ func (c *TCB) rcvListen(d *TCP_Packet) {
 		//ch logs.Trace.Println(c.Hash(), "Sent ACK data")
 
 		c.seqNum += 1
-		c.recentAckNum = c.ISS
+		c.recentAckNum = c.iss
 		return
 	}
 }
 
-func (c *TCB) dealSynSent(d *TCP_Packet) {
+func (c *TCB) dealSynSent(d *packet) {
 	//ch logs.Trace.Println(c.Hash(), "Dealing state syn-sent")
 	if d.header.flags&TCP_ACK != 0 {
 		//ch logs.Trace.Println(c.Hash(), "verifing the ack")
 		if d.header.flags&TCP_RST != 0 {
 			return
 		}
-		if d.header.ack <= c.ISS || d.header.ack > c.seqNum {
+		if d.header.ack <= c.iss || d.header.ack > c.seqNum {
 			logs.Warn.Println(c.Hash(), "Sending reset")
 			err := c.sendReset(d.header.ack, 0)
 			if err != nil {
@@ -386,7 +386,7 @@ func (c *TCB) dealSynSent(d *TCP_Packet) {
 
 	if d.header.flags&TCP_RST != 0 {
 		logs.Error.Println(c.Hash(), "error: connection reset")
-		c.updateState(CLOSED)
+		c.updateState(fsmClosed)
 		return
 	}
 
@@ -395,7 +395,7 @@ func (c *TCB) dealSynSent(d *TCP_Packet) {
 	if d.header.flags&TCP_SYN != 0 {
 		//ch logs.Trace.Println(c.Hash(), "rcvd a SYN")
 		c.ackNum = d.header.seq + 1
-		c.IRS = d.header.seq
+		c.irs = d.header.seq
 
 		if d.header.flags&TCP_ACK != 0 {
 			c.updateLastAck(d.header.ack)
@@ -403,11 +403,11 @@ func (c *TCB) dealSynSent(d *TCP_Packet) {
 			//ch logs.Trace.Println(c.Hash(), "ISS:", c.ISS)
 		}
 
-		if c.recentAckNum > c.ISS {
+		if c.recentAckNum > c.iss {
 			//ch logs.Trace.Println(c.Hash(), "rcvd a SYN-ACK")
 			// the syn has been ACKed
 			// reply with an ACK
-			c.updateState(ESTABLISHED)
+			c.updateState(fsmEstablished)
 			c.seqAckMutex.RLock()
 			err := c.sendAck(c.seqNum, c.ackNum)
 			c.seqAckMutex.RUnlock()
@@ -422,7 +422,7 @@ func (c *TCB) dealSynSent(d *TCP_Packet) {
 			// http://www.tcpipguide.com/free/t_TCPConnectionEstablishmentProcessTheThreeWayHandsh-4.htm
 			// (Simultaneous Open Connection Establishment)
 
-			//c.UpdateState(SYN_RCVD)
+			//c.UpdateState(fsmSynRcvd)
 			// TODO send <SEQ=ISS><ACK=RCV.NXT><CTL=SYN,ACK>
 			// TODO if more controls/txt, continue processing after established
 		}
@@ -432,14 +432,14 @@ func (c *TCB) dealSynSent(d *TCP_Packet) {
 	logs.Warn.Println(c.Hash(), "Dropping packet with seq: ", d.header.seq, "ack: ", d.header.ack)
 }
 
-func (c *TCB) dealSynRcvd(d *TCP_Packet) {
+func (c *TCB) dealSynRcvd(d *packet) {
 	//ch logs.Trace.Println(c.Hash(), "dealing Syn Rcvd")
 	c.seqAckMutex.RLock()
 	defer c.seqAckMutex.RUnlock()
 	//ch logs.Trace.Printf("%s recentAck: %d, header ack: %d, seqNum: %d", c.Hash(), c.recentAckNum, d.header.ack, c.seqNum)
 	if c.recentAckNum <= d.header.ack && d.header.ack <= c.seqNum {
 		//ch logs.Trace.Println(c.Hash(), "SynRcvd -> Established")
-		c.updateState(ESTABLISHED)
+		c.updateState(fsmEstablished)
 	} else {
 		err := c.sendReset(d.header.ack, 0)
 		logs.Warn.Println(c.Hash(), "Sent RST data")

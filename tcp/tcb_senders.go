@@ -37,8 +37,8 @@ func (c *TCB) sendData(data []byte, push bool) (err error) {
 		//ch logs.Trace.Println(c.Hash(), "Data send with PSH flag")
 		flags |= TCP_PSH
 	}
-	psh_packet := &TCP_Packet{
-		header: &TCP_Header{
+	psh_packet := &packet{
+		header: &header{
 			seq:     c.seqNum,
 			ack:     c.ackNum,
 			flags:   flags,
@@ -57,7 +57,7 @@ func (c *TCB) sendData(data []byte, push bool) (err error) {
 	return err
 }
 
-func (c *TCB) sendWithRetransmit(data *TCP_Packet) error {
+func (c *TCB) sendWithRetransmit(data *packet) error {
 	// send the first packet
 	err := c.sendPacket(data)
 	if err != nil { // try at least twice
@@ -130,7 +130,7 @@ func resendTimer(timerOutput, timeout chan<- bool, finished <-chan bool, delay t
 	timeout <- true
 }
 
-func (c *TCB) sendPacket(d *TCP_Packet) error {
+func (c *TCB) sendPacket(d *packet) error {
 	// Requires that seq, ack, flags, urg, and options are set
 	// Will set everything else
 
@@ -142,7 +142,7 @@ func (c *TCB) sendPacket(d *TCP_Packet) error {
 	d.rip = c.ipAddress
 	d.lip = c.srcIP
 
-	pay, err := d.Marshal_TCP_Packet()
+	pay, err := d.Marshal()
 	if err != nil {
 		logs.Error.Println(c.Hash(), err)
 		return err
@@ -163,8 +163,8 @@ func (c *TCB) sendPacket(d *TCP_Packet) error {
 
 func (c *TCB) sendResetFlag(seq, ack uint32, flag uint8) error {
 	//ch logs.Trace.Println(c.Hash(), "Sending RST with seq: ", seq, " and ack: ", ack)
-	rst := &TCP_Packet{
-		header: &TCP_Header{
+	rst := &packet{
+		header: &header{
 			seq:     seq,
 			ack:     ack,
 			flags:   flag,
@@ -183,8 +183,8 @@ func (c *TCB) sendReset(seq, ack uint32) error {
 
 func (c *TCB) sendAck(seq, ack uint32) error {
 	//ch logs.Trace.Println(c.Hash(), "Sending ACK with seq: ", seq, " and ack: ", ack)
-	ack_packet := &TCP_Packet{
-		header: &TCP_Header{
+	ack_packet := &packet{
+		header: &header{
 			seq:     seq,
 			ack:     ack,
 			flags:   TCP_ACK,
@@ -198,8 +198,8 @@ func (c *TCB) sendAck(seq, ack uint32) error {
 
 func (c *TCB) sendFin(seq, ack uint32) error {
 	//ch logs.Trace.Println(c.Hash(), "Sending FIN with seq: ", seq, " and ack: ", ack)
-	fin_packet := &TCP_Packet{
-		header: &TCP_Header{
+	fin_packet := &packet{
+		header: &header{
 			seq:     seq,
 			ack:     ack,
 			flags:   TCP_ACK | TCP_FIN,

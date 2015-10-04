@@ -13,11 +13,11 @@ import (
 // Global src, dst port and ip registry for TCP binding
 type TCP_Port_Manager_Type struct {
 	tcp_reader ipv4.Reader
-	incoming   map[uint16](map[uint16](map[ipv4.Hash](chan *TCP_Packet))) // dst, src port, remote ip
+	incoming   map[uint16](map[uint16](map[ipv4.Hash](chan *packet))) // dst, src port, remote ip
 	lock       *sync.RWMutex
 }
 
-func (m *TCP_Port_Manager_Type) bind(rport, lport uint16, ip *ipv4.Address) (chan *TCP_Packet, error) {
+func (m *TCP_Port_Manager_Type) bind(rport, lport uint16, ip *ipv4.Address) (chan *packet, error) {
 	// race prevention
 	m.lock.Lock()
 	defer m.lock.Unlock()
@@ -25,19 +25,19 @@ func (m *TCP_Port_Manager_Type) bind(rport, lport uint16, ip *ipv4.Address) (cha
 	// lport is the local one here, rport is the remote
 	//ch logs.Info.Println("Attempting to bind to rport", rport, "lport", lport, "ip", ip.Hash())
 	if _, ok := m.incoming[lport]; !ok {
-		m.incoming[lport] = make(map[uint16](map[ipv4.Hash](chan *TCP_Packet)))
+		m.incoming[lport] = make(map[uint16](map[ipv4.Hash](chan *packet)))
 	}
 
 	// TODO add an option (for servers) for all srcports
 	if _, ok := m.incoming[lport][rport]; !ok {
-		m.incoming[lport][rport] = make(map[ipv4.Hash](chan *TCP_Packet))
+		m.incoming[lport][rport] = make(map[ipv4.Hash](chan *packet))
 	}
 
 	if _, ok := m.incoming[lport][rport][ip.Hash()]; ok {
 		return nil, fmt.Errorf("Ports (lport: %d, rport %d) and IP (%v) already binded to", lport, rport, ip)
 	}
 
-	ans := make(chan *TCP_Packet, TCP_INCOMING_BUFF_SZ)
+	ans := make(chan *packet, TCP_INCOMING_BUFF_SZ)
 	m.incoming[lport][rport][ip.Hash()] = ans
 	return ans, nil
 }
@@ -71,7 +71,7 @@ func (m *TCP_Port_Manager_Type) readAll() {
 }
 
 func (m *TCP_Port_Manager_Type) readDeal(rip, lip *ipv4.Address, payload []byte) error {
-	p, err := Extract_TCP_Packet(payload, rip, lip)
+	p, err := extractPacket(payload, rip, lip)
 	if err != nil {
 		logs.Error.Println(err)
 		return err
@@ -80,7 +80,7 @@ func (m *TCP_Port_Manager_Type) readDeal(rip, lip *ipv4.Address, payload []byte)
 	rport := p.header.srcport
 	lport := p.header.dstport
 
-	var output chan *TCP_Packet = nil
+	var output chan *packet = nil
 
 	m.lock.RLock()
 	defer m.lock.RUnlock()
@@ -128,7 +128,7 @@ var TCP_Port_Manager = func() *TCP_Port_Manager_Type {
 
 	m := &TCP_Port_Manager_Type{
 		tcp_reader: ipr,
-		incoming:   make(map[uint16](map[uint16](map[ipv4.Hash](chan *TCP_Packet)))),
+		incoming:   make(map[uint16](map[uint16](map[ipv4.Hash](chan *packet)))),
 		lock:       &sync.RWMutex{},
 	}
 	go m.readAll()
