@@ -24,13 +24,13 @@ func (pm *Ping_Manager) ping_response_dealer() {
 	}
 }
 
-func sendSinglePing(writer ipv4.Writer, id, seq uint16, timeout time.Duration, reply chan *icmp.ICMP_In) {
+func sendSinglePing(writer ipv4.Writer, id, seq uint16, timeout time.Duration, reply chan *icmp.Packet) {
 	// prepare packet
-	packet := &icmp.ICMP_Header{
-		TypeF: PING_ECHO_REQUEST_TYPE,
-		Code:  PING_ICMP_CODE,
-		Opt:   uint32(id)<<16 | uint32(seq),
-		Data:  []byte(DATA_56_BYTES), // TODO make legit by putting the timestamp in the data
+	packet := &icmp.Header{
+		Tp:   icmp.EchoRequest,
+		Code: PING_ICMP_CODE,
+		Opt:  uint32(id)<<16 | uint32(seq),
+		Data: []byte(DATA_56_BYTES), // TODO make legit by putting the timestamp in the data
 	}
 
 	// make data
@@ -38,7 +38,7 @@ func sendSinglePing(writer ipv4.Writer, id, seq uint16, timeout time.Duration, r
 
 	time1 := time.Now()
 	timeoutTimer := time.NewTimer(timeout)
-	go func(seqChan chan *icmp.ICMP_In, header *icmp.ICMP_Header, time1 *time.Time, timer *time.Timer) {
+	go func(seqChan chan *icmp.Packet, header *icmp.Header, time1 *time.Time, timer *time.Timer) {
 		for {
 			select {
 			case pingResonse := <-seqChan:
@@ -48,7 +48,7 @@ func sendSinglePing(writer ipv4.Writer, id, seq uint16, timeout time.Duration, r
 				}
 				time2 := time.Now()
 				logs.Info.Printf("%d bytes from %v: icmp_seq=%d time=%f ms",
-					len(header.Data)+icmp.ICMP_Header_MinSize,
+					len(header.Data)+icmp.HeaderMinSize,
 					pingResonse.RIP.IP,
 					uint16(header.Opt),
 					float32(time2.Sub(*time1).Nanoseconds())/1000000) // put ttl
@@ -61,14 +61,14 @@ func sendSinglePing(writer ipv4.Writer, id, seq uint16, timeout time.Duration, r
 	}(reply, packet, &time1, timeoutTimer)
 }
 
-func (pm *Ping_Manager) initIdentifier(terminate chan bool) (id uint16, seqChannel map[uint16](chan *icmp.ICMP_In), err error) {
+func (pm *Ping_Manager) initIdentifier(terminate chan bool) (id uint16, seqChannel map[uint16](chan *icmp.Packet), err error) {
 	// get identifier
 	pm.currentIdentifier++
 	id = pm.currentIdentifier
 
 	// setup sequence number dealer
-	pm.identifiers[id] = make(chan *icmp.ICMP_In)
-	seqChannel = make(map[uint16](chan *icmp.ICMP_In))
+	pm.identifiers[id] = make(chan *icmp.Packet)
+	seqChannel = make(map[uint16](chan *icmp.Packet))
 
 	// create go routine function to deal packets
 	go sequenceDealer(pm.identifiers[id], seqChannel, terminate)
@@ -76,7 +76,7 @@ func (pm *Ping_Manager) initIdentifier(terminate chan bool) (id uint16, seqChann
 	return id, seqChannel, nil
 }
 
-func sequenceDealer(idInput chan *icmp.ICMP_In, seqChan map[uint16](chan *icmp.ICMP_In), terminate chan bool) {
+func sequenceDealer(idInput chan *icmp.Packet, seqChan map[uint16](chan *icmp.Packet), terminate chan bool) {
 	// TODO verify IPs
 	for {
 		select {
@@ -114,7 +114,7 @@ func (pm *Ping_Manager) SendPing(ip *ipv4.Address, interval, timeout time.Durati
 	}
 
 	for i := uint16(1); i <= numPings; i++ {
-		seqChannel[i] = make(chan *icmp.ICMP_In) // FIXME data race
+		seqChannel[i] = make(chan *icmp.Packet) // FIXME data race
 
 		sendSinglePing(writer, id, i, timeout, seqChannel[i]) // function is non-blocking
 

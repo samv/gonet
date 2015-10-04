@@ -8,30 +8,28 @@ import (
 )
 
 const (
-	PING_ECHO_REQUEST_TYPE = 8
-	PING_ECHO_REPLY_TYPE   = 0
 	PING_ICMP_CODE         = 0
 	PING_START_ID          = 8000 // TODO choose this randomly
 )
 
 type Ping_Manager struct {
 	// Responding to pings
-	input  chan *icmp.ICMP_In
+	input  chan *icmp.Packet
 	output map[ipv4.Hash](ipv4.Writer)
 
 	// Sending pings and receiving responses
-	reply             chan *icmp.ICMP_In
+	reply             chan *icmp.Packet
 	currentIdentifier uint16
-	identifiers       map[uint16](chan *icmp.ICMP_In)
+	identifiers       map[uint16](chan *icmp.Packet)
 }
 
-func NewPing_Manager(icmprm *icmp.ICMP_Read_Manager) (*Ping_Manager, error) {
-	input, err := icmprm.Bind(8)
+func NewPing_Manager() (*Ping_Manager, error) {
+	input, err := icmp.Bind(icmp.EchoRequest)
 	if err != nil {
 		return nil, err
 	}
 
-	reply, err := icmprm.Bind(0)
+	reply, err := icmp.Bind(icmp.EchoReply)
 	if err != nil {
 		return nil, err
 	}
@@ -41,7 +39,7 @@ func NewPing_Manager(icmprm *icmp.ICMP_Read_Manager) (*Ping_Manager, error) {
 		output:            make(map[ipv4.Hash](ipv4.Writer), 1),
 		reply:             reply,
 		currentIdentifier: PING_START_ID,
-		identifiers:       make(map[uint16](chan *icmp.ICMP_In)),
+		identifiers:       make(map[uint16](chan *icmp.Packet)),
 	}
 
 	go pm.ping_replier()
@@ -51,7 +49,7 @@ func NewPing_Manager(icmprm *icmp.ICMP_Read_Manager) (*Ping_Manager, error) {
 }
 
 var GlobalPingManager = func() *Ping_Manager {
-	pm, err := NewPing_Manager(icmp.GlobalICMPReadManager)
+	pm, err := NewPing_Manager()
 	if err != nil {
 		logs.Error.Fatal(err)
 	}

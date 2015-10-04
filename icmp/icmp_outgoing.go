@@ -4,8 +4,8 @@ import (
 	"network/ipv4"
 )
 
-func SendICMPPacket(writer ipv4.Writer, data *ICMP_Header) error {
-	packet, err := data.MarshalICMPHeader()
+func SendICMPPacket(writer ipv4.Writer, data *Header) error {
+	packet, err := data.Marshal()
 	if err != nil {
 		return err
 	}

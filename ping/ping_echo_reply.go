@@ -14,8 +14,8 @@ func (pm *Ping_Manager) ping_replier() {
 	}
 }
 
-func (pm *Ping_Manager) respondTo(ping *icmp.ICMP_In) error {
-	ping.Header.TypeF = PING_ECHO_REPLY_TYPE
+func (pm *Ping_Manager) respondTo(ping *icmp.Packet) error {
+	ping.Header.Tp = icmp.EchoReply
 
 	// get writer
 	writer, err := pm.getIP_Writer(ping.RIP)

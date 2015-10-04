@@ -7,60 +7,48 @@ import (
 	"github.com/hsheth2/logs"
 )
 
-type ICMP_Read_Manager struct {
-	reader ipv4.Reader
-	buff   map[uint8](chan *ICMP_In)
-}
+var (
+	reader  ipv4.Reader
+	buffers map[Type](chan *Packet)
+)
 
-func NewICMP_Read_Manager() (*ICMP_Read_Manager, error) {
+func init() {
 	ipr, err := ipv4.NewReader(ipv4.IPAll, ipv4.IPProtoICMP)
 	if err != nil {
-		return nil, err
+		logs.Error.Fatalln(err)
 	}
 
-	x := &ICMP_Read_Manager{
-		reader: ipr,
-		buff:   make(map[uint8](chan *ICMP_In)),
-	}
+	reader = ipr
+	buffers = make(map[Type](chan *Packet))
 
-	go x.readAll()
-
-	return x, nil
+	go readAll()
 }
 
-var GlobalICMPReadManager = func() *ICMP_Read_Manager {
-	rm, err := NewICMP_Read_Manager()
-	if err != nil {
-		logs.Error.Fatal(err)
-	}
-	return rm
-}()
-
-func (x *ICMP_Read_Manager) Bind(ICMP_type uint8) (chan *ICMP_In, error) {
+func Bind(tp Type) (chan *Packet, error) {
 	// add the port if not already there
-	if _, found := x.buff[ICMP_type]; !found {
-		x.buff[ICMP_type] = make(chan *ICMP_In, ICMP_QUEUE_Size)
+	if _, found := buffers[tp]; !found {
+		buffers[tp] = make(chan *Packet, queueSize)
 	} else {
 		return nil, errors.New("Another application binded")
 	}
-	return x.buff[ICMP_type], nil
+	return buffers[tp], nil
 }
 
-func (x *ICMP_Read_Manager) Unbind(ICMP_type uint8) error {
+func Unbind(tp Type) error {
 	// TODO ICMP unbind
 	return nil
 }
 
-func (x *ICMP_Read_Manager) readAll() {
+func readAll() {
 	for {
-		header, err := x.reader.ReadFrom()
+		header, err := reader.ReadFrom()
 		if err != nil {
 			logs.Error.Println(err)
 			continue
 		}
 		////ch logs.Info.Println("Pay", payload, "rip", rip, "lip", lip)
 
-		if len(header.Payload) < ICMP_Header_MinSize {
+		if len(header.Payload) < HeaderMinSize {
 			//ch logs.Info.Println("Dropping Small ICMP packet:", payload)
 			continue
 		}
@@ -73,7 +61,7 @@ func (x *ICMP_Read_Manager) readAll() {
 			continue
 		}
 
-		if buf, ok := x.buff[data.Header.TypeF]; ok {
+		if buf, ok := buffers[data.Header.Tp]; ok {
 			buf <- data
 		} else {
 			//ch logs.Info.Println("Dropping ICMP packet:", payload)
