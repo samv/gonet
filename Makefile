@@ -32,8 +32,9 @@ lines:
 vet:
 	go vet ./...
 fmt:
-	./auto-format.sh
-	# go fmt ${pkgs}
+	@echo "Formatting Files..."
+	goimports -l -w ./
+	@echo "Finished Formatting"
 
 
 # Different tests that could be run on the network's code
