@@ -8,7 +8,7 @@ import (
 	"github.com/hsheth2/logs"
 )
 
-type Server_TCB struct {
+type Server struct {
 	listener        chan *packet
 	listenPort      uint16
 	listenIP        *ipv4.Address
@@ -18,8 +18,8 @@ type Server_TCB struct {
 	connQueueUpdate *sync.Cond
 }
 
-func New_Server_TCB() (*Server_TCB, error) {
-	x := &Server_TCB{
+func NewServer() (*Server, error) {
+	x := &Server{
 		listener:        nil,
 		listenPort:      0,
 		listenIP:        ipv4.IPAll,
@@ -31,11 +31,11 @@ func New_Server_TCB() (*Server_TCB, error) {
 	return x, nil
 }
 
-func (s *Server_TCB) BindListen(port uint16, ip *ipv4.Address) error {
+func (s *Server) BindListen(port uint16, ip *ipv4.Address) error {
 	return s.BindListenWithQueueSize(port, ip, listenQueueSizeDefault)
 }
 
-func (s *Server_TCB) BindListenWithQueueSize(port uint16, ip *ipv4.Address, queue_sz int) error {
+func (s *Server) BindListenWithQueueSize(port uint16, ip *ipv4.Address, queueSize int) error {
 	s.listenPort = port
 	s.listenIP = ip
 	read, err := portManager.bind(0, port, ip)
@@ -44,14 +44,14 @@ func (s *Server_TCB) BindListenWithQueueSize(port uint16, ip *ipv4.Address, queu
 	}
 	s.listener = read
 	s.state = fsmListen
-	s.connQueue = make(chan *TCB, queue_sz)
+	s.connQueue = make(chan *TCB, queueSize)
 
 	go s.LongListener()
 
 	return nil
 }
 
-func (s *Server_TCB) LongListener() {
+func (s *Server) LongListener() {
 	//ch logs.Trace.Println("Server listener routine")
 	for {
 		in := <-s.listener
@@ -65,7 +65,7 @@ func (s *Server_TCB) LongListener() {
 		}
 
 		////ch logs.Trace.Println("Packet rcvd by server has promise: responding with SYN-ACK")
-		go func(s *Server_TCB, in *packet) {
+		go func(s *Server, in *packet) {
 			lp := s.listenPort
 			rp := in.header.srcport
 			rIP := in.rip
@@ -82,7 +82,7 @@ func (s *Server_TCB) LongListener() {
 				return
 			}
 
-			c, err := New_TCB(lp, rp, rIP, read, r, serverParent)
+			c, err := newTCB(lp, rp, rIP, read, r, serverParent)
 			if err != nil {
 				logs.Error.Println(err)
 				return
@@ -130,7 +130,7 @@ func (s *Server_TCB) LongListener() {
 	}
 }
 
-func (s *Server_TCB) Accept() (c *TCB, rip *ipv4.Address, rport uint16, err error) {
+func (s *Server) Accept() (c *TCB, rip *ipv4.Address, rport uint16, err error) {
 	s.connQueueUpdate.L.Lock()
 	defer s.connQueueUpdate.L.Unlock()
 	for {
@@ -146,6 +146,6 @@ func (s *Server_TCB) Accept() (c *TCB, rip *ipv4.Address, rport uint16, err erro
 	}
 }
 
-func (s *Server_TCB) Close() error {
+func (s *Server) Close() error {
 	return nil // TODO actually close the server tcb
 }

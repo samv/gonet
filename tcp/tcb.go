@@ -24,7 +24,7 @@ type TCB struct {
 	timeWaitRestart  chan bool           // signals when the time_wait timer should restart
 	stateUpdate      *sync.Cond          // signals when the state is changed
 	kind             tcbParentType       // type (server or client)
-	serverParent     *Server_TCB         // the parent server
+	serverParent     *Server             // the parent server
 	curWindow        uint16              // the current window size
 	windowMutex      *sync.RWMutex       // protects access to the window size
 	sendBuffer       []byte              // a buffer of bytes that need to be sent
@@ -43,7 +43,7 @@ type TCB struct {
 	maxSegSize       uint16              // MSS (MTU)
 }
 
-func New_TCB(local, remote uint16, dstIP *ipv4.Address, read chan *packet, write ipv4.Writer, kind tcbParentType) (*TCB, error) {
+func newTCB(local, remote uint16, dstIP *ipv4.Address, read chan *packet, write ipv4.Writer, kind tcbParentType) (*TCB, error) {
 	//ch logs.Trace.Println("New_TCB")
 
 	seq, err := genRandSeqNum()

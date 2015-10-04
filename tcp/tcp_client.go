@@ -7,7 +7,7 @@ import (
 	"github.com/hsheth2/logs"
 )
 
-func New_TCB_From_Client(local, remote uint16, dstIP *ipv4.Address) (*TCB, error) {
+func NewClient(local, remote uint16, dstIP *ipv4.Address) (*TCB, error) {
 	/*write, err := NewIP_Writer(dstIP, TCP_PROTO)
 	if err != nil {
 		return nil, err
@@ -26,7 +26,7 @@ func New_TCB_From_Client(local, remote uint16, dstIP *ipv4.Address) (*TCB, error
 	}
 
 	//ch logs.Trace.Println("Finished New TCB from Client")
-	return New_TCB(local, remote, dstIP, read, r, clientParent)
+	return newTCB(local, remote, dstIP, read, r, clientParent)
 }
 
 func (c *TCB) Connect() error {

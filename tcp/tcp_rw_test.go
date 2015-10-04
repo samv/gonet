@@ -7,9 +7,6 @@ import (
 	"time"
 )
 
-const server_port = 20102
-const client_port = 20101
-
 func TestReadWriteLocal(t *testing.T) {
 	read_write_test(t, ipv4.MakeIP("127.0.0.1"))
 }
@@ -20,6 +17,9 @@ func TestReadWriteOverNetwork(t *testing.T) {
 }
 
 func read_write_test(t *testing.T, ip *ipv4.Address) {
+	const serverPort = 20102
+	const clientPort = 20101
+
 	// TODO make both server and client read and write
 	success := make(chan bool, 1)
 
@@ -27,14 +27,14 @@ func read_write_test(t *testing.T, ip *ipv4.Address) {
 
 	// server (reads data, initiates close)
 	go func() {
-		s, err := New_Server_TCB()
+		s, err := NewServer()
 		if err != nil {
 			t.Error(err)
 			return
 		}
 		defer s.Close()
 
-		err = s.BindListen(server_port, ip)
+		err = s.BindListen(serverPort, ip)
 		if err != nil {
 			t.Error(err)
 			return
@@ -70,7 +70,7 @@ func read_write_test(t *testing.T, ip *ipv4.Address) {
 
 	// client (sends data)
 	go func() {
-		client, err := New_TCB_From_Client(client_port, server_port, ip)
+		client, err := NewClient(clientPort, serverPort, ip)
 		if err != nil {
 			t.Error("err", err)
 			return

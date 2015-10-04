@@ -37,7 +37,7 @@ func (c *TCB) sendData(data []byte, push bool) (err error) {
 		//ch logs.Trace.Println(c.Hash(), "Data send with PSH flag")
 		flags |= flagPsh
 	}
-	psh_packet := &packet{
+	pshPacket := &packet{
 		header: &header{
 			seq:     c.seqNum,
 			ack:     c.ackNum,
@@ -50,7 +50,7 @@ func (c *TCB) sendData(data []byte, push bool) (err error) {
 	c.seqAckMutex.Lock()
 	c.seqNum += uint32(len(data))
 	c.seqAckMutex.Unlock()
-	err = c.sendWithRetransmit(psh_packet)
+	err = c.sendWithRetransmit(pshPacket)
 	if err != nil {
 		logs.Error.Println(c.Hash(), err)
 	}
@@ -183,7 +183,7 @@ func (c *TCB) sendReset(seq, ack uint32) error {
 
 func (c *TCB) sendAck(seq, ack uint32) error {
 	//ch logs.Trace.Println(c.Hash(), "Sending ACK with seq: ", seq, " and ack: ", ack)
-	ack_packet := &packet{
+	ackPacket := &packet{
 		header: &header{
 			seq:     seq,
 			ack:     ack,
@@ -193,12 +193,12 @@ func (c *TCB) sendAck(seq, ack uint32) error {
 		},
 		payload: []byte{},
 	}
-	return c.sendPacket(ack_packet)
+	return c.sendPacket(ackPacket)
 }
 
 func (c *TCB) sendFin(seq, ack uint32) error {
 	//ch logs.Trace.Println(c.Hash(), "Sending FIN with seq: ", seq, " and ack: ", ack)
-	fin_packet := &packet{
+	finPacket := &packet{
 		header: &header{
 			seq:     seq,
 			ack:     ack,
@@ -208,5 +208,5 @@ func (c *TCB) sendFin(seq, ack uint32) error {
 		},
 		payload: []byte{},
 	}
-	return c.sendPacket(fin_packet)
+	return c.sendPacket(finPacket)
 }
