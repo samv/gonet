@@ -35,6 +35,8 @@ fmt:
 	@echo "Formatting Files..."
 	goimports -l -w ./
 	@echo "Finished Formatting"
+lint:
+	golint ./...
 
 
 # Different tests that could be run on the network's code
