@@ -77,7 +77,7 @@ func readWriteTest(t *testing.T, ip *ipv4.Address) {
 		}
 
 		fmt.Println("Client connecting")
-		err = client.Connect()
+		conn, err := client.Connect()
 		if err != nil {
 			t.Error(err)
 			return
@@ -86,7 +86,7 @@ func readWriteTest(t *testing.T, ip *ipv4.Address) {
 
 		time.Sleep(1 * time.Second)
 		fmt.Println("Client sending data:", data)
-		err = client.Send(data)
+		err = conn.Send(data)
 		if err != nil {
 			t.Error(err)
 			return
@@ -94,7 +94,7 @@ func readWriteTest(t *testing.T, ip *ipv4.Address) {
 
 		time.Sleep(1 * time.Second)
 		fmt.Println("Client Closing")
-		client.Close()
+		conn.Close()
 		fmt.Println("Client Close finished")
 	}()
 

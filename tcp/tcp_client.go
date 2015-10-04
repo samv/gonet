@@ -7,12 +7,11 @@ import (
 	"github.com/hsheth2/logs"
 )
 
-func NewClient(local, remote uint16, dstIP *ipv4.Address) (*TCB, error) {
-	/*write, err := NewIP_Writer(dstIP, TCP_PROTO)
-	if err != nil {
-		return nil, err
-	}*/
+type Client struct {
+	tcb *TCB
+}
 
+func NewClient(local, remote uint16, dstIP *ipv4.Address) (*Client, error) {
 	read, err := portManager.bind(remote, local, dstIP)
 	if err != nil {
 		logs.Error.Println(err, local, remote, dstIP.Hash())
@@ -26,47 +25,53 @@ func NewClient(local, remote uint16, dstIP *ipv4.Address) (*TCB, error) {
 	}
 
 	//ch logs.Trace.Println("Finished New TCB from Client")
-	return newTCB(local, remote, dstIP, read, r, clientParent)
+	tcb, err := newTCB(local, remote, dstIP, read, r, clientParent)
+	if err != nil {
+		return nil, err
+	}
+
+	return &Client{tcb: tcb}, nil
 }
 
-func (c *TCB) Connect() error {
-	if c.kind != clientParent || c.getState() != fsmClosed {
-		return errors.New("TCB is not a closed client")
+func (c *Client) Connect() (*TCB, error) {
+	if c.tcb.kind != clientParent || c.tcb.getState() != fsmClosed {
+		return nil, errors.New("not a closed client")
 	}
 
 	// Build the SYN packet
 	SYN := &packet{
 		header: &header{
-			srcport: c.lport,
-			dstport: c.rport,
-			seq:     c.seqNum,
-			ack:     c.ackNum,
+			srcport: c.tcb.lport,
+			dstport: c.tcb.rport,
+			seq:     c.tcb.seqNum,
+			ack:     c.tcb.ackNum,
 			flags:   flagSyn,
-			window:  c.curWindow, // TODO improve the window size calculation
+			window:  c.tcb.curWindow, // TODO improve the window size calculation
 			urg:     0,
-			options: []byte{0x02, 0x04, 0xff, 0xd7, 0x04, 0x02, 0x08, 0x0a, 0x02, 0x64, 0x80, 0x8b, 0x0, 0x0, 0x0, 0x0, 0x01, 0x03, 0x03, 0x07}, // TODO compute the options of SYN instead of hardcoding them
+			options: []byte{0x02, 0x04, 0xff, 0xd7, 0x04, 0x02, 0x08, 0x0a, 0x02, 0x64, 0x80, 0x8b, 0x0,
+				0x0, 0x0, 0x0, 0x01, 0x03, 0x03, 0x07}, // TODO compute the options of SYN instead of hardcoding them
 		},
 		payload: []byte{},
-		rip:     c.ipAddress,
-		lip:     c.srcIP,
+		rip:     c.tcb.ipAddress,
+		lip:     c.tcb.srcIP,
 	}
-	c.seqNum += 1
+	c.tcb.seqNum += 1
 
 	// Send the SYN packet
 	//ch logs.Trace.Println(c.Hash(), "About to send syn")
-	c.updateState(fsmSynSent)
-	go c.sendWithRetransmit(SYN)
+	c.tcb.updateState(fsmSynSent)
+	go c.tcb.sendWithRetransmit(SYN)
 	//ch logs.Trace.Println(c.Hash(), "Sent SYN")
 
 	// wait for the connection to be established
-	c.stateUpdate.L.Lock()
-	defer c.stateUpdate.L.Unlock()
-	for c.state != fsmEstablished && c.state != fsmClosed {
-		c.stateUpdate.Wait()
+	c.tcb.stateUpdate.L.Lock()
+	defer c.tcb.stateUpdate.L.Unlock()
+	for c.tcb.state != fsmEstablished && c.tcb.state != fsmClosed {
+		c.tcb.stateUpdate.Wait()
 	}
-	if c.state == fsmClosed {
-		return errors.New("Connection closed by reset or timeout")
+	if c.tcb.state == fsmClosed {
+		return nil, errors.New("connection closed by reset or timeout")
 	} else {
-		return nil
+		return c.tcb, nil
 	}
 }
