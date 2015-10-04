@@ -90,7 +90,7 @@ func (s *Server_TCB) LongListener() {
 			c.serverParent = s
 
 			// update state
-			c.UpdateState(SYN_RCVD)
+			c.updateState(SYN_RCVD)
 
 			// send syn-ack
 			c.ackNum = in.header.seq + 1

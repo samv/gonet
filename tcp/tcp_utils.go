@@ -18,7 +18,7 @@ func (c *TCB) Hash() string {
 	return fmt.Sprintf("%d%d", c.lport, c.rport)
 }
 
-func (c *TCB) UpdateState(newState uint) {
+func (c *TCB) updateState(newState uint) {
 	c.stateUpdate.L.Lock()
 	defer c.stateUpdate.L.Unlock()
 	c.updateStateReal(newState)
@@ -40,7 +40,7 @@ func (c *TCB) updateStateReal(newState uint) {
 	c.state = newState
 	c.stateUpdate.Broadcast()
 	if c.serverParent != nil {
-		go SendUpdate(c.serverParent.connQueueUpdate)
+		go sendUpdate(c.serverParent.connQueueUpdate)
 	}
 }
 
@@ -56,14 +56,14 @@ func (c *TCB) getWindow() uint16 {
 	return c.curWindow
 }
 
-func (c *TCB) UpdateLastAck(newAck uint32) error {
+func (c *TCB) updateLastAck(newAck uint32) error {
 	//ch logs.Trace.Println(c.Hash(), "New ack number:", newAck)
 	c.recentAckNum = newAck
 	go notifiers.SendNotifierBroadcast(c.recentAckUpdate, c.recentAckNum)
 	return nil
 }
 
-func SendUpdate(update *sync.Cond) {
+func sendUpdate(update *sync.Cond) {
 	update.L.Lock()
 	update.Broadcast()
 	update.L.Unlock()
@@ -73,7 +73,7 @@ func (c *TCB) timeWaitTimer(restart chan bool) error {
 	select {
 	case <-time.After(2 * time.Millisecond):
 		close(c.timeWaitRestart)
-		c.UpdateState(CLOSED)
+		c.updateState(CLOSED)
 		return nil
 	case <-restart:
 		//ch logs.Trace.Println(c.Hash(), "Restarting timeWaitTimer")
@@ -187,13 +187,13 @@ func min(a, b uint64) uint64 {
 	return a
 }
 
-func Assert(assert bool, msg string) {
+func tcpAssert(assert bool, msg string) {
 	if !assert {
 		panic("ASSERTION FAILED: " + msg)
 	}
 }
 
-func Recover() {
+func tcpRecover() {
 	if r := recover(); r != nil {
 		logs.Error.Println("Recover from PANIC:", r)
 	}

@@ -54,7 +54,7 @@ func (c *TCB) Connect() error {
 
 	// Send the SYN packet
 	//ch logs.Trace.Println(c.Hash(), "About to send syn")
-	c.UpdateState(SYN_SENT)
+	c.updateState(SYN_SENT)
 	go c.sendWithRetransmit(SYN)
 	//ch logs.Trace.Println(c.Hash(), "Sent SYN")
 
