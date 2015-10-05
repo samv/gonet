@@ -8,7 +8,6 @@ import (
 	"time"
 
 	"github.com/hsheth2/logs"
-	"github.com/hsheth2/notifiers"
 )
 
 func (c *TCB) hash() string {
@@ -56,7 +55,7 @@ func (c *TCB) getWindow() uint16 {
 func (c *TCB) updateLastAck(newAck uint32) error {
 	//ch logs.Trace.Println(c.Hash(), "New ack number:", newAck)
 	c.recentAckNum = newAck
-	go notifiers.SendNotifierBroadcast(c.recentAckUpdate, c.recentAckNum)
+	go c.recentAckUpdate.Broadcast(c.recentAckNum)
 	return nil
 }
 

@@ -143,9 +143,9 @@ func (c *TCB) Close() error {
 	c.stateUpdate.L.Unlock()
 
 	// kill all retransmitters
-	c.recentAckUpdate.Broadcast(0)
+	c.recentAckUpdate.Broadcast(uint32(0))
 	c.recentAckUpdate.Broadcast(c.ackNum)
-	c.recentAckUpdate.Broadcast(math.MaxUint32)
+	c.recentAckUpdate.Broadcast(uint32(math.MaxUint32))
 
 	// send FIN
 	//ch logs.Trace.Println(c.Hash(), "Sending FIN within close")
