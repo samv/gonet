@@ -2,6 +2,7 @@
 
 SHELL = /bin/bash
 
+# Basic building
 install: clean setup depend build
 depend:
 	go get -u github.com/hsheth2/logs
@@ -9,6 +10,7 @@ depend:
 	go get -u github.com/pkg/profile
 	go get -u github.com/hsheth2/water
 	go get -u github.com/hsheth2/water/waterutil
+	-go get -t -u ./...
 build:
 	go clean ./...
 	go install ./...
@@ -27,7 +29,7 @@ setup:
 lines:
 	find ./ -name '*.go' | xargs wc -l
 
-# Error Checking
+# Checks for style and errors
 vet:
 	go vet ./...
 fmt:
