@@ -31,3 +31,8 @@ func TestTapPing(t *testing.T) {
 func TestExternalPing(t *testing.T) {
 	ping_tester(t, ipv4.MakeIP("192.168.1.2"), 5) // TODO decide dynamically based on ip address
 }
+
+func TestPingBing(t *testing.T) {
+	t.Skip("Pinging externally does not work yet")
+	ping_tester(t, ipv4.MakeIP("204.79.197.200"), 5) // TODO use DNS to determine this IP
+}
