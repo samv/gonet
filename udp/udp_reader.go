@@ -8,14 +8,14 @@ const MAX_UDP_PACKET_LEN = 65507
 const UDP_RCV_BUF_SZ = 1000
 
 type UDP_Reader struct {
-	manager   *UDP_Read_Manager
+	manager   *readManager
 	bytes     <-chan []byte
 	port      uint16 // ports
 	ipAddress *ipv4.Address
 }
 
-func NewUDP(x *UDP_Read_Manager, port uint16, ip *ipv4.Address) (*UDP_Reader, error) {
-	bts, err := x.Bind(port, ip)
+func NewUDP(x *readManager, port uint16, ip *ipv4.Address) (*UDP_Reader, error) {
+	bts, err := x.bind(port, ip)
 	if err != nil {
 		return nil, err
 	}
@@ -32,5 +32,5 @@ func (c *UDP_Reader) Read(size int) ([]byte, error) {
 }
 
 func (c *UDP_Reader) Close() error {
-	return c.manager.Unbind(c.port, c.ipAddress)
+	return c.manager.unbind(c.port, c.ipAddress)
 }

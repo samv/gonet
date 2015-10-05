@@ -8,26 +8,26 @@ import (
 	"github.com/hsheth2/logs"
 )
 
-type UDP_Read_Manager struct {
+type readManager struct {
 	reader ipv4.Reader
 	buff   map[uint16](map[ipv4.Hash](chan []byte))
 }
 
-var GlobalUDP_Read_Manager *UDP_Read_Manager = func() *UDP_Read_Manager {
-	rm, err := NewUDP_Read_Manager()
+var globalReadManager *readManager = func() *readManager {
+	rm, err := newReadManager()
 	if err != nil {
 		logs.Error.Fatal(err)
 	}
 	return rm
 }()
 
-func NewUDP_Read_Manager() (*UDP_Read_Manager, error) {
+func newReadManager() (*readManager, error) {
 	ipr, err := ipv4.NewReader(ipv4.IPAll, ipv4.IPProtoUDP)
 	if err != nil {
 		return nil, err
 	}
 
-	x := &UDP_Read_Manager{
+	x := &readManager{
 		reader: ipr,
 		buff:   make(map[uint16](map[ipv4.Hash](chan []byte))),
 	}
@@ -37,7 +37,7 @@ func NewUDP_Read_Manager() (*UDP_Read_Manager, error) {
 	return x, nil
 }
 
-func (x *UDP_Read_Manager) readAll() {
+func (x *readManager) readAll() {
 	for {
 		header, err := x.reader.ReadFrom()
 		if err != nil {
@@ -87,7 +87,7 @@ func (x *UDP_Read_Manager) readAll() {
 	}
 }
 
-func (x *UDP_Read_Manager) Bind(port uint16, ip *ipv4.Address) (chan []byte, error) {
+func (x *readManager) bind(port uint16, ip *ipv4.Address) (chan []byte, error) {
 	// add the port if not already there
 	if _, found := x.buff[port]; !found {
 		x.buff[port] = make(map[ipv4.Hash](chan []byte))
@@ -103,7 +103,7 @@ func (x *UDP_Read_Manager) Bind(port uint16, ip *ipv4.Address) (chan []byte, err
 	}
 }
 
-func (x *UDP_Read_Manager) Unbind(port uint16, ip *ipv4.Address) error {
+func (x *readManager) unbind(port uint16, ip *ipv4.Address) error {
 	delete(x.buff[port], ip.Hash()) // TODO verify that it will succeed
 	return nil
 }

@@ -24,7 +24,7 @@ func TestReadWriteExternal(t *testing.T) {
 func read_write_test(t *testing.T, ip *ipv4.Address, exp int) {
 	success := make(chan bool, 1)
 
-	r, err := NewUDP(GlobalUDP_Read_Manager, rwport, ip)
+	r, err := NewUDP(globalReadManager, rwport, ip)
 	if err != nil {
 		t.Fatal(err)
 	}
