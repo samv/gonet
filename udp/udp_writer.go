@@ -4,22 +4,20 @@ import (
 	"network/ipv4"
 )
 
-const UDP_HEADER_SZ = 8
-
-type UDP_Writer struct {
+type writer struct {
 	rip      *ipv4.Address // destination ip address
 	lip      *ipv4.Address // source ip address
 	writer   ipv4.Writer
-	src, dst uint16 // ports
+	src, dst Port // ports
 }
 
-func NewUDP_Writer(src, dest uint16, dstIP *ipv4.Address) (*UDP_Writer, error) {
+func NewWriter(src, dest Port, dstIP *ipv4.Address) (Writer, error) {
 	write, err := ipv4.NewWriter(dstIP, ipv4.IPProtoUDP)
 	if err != nil {
 		return nil, err
 	}
 
-	return &UDP_Writer{
+	return &writer{
 		src:    src,
 		dst:    dest,
 		rip:    dstIP,
@@ -28,8 +26,8 @@ func NewUDP_Writer(src, dest uint16, dstIP *ipv4.Address) (*UDP_Writer, error) {
 	}, nil
 }
 
-func (c *UDP_Writer) Write(x []byte) (int, error) {
-	headerLen := uint16(UDP_HEADER_SZ + len(x))
+func (c *writer) Write(x []byte) (int, error) {
+	headerLen := uint16(udpHeaderSize + len(x))
 	UDPHeader := []byte{
 		byte(c.src >> 8), byte(c.src), // Source port in byte slice
 		byte(c.dst >> 8), byte(c.dst), // Destination port in byte slice
@@ -46,6 +44,6 @@ func (c *UDP_Writer) Write(x []byte) (int, error) {
 	return c.writer.WriteTo(data)
 }
 
-func (c *UDP_Writer) Close() error {
+func (c *writer) Close() error {
 	return nil
 }

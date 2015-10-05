@@ -9,22 +9,22 @@ import (
 const rwport = 20102
 
 func TestReadWriteLocal(t *testing.T) {
-	read_write_test(t, ipv4.LoopbackIPAddress, 0)
+	readWriteTest(t, ipv4.LoopbackIPAddress, 0)
 }
 
 func TestReadWriteLocalFragmentation(t *testing.T) {
-	read_write_test(t, ipv4.LoopbackIPAddress, 10)
+	readWriteTest(t, ipv4.LoopbackIPAddress, 10)
 }
 
 func TestReadWriteExternal(t *testing.T) {
 	t.Skip("External tests actually don't work")
-	read_write_test(t, ipv4.ExternalIPAddress, 0)
+	readWriteTest(t, ipv4.ExternalIPAddress, 0)
 }
 
-func read_write_test(t *testing.T, ip *ipv4.Address, exp int) {
+func readWriteTest(t *testing.T, ip *ipv4.Address, exp int) {
 	success := make(chan bool, 1)
 
-	r, err := NewUDP(globalReadManager, rwport, ip)
+	r, err := NewReader(rwport, ip)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -36,7 +36,7 @@ func read_write_test(t *testing.T, ip *ipv4.Address, exp int) {
 	}
 
 	go func() {
-		w, err := NewUDP_Writer(20000, rwport, ip)
+		w, err := NewWriter(20000, rwport, ip)
 		if err != nil {
 			t.Fatal(err)
 		}
@@ -53,7 +53,7 @@ func read_write_test(t *testing.T, ip *ipv4.Address, exp int) {
 
 	go func() {
 		//time.Sleep(10*time.Second)
-		p, err := r.Read(MAX_UDP_PACKET_LEN)
+		p, err := r.Read(maxUDPPacketLength)
 		if err != nil {
 			t.Fatal(err)
 		}

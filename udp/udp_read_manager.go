@@ -10,7 +10,7 @@ import (
 
 type readManager struct {
 	reader ipv4.Reader
-	buff   map[uint16](map[ipv4.Hash](chan []byte))
+	buff   map[Port](map[ipv4.Hash](chan []byte))
 }
 
 var globalReadManager *readManager = func() *readManager {
@@ -29,7 +29,7 @@ func newReadManager() (*readManager, error) {
 
 	x := &readManager{
 		reader: ipr,
-		buff:   make(map[uint16](map[ipv4.Hash](chan []byte))),
+		buff:   make(map[Port](map[ipv4.Hash](chan []byte))),
 	}
 
 	go x.readAll()
@@ -47,21 +47,21 @@ func (x *readManager) readAll() {
 		//fmt.Println(b)
 		//fmt.Println("UDP header and payload: ", payload)
 
-		dst := (((uint16)(header.Payload[2])) * 256) + ((uint16)(header.Payload[3]))
+		dst := (((Port)(header.Payload[2])) * 256) + ((Port)(header.Payload[3]))
 		//fmt.Println(dst)
 
-		if len(header.Payload) < UDP_HEADER_SZ {
+		if len(header.Payload) < udpHeaderSize {
 			//ch logs.Info.Println("Dropping Small UDP packet:", payload)
 			continue
 		}
 
 		headerLen := uint16(header.Payload[4])<<8 | uint16(header.Payload[5])
-		if !ipv4.VerifyTransportChecksum(header.Payload[:UDP_HEADER_SZ], header.Rip, header.Lip, headerLen, ipv4.IPProtoUDP) {
+		if !ipv4.VerifyTransportChecksum(header.Payload[:udpHeaderSize], header.Rip, header.Lip, headerLen, ipv4.IPProtoUDP) {
 			//ch logs.Info.Println("Dropping UDP Packet for bad checksum:", payload)
 			continue
 		}
 
-		header.Payload = header.Payload[UDP_HEADER_SZ:]
+		header.Payload = header.Payload[udpHeaderSize:]
 		//fmt.Println(payload)
 
 		if portBuf, ok := x.buff[dst]; ok {
@@ -87,7 +87,7 @@ func (x *readManager) readAll() {
 	}
 }
 
-func (x *readManager) bind(port uint16, ip *ipv4.Address) (chan []byte, error) {
+func (x *readManager) bind(port Port, ip *ipv4.Address) (chan []byte, error) {
 	// add the port if not already there
 	if _, found := x.buff[port]; !found {
 		x.buff[port] = make(map[ipv4.Hash](chan []byte))
@@ -95,7 +95,7 @@ func (x *readManager) bind(port uint16, ip *ipv4.Address) (chan []byte, error) {
 
 	// add the ip to the port's list
 	if _, found := x.buff[port][ip.Hash()]; !found {
-		ans := make(chan []byte, UDP_RCV_BUF_SZ)
+		ans := make(chan []byte, receiveBufferSize)
 		x.buff[port][ip.Hash()] = ans
 		return ans, nil
 	} else {
@@ -103,7 +103,7 @@ func (x *readManager) bind(port uint16, ip *ipv4.Address) (chan []byte, error) {
 	}
 }
 
-func (x *readManager) unbind(port uint16, ip *ipv4.Address) error {
+func (x *readManager) unbind(port Port, ip *ipv4.Address) error {
 	delete(x.buff[port], ip.Hash()) // TODO verify that it will succeed
 	return nil
 }

@@ -4,26 +4,22 @@ import (
 	"network/ipv4"
 )
 
-const MAX_UDP_PACKET_LEN = 65507
-const UDP_RCV_BUF_SZ = 1000
-
-type UDP_Reader struct {
-	manager   *readManager
+type reader struct {
 	bytes     <-chan []byte
-	port      uint16 // ports
+	port      Port // ports
 	ipAddress *ipv4.Address
 }
 
-func NewUDP(x *readManager, port uint16, ip *ipv4.Address) (*UDP_Reader, error) {
-	bts, err := x.bind(port, ip)
+func NewReader(port Port, ip *ipv4.Address) (Reader, error) {
+	bts, err := globalReadManager.bind(port, ip)
 	if err != nil {
 		return nil, err
 	}
 
-	return &UDP_Reader{port: port, bytes: bts, manager: x, ipAddress: ip}, nil
+	return &reader{port: port, bytes: bts, ipAddress: ip}, nil
 }
 
-func (c *UDP_Reader) Read(size int) ([]byte, error) {
+func (c *reader) Read(size int) ([]byte, error) {
 	data := <-c.bytes
 	if len(data) > size {
 		data = data[:size]
@@ -31,6 +27,6 @@ func (c *UDP_Reader) Read(size int) ([]byte, error) {
 	return data, nil
 }
 
-func (c *UDP_Reader) Close() error {
-	return c.manager.unbind(c.port, c.ipAddress)
+func (c *reader) Close() error {
+	return globalReadManager.unbind(c.port, c.ipAddress)
 }
