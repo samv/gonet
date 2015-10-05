@@ -7,6 +7,8 @@ import (
 	"github.com/hsheth2/water"
 )
 
+const tapName = "tap0"
+
 type tapIO struct {
 	ifce    *water.Interface
 	readBuf chan []byte
@@ -19,6 +21,10 @@ func tapInit() *tapIO {
 	if err != nil {
 		logs.Error.Fatalln(err)
 	}
+	err = ifce.ifce.SetPersistent(true)
+	if err != nil {
+		logs.Warn.Println("Failed to make persistent:", err)
+	}
 	return ifce
 }
 
@@ -30,7 +36,7 @@ func newTapIO(ifname string) (*tapIO, error) {
 
 	tap := &tapIO{
 		ifce:    ifce,
-		readBuf: make(chan []byte, rxQUEUESIZE),
+		readBuf: make(chan []byte, rxQueueSize),
 	}
 
 	go tap.readAll()
@@ -71,7 +77,7 @@ func (tap *tapIO) readAll() {
 }
 
 func (tap *tapIO) readOnce() ([]byte, error) {
-	buf := make([]byte, maxFRAMESIZE)
+	buf := make([]byte, maxFrameSize)
 	ln, err := tap.ifce.Read(buf)
 	if err != nil {
 		return nil, err

@@ -20,7 +20,7 @@ func loInit() *loopbackIO {
 
 func newLoopbackIO() (*loopbackIO, error) {
 	lo := &loopbackIO{
-		readBuf: make(chan []byte, rxQUEUESIZE),
+		readBuf: make(chan []byte, rxQueueSize),
 	}
 
 	return lo, nil

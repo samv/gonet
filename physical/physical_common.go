@@ -10,6 +10,5 @@ const (
 	ExternalInternalIndex InternalIndex = 2
 )
 
-const tapName = "tap0"
-const rxQUEUESIZE = 5000
-const maxFRAMESIZE = 1526
+const rxQueueSize = 5000
+const maxFrameSize = 1526
