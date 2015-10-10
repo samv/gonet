@@ -2,8 +2,8 @@ package main
 
 import (
 	"fmt"
-	"network/tcp"
 	"network/ipv4"
+	"network/tcp"
 )
 
 func main() {
