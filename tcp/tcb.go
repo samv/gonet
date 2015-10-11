@@ -101,7 +101,6 @@ func (c *TCB) Send(data []byte) error { // a blocking send call
 }
 
 func (c *TCB) Recv(num uint64) ([]byte, error) { // blocking recv call TODO add timeout
-	// TODO check if conn is closed
 	c.pushSignal.L.Lock()
 	defer c.pushSignal.L.Unlock()
 	for {
@@ -113,7 +112,7 @@ func (c *TCB) Recv(num uint64) ([]byte, error) { // blocking recv call TODO add 
 			c.pushBuffer = c.pushBuffer[amt:]
 			return data, nil
 		}
-		if c.getState() == fsmClosed || c.getState() == fsmLastAck || c.getState() == fsmCloseWait {
+		if c.getState() == fsmClosed || c.getState() == fsmLastAck || c.getStat() == fsmCloseWait {
 			return nil, errors.New("Cannot reveive, losed")
 		}
 		//ch logs.Trace.Println(c.Hash(), "Waiting for push signal")
