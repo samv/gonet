@@ -1,9 +1,9 @@
 package main
 
 import (
+	"fmt"
 	"network/http"
 	"path/filepath"
-	"fmt"
 )
 
 func main() {

@@ -1,20 +1,21 @@
 package http
 
 import (
+	"errors"
 	"fmt"
+	"io/ioutil"
 	"network/ipv4"
 	"network/tcp"
-	"strings"
-	"errors"
-	"io/ioutil"
 	"path/filepath"
+	"strings"
 )
 
 type contentType string
+
 const (
-	html contentType = "html"
-	png = "png"
-	plain = "plain"
+	html  contentType = "html"
+	png               = "png"
+	plain             = "plain"
 )
 
 var base, _ = filepath.Abs("./static")
@@ -72,10 +73,10 @@ func respond(socket *tcp.TCB, request string) error {
 		}
 		return socket.Send(
 			append([]byte(
-				"HTTP/1.1 200 OK\r\n" +
-					"Content-Type: text/" + string(tp) + "\r\n" +
-					"Content-Length: " + fmt.Sprint(len(response)) + "\r\n" +
-					"Connection: close\r\n" +
+				"HTTP/1.1 200 OK\r\n"+
+					"Content-Type: text/"+string(tp)+"\r\n"+
+					"Content-Length: "+fmt.Sprint(len(response))+"\r\n"+
+					"Connection: close\r\n"+
 					"\r\n",
 			), response...),
 		)
