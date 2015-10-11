@@ -10,7 +10,7 @@ depend:
 	go get -u github.com/pkg/profile
 	go get -u github.com/hsheth2/water
 	go get -u github.com/hsheth2/water/waterutil
-	-go get -t -u ./...
+	-go get -t ./...
 build:
 	go clean ./...
 	go install ./...
@@ -20,6 +20,7 @@ clean:
 	-rm -f *.test
 	-rm -f *.cover
 	-rm -f *.html
+	-rm -f httpTest
 	go clean ./...
 setup:
 	-./tap_setup.sh
@@ -39,6 +40,9 @@ fmt:
 lint:
 	golint ./...
 
+# start documentation
+doc:
+	godoc -http=:6060
 
 # Different tests that could be run on the network's code
 test: test_others test_network

@@ -2,30 +2,30 @@ package main
 
 import (
 	"fmt"
-	"network/tcp"
 	"network/ipv4"
+	"network/tcp"
 )
 
 func main() {
 	server, err := tcp.NewServer()
 	if err != nil {
-		fmt.Println("derp", err)
+		fmt.Println("tcp server", err)
 		return
 	}
 	server.BindListen(80, ipv4.IPAll)
 	for {
 		socket, _, _, err := server.Accept()
 		if err != nil {
-			fmt.Println("Dank", err)
+			fmt.Println("tcp accept", err)
 			continue
 		}
 		request, err := socket.Recv(8000)
 		if err != nil {
-			fmt.Println("swag", err)
+			fmt.Println("socket recv", err)
 			continue
 		}
 		fmt.Println(request)
-		response := "Dank World m8"
+		response := "Hello World!"
 		socket.Send(
 			[]byte(
 				"HTTP/1.1 200 OK\r\n" +
@@ -37,7 +37,7 @@ func main() {
 		socket.Send([]byte(response))
 		err = socket.Close()
 		if err != nil {
-			fmt.Println("we done kiddos", err)
+			fmt.Println("socket close", err)
 			continue
 		}
 	}
