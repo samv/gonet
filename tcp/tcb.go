@@ -112,6 +112,10 @@ func (c *TCB) Recv(num uint64) ([]byte, error) { // blocking recv call TODO add 
 			c.pushBuffer = c.pushBuffer[amt:]
 			return data, nil
 		}
+		switch c.getState() {
+		case fsmClosed, fsmLastAck, fsmCloseWait:
+			return nil, errors.New("connection closed by remote; cannot receive")
+		}
 		//ch logs.Trace.Println(c.Hash(), "Waiting for push signal")
 		c.pushSignal.Wait() // wait for a push
 	}
