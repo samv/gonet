@@ -40,7 +40,7 @@ func TestWriteWater(t *testing.T) {
 		logs.Error.Fatalln(err)
 	}
 
-	//ch logs.Info.Println(input[:n])
+	logs.Info.Println(input[:n])
 }
 
 func TestReadWater(t *testing.T) {
@@ -52,17 +52,18 @@ func TestReadWater(t *testing.T) {
 
 	d := make([]byte, 1522)
 	for {
-		_, err := ifce.Read(d)
+		n, err := ifce.Read(d)
 		if err != nil {
 			logs.Error.Fatalln(err)
 		}
-		//ch logs.Info.Println("Got a packet:", packet)
+		packet := d[:n]
+		logs.Info.Println("Got a packet:", packet)
 		if waterutil.IsIPv4(d) {
-			//ch logs.Info.Printf("Source:      %v\n", waterutil.IPv4Source(packet))
-			//ch logs.Info.Printf("Destination: %v\n", waterutil.IPv4Destination(packet))
-			//ch logs.Info.Printf("Protocol:    %v\n", waterutil.IPv4Protocol(packet))
+			logs.Info.Printf("Source:      %v\n", waterutil.IPv4Source(packet))
+			logs.Info.Printf("Destination: %v\n", waterutil.IPv4Destination(packet))
+			logs.Info.Printf("Protocol:    %v\n", waterutil.IPv4Protocol(packet))
 			break
 		}
-		//ch logs.Info.Println("\n")
+		logs.Info.Print("\n\n")
 	}
 }
