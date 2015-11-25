@@ -16,6 +16,17 @@ type portManagerType struct {
 	lock      *sync.RWMutex
 }
 
+func (m *portManagerType) getUnusedPort() (uint16, error) {
+	for i := uint16(32768); i <= uint16(61000); i++ {
+		for k := range m.incoming {
+			if _, exists := incoming["foo"]; !exists {
+				return i, nil
+			}
+		}
+	}
+	return nil, errors.New("No ports available to bind to")
+}
+
 var portManager = func() *portManagerType { // TODO use an init function
 	ipr, err := ipv4.NewReader(ipv4.IPAll, ipv4.IPProtoTCP)
 	if err != nil {
