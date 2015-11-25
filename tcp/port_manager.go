@@ -1,6 +1,7 @@
 package tcp
 
 import (
+	"errors"
 	"fmt"
 	"network/ipv4"
 	"sync"
@@ -13,6 +14,15 @@ type portManagerType struct {
 	tcpReader ipv4.Reader
 	incoming  map[uint16](map[uint16](map[ipv4.Hash](chan *packet))) // dst, src port, remote ip
 	lock      *sync.RWMutex
+}
+
+func (m *portManagerType) GetUnusedPort() (uint16, error) {
+	for i := minPort; i <= maxPort; i++ {
+		if _, exists := m.incoming[i]; !exists {
+			return i, nil
+		}
+	}
+	return uint16(0), errors.New("No ports available to bind to")
 }
 
 var portManager = func() *portManagerType { // TODO use an init function
@@ -38,6 +48,11 @@ func (m *portManagerType) bind(rport, lport uint16, ip *ipv4.Address) (chan *pac
 
 	// lport is the local one here, rport is the remote
 	//ch logs.Info.Println("Attempting to bind to rport", rport, "lport", lport, "ip", ip.Hash())
+	//	lport, err := m.getUnusedPort()
+	//	if err != nil {
+	//		return nil, err
+	//	}
+
 	if _, ok := m.incoming[lport]; !ok {
 		m.incoming[lport] = make(map[uint16](map[ipv4.Hash](chan *packet)))
 	}

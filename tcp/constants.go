@@ -57,3 +57,8 @@ const ( // TODO use iota
 	flagEce      = 0x40
 	flagCwr      = 0x80
 )
+
+const (
+	minPort = uint16(32768)
+	maxPort = uint16(61000)
+)
