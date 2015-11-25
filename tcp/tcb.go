@@ -101,7 +101,7 @@ func (c *TCB) Send(data []byte) error { // a blocking send call
 	return nil
 }
 
-func (c *TCB) Recv(num uint64) ([]byte, error) { // blocking recv call TODO add timeout
+func (c *TCB) Recv(num int) ([]byte, error) { // blocking recv call TODO add timeout
 	c.pushSignal.L.Lock()
 	defer c.pushSignal.L.Unlock()
 	for {
