@@ -100,13 +100,13 @@ func (c *TCB) Send(data []byte) error { // a blocking send call
 	return nil
 }
 
-func (c *TCB) Recv(num uint64) ([]byte, error) { // blocking recv call TODO add timeout
+func (c *TCB) Recv(num int) ([]byte, error) { // blocking recv call TODO add timeout
 	c.pushSignal.L.Lock()
 	defer c.pushSignal.L.Unlock()
 	for {
 		//ch logs.Trace.Println(c.Hash(), "Attempting to read off of pushBuffer")
 		//ch logs.Trace.Println(c.Hash(), "Amt of data on pushBuffer:", len(c.pushBuffer))
-		amt := min(num, uint64(len(c.pushBuffer)))
+		amt := min(uint64(num), uint64(len(c.pushBuffer)))
 		if amt != 0 {
 			data := c.pushBuffer[:amt]
 			c.pushBuffer = c.pushBuffer[amt:]

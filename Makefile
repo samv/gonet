@@ -8,6 +8,7 @@ PKGS := $(shell go list ./...) # tr '\n' ' ' ?
 
 # Basic building
 install: clean setup depend build
+reinstall: clean setup build
 list:
 	@echo $(PKGS)
 
