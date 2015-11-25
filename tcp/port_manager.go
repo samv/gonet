@@ -1,6 +1,7 @@
 package tcp
 
 import (
+	"errors"
 	"fmt"
 	"sync"
 
@@ -16,15 +17,13 @@ type portManagerType struct {
 	lock      *sync.RWMutex
 }
 
-func (m *portManagerType) getUnusedPort() (uint16, error) {
-	for i := uint16(32768); i <= uint16(61000); i++ {
-		for k := range m.incoming {
-			if _, exists := incoming["foo"]; !exists {
-				return i, nil
-			}
+func (m *portManagerType) GetUnusedPort() (uint16, error) {
+	for i := minPort; i <= maxPort; i++ {
+		if _, exists := m.incoming[i]; !exists {
+			return i, nil
 		}
 	}
-	return nil, errors.New("No ports available to bind to")
+	return uint16(0), errors.New("No ports available to bind to")
 }
 
 var portManager = func() *portManagerType { // TODO use an init function
