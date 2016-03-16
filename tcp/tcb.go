@@ -122,6 +122,14 @@ func (c *TCB) Recv(num uint64) ([]byte, error) { // blocking recv call TODO add 
 	//return nil, errors.New("Read failed")
 }
 
+func (c *TCB) IsRemoteClosed() bool {
+	switch c.getState() {
+	case fsmClosed, fsmLastAck, fsmCloseWait, fsmTimeWait:
+		return true
+	}
+	return false;
+}
+
 func (c *TCB) Close() error {
 	//ch logs.Trace.Println(c.Hash(), "Closing TCB with lport:", c.lport)
 
