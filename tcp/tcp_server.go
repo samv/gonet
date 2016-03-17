@@ -52,10 +52,10 @@ func (s *Server) BindListenWithQueueSize(port uint16, ip *ipv4.Address, queueSiz
 }
 
 func (s *Server) longListener() {
-	//ch logs.Trace.Println("Server listener routine")
+	/*logs*/logs.Trace.Println("Server listener routine")
 	for {
 		in := <-s.listener
-		////ch logs.Trace.Println("Server rcvd packet:", in)
+		///*logs*/logs.Trace.Println("Server rcvd packet:", in)
 		if in.header.flags&flagRst != 0 {
 			continue // parent TCB drops the RST
 		} else if in.header.flags&flagAck != 0 {
@@ -64,7 +64,7 @@ func (s *Server) longListener() {
 			// TODO send reset
 		}
 
-		////ch logs.Trace.Println("Packet rcvd by server has promise: responding with SYN-ACK")
+		///*logs*/logs.Trace.Println("Packet rcvd by server has promise: responding with SYN-ACK")
 		go func(s *Server, in *packet) {
 			lp := s.listenPort
 			rp := in.header.srcport
@@ -94,7 +94,7 @@ func (s *Server) longListener() {
 
 			// send syn-ack
 			c.ackNum = in.header.seq + 1
-			//ch logs.Trace.Printf("%s Server/TCB seq: %d, ack: %d, to rip: %v\n", c.Hash(), c.seqNum, c.ackNum, c.ipAddress.IP)
+			/*logs*/logs.Trace.Printf("%s Server/TCB seq: %d, ack: %d, to rip: %v\n", c.hash(), c.seqNum, c.ackNum, c.ipAddress.IP)
 			synack := &packet{
 				header: &header{
 					seq:     c.seqNum,
@@ -110,13 +110,13 @@ func (s *Server) longListener() {
 			c.seqAckMutex.Lock()
 			c.seqNum += 1
 			c.seqAckMutex.Unlock()
-			//ch logs.Trace.Println(c.Hash(), "Server/TCB about to respond with SYN-ACK")
+			/*logs*/logs.Trace.Println(c.hash(), "Server/TCB about to respond with SYN-ACK")
 			err = c.sendWithRetransmit(synack)
 			if err != nil {
 				logs.Error.Println(err)
 				return
 			}
-			//ch logs.Trace.Println(c.Hash(), "Server/TCB responded with SYN-ACK")
+			/*logs*/logs.Trace.Println(c.hash(), "Server/TCB responded with SYN-ACK")
 
 			select {
 			case s.connQueue <- c:

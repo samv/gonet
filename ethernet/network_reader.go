@@ -39,7 +39,7 @@ func (ethr *ethernetReader) readAll() {
 			//Lmac:   &MAC_Address{Data: data[0:ETH_MAC_ADDR_SZ]},
 			Packet: data[ethHeaderSize:],
 		}
-		//			//ch logs.Info.Println("Beginning to forward ethernet packet")
+		//			/*logs*/logs.Info.Println("Beginning to forward ethernet packet")
 		select {
 		case ethr.processed <- ethHead:
 			//logs.Trace.Println("Forwarding ethernet packet")

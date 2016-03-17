@@ -33,12 +33,12 @@ func (lo *loopbackIO) getInput() chan []byte {
 // blocking write to loopback "interface"
 func (lo *loopbackIO) Write(data []byte) (int, error) {
 	lo.readBuf <- data
-	////ch logs.Info.Println("Finished loopback write")
+	///*logs*/logs.Info.Println("Finished loopback write")
 	return len(data), nil
 }
 
 func (lo *loopbackIO) Read() ([]byte, error) {
-	////ch logs.Trace.Println("read packet off network_tap")
+	///*logs*/logs.Trace.Println("read packet off network_tap")
 	return <-lo.readBuf, nil // TODO check if chan is closed
 }
 
