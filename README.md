@@ -1,3 +1,9 @@
-A network stack written in Go.
+# GoNet
 
-To generate the logs run `git log --graph --pretty=format:'%Cred%h%Creset -%C(yellow)%d%Creset %s %Cgreen(%ci) %C(bold blue)<%an>%Creset' --abbrev-commit | tac | python -c 'import sys; print "\n".join([x.strip("\n")[:15].replace("/", "lolxxx").replace("\\", "/").replace("lolxxx", "\\") + x.strip("\n")[15:] for x in sys.stdin.readlines()])' | aha > log.htm`
+A network stack written in Go with the CSP style.
+
+Warning: This project is still under development.
+
+## Contributors
+This project was created by [Harshal Sheth](https://github.com/hsheth2)
+and [Aashish Welling](https://github.com/omegablitz). 
