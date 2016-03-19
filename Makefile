@@ -41,6 +41,7 @@ lines:
 check: fmt lint vet errcheck
 
 fmt:
+	go get golang.org/x/tools/cmd/goimports
 	@echo "Formatting Files..."
 	goimports -l -w ./
 	@echo "Finished Formatting"
