@@ -1,7 +1,7 @@
 package arp
 
 import (
-	"network/ethernet"
+	"github.com/hsheth2/gonet/ethernet"
 
 	"github.com/hsheth2/notifiers"
 )

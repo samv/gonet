@@ -4,21 +4,22 @@ import (
 	"errors"
 	"fmt"
 	"io/ioutil"
-	"network/ipv4"
-	"network/tcp"
 	"path/filepath"
 	"strings"
+
+	"github.com/hsheth2/gonet/ipv4"
+	"github.com/hsheth2/gonet/tcp"
 )
 
 type contentType string
 
 const (
-	html  contentType = "text/html"
-	png               = "image/png"
-	plain             = "text/plain"
-	js                = "application/javascript"
-	css               = "text/css"
-	favicon           = "image/x-icon"
+	html    contentType = "text/html"
+	png                 = "image/png"
+	plain               = "text/plain"
+	js                  = "application/javascript"
+	css                 = "text/css"
+	favicon             = "image/x-icon"
 )
 
 const noCache = "Cache-Control: no-cache, no-store, must-revalidate\r\n" +
@@ -38,7 +39,7 @@ func getFile(file string) ([]byte, error) {
 }
 
 func fileType(filename string) contentType {
-	fmt.Println("filetype",strings.ToLower(filepath.Ext(filename)))
+	fmt.Println("filetype", strings.ToLower(filepath.Ext(filename)))
 	switch strings.ToLower(filepath.Ext(filename)) { // TODO more content types
 	case ".html":
 		return html
@@ -81,12 +82,12 @@ func respond(socket *tcp.TCB, request string) error {
 			response = []byte("not found\n")
 			socket.Send(
 				append([]byte(
-					"HTTP/1.1 404 Not Found\r\n" +
-					"Content-Type: text/plain\r\n" +
-					"Content-Length: "+fmt.Sprint(len(response))+"\r\n"+
-					noCache +
-					"Connection: close\r\n" +
-					"\r\n",
+					"HTTP/1.1 404 Not Found\r\n"+
+						"Content-Type: text/plain\r\n"+
+						"Content-Length: "+fmt.Sprint(len(response))+"\r\n"+
+						noCache+
+						"Connection: close\r\n"+
+						"\r\n",
 				), response...),
 			)
 			return fmt.Errorf("serve req (finding file): %s", err)
@@ -96,7 +97,7 @@ func respond(socket *tcp.TCB, request string) error {
 				"HTTP/1.1 200 OK\r\n"+
 					"Content-Type: "+string(tp)+"\r\n"+
 					"Content-Length: "+fmt.Sprint(len(response))+"\r\n"+
-					noCache +
+					noCache+
 					"Connection: close\r\n"+
 					"\r\n",
 			), response...),

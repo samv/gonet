@@ -41,6 +41,7 @@ lines:
 check: fmt lint vet errcheck
 
 fmt:
+	go get golang.org/x/tools/cmd/goimports
 	@echo "Formatting Files..."
 	goimports -l -w ./
 	@echo "Finished Formatting"
@@ -62,11 +63,11 @@ test_others:
 	./run_test.sh github.com/hsheth2/notifiers
 test_network: test_udp test_tcp test_ping
 test_udp:
-	./run_test.sh network/udp
+	./run_test.sh github.com/hsheth2/gonet/udp
 test_tcp:
-	./run_test.sh network/tcp
+	./run_test.sh github.com/hsheth2/gonet/tcp
 test_ping:
-	./run_test.sh network/ping
+	./run_test.sh github.com/hsheth2/gonet/ping
 test_tap:
 	# for testing water
-	./run_test.sh network/ethernet
+	./run_test.sh github.com/hsheth2/gonet/ethernet

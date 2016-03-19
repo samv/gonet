@@ -1,8 +1,7 @@
 package ethernet
 
 import (
-	"network/physical"
-	//"github.com/hsheth2/logs"
+	"github.com/hsheth2/gonet/physical"
 )
 
 type ethernetWriter struct {

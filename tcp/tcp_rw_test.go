@@ -2,9 +2,10 @@ package tcp
 
 import (
 	"fmt"
-	"network/ipv4"
 	"testing"
 	"time"
+
+	"github.com/hsheth2/gonet/ipv4"
 )
 
 func TestReadWriteLocal(t *testing.T) {

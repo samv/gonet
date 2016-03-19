@@ -2,7 +2,8 @@ package ethernet
 
 import (
 	"errors"
-	"network/physical"
+
+	"github.com/hsheth2/gonet/physical"
 
 	"github.com/hsheth2/logs"
 )

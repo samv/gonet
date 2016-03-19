@@ -29,7 +29,7 @@ func TestWriteWater(t *testing.T) {
 			if err != nil {
 				logs.Error.Fatalln(err)
 			}
-			/*logs*/logs.Info.Println("Write success")
+			/*logs*/ logs.Info.Println("Write success")
 			time.Sleep(20 * time.Millisecond)
 		}
 	}()
