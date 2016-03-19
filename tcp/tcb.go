@@ -44,7 +44,7 @@ type TCB struct {
 }
 
 func newTCB(local, remote uint16, dstIP *ipv4.Address, read chan *packet, write ipv4.Writer, kind tcbParentType) (*TCB, error) {
-	//ch logs.Trace.Println("New_TCB")
+	/*logs*/logs.Trace.Println("New_TCB")
 
 	seq, err := genRandSeqNum()
 	if err != nil {
@@ -80,7 +80,7 @@ func newTCB(local, remote uint16, dstIP *ipv4.Address, read chan *packet, write 
 		recentAckUpdate:  notifiers.NewNotifier(),
 		maxSegSize:       ipv4.IPMTU - basicHeaderSize,
 	}
-	////ch logs.Trace.Println("Starting the packet dealer")
+	///*logs*/logs.Trace.Println("Starting the packet dealer")
 
 	go c.packetSender()
 	go c.packetDealer()
@@ -104,22 +104,34 @@ func (c *TCB) Recv(num uint64) ([]byte, error) { // blocking recv call TODO add 
 	c.pushSignal.L.Lock()
 	defer c.pushSignal.L.Unlock()
 	for {
-		//ch logs.Trace.Println(c.Hash(), "Attempting to read off of pushBuffer")
-		//ch logs.Trace.Println(c.Hash(), "Amt of data on pushBuffer:", len(c.pushBuffer))
+		/*logs*/logs.Trace.Println(c.hash(), "Attempting to read off of pushBuffer")
+		/*logs*/logs.Trace.Println(c.hash(), "Amt of data on pushBuffer:", len(c.pushBuffer))
 		amt := min(num, uint64(len(c.pushBuffer)))
 		if amt != 0 {
 			data := c.pushBuffer[:amt]
 			c.pushBuffer = c.pushBuffer[amt:]
 			return data, nil
 		}
-		//ch logs.Trace.Println(c.Hash(), "Waiting for push signal")
+		switch c.getState() {
+		case fsmClosed, fsmLastAck, fsmCloseWait:
+			return nil, errors.New("connection closed by remote; cannot receive")
+		}
+		/*logs*/logs.Trace.Println(c.hash(), "Waiting for push signal")
 		c.pushSignal.Wait() // wait for a push
 	}
 	//return nil, errors.New("Read failed")
 }
 
+func (c *TCB) IsRemoteClosed() bool {
+	switch c.getState() {
+	case fsmClosed, fsmLastAck, fsmCloseWait, fsmTimeWait:
+		return true
+	}
+	return false;
+}
+
 func (c *TCB) Close() error {
-	//ch logs.Trace.Println(c.Hash(), "Closing TCB with lport:", c.lport)
+	/*logs*/logs.Trace.Println(c.hash(), "Closing TCB with lport:", c.lport)
 
 	// block all future sends
 	c.sendBufferUpdate.L.Lock()
@@ -127,17 +139,17 @@ func (c *TCB) Close() error {
 	c.sendBufferUpdate.L.Unlock()
 
 	if len(c.sendBuffer) != 0 {
-		//ch logs.Trace.Println(c.Hash(), "Blocking until all pending writes complete")
+		/*logs*/logs.Trace.Println(c.hash(), "Blocking until all pending writes complete")
 		c.sendFinished.Wait() // wait for send to finish
 	}
 
 	// update state for sending FIN packet
 	c.stateUpdate.L.Lock()
 	if c.state == fsmEstablished {
-		//ch logs.Trace.Println(c.Hash(), "Entering fin-wait-1")
+		/*logs*/logs.Trace.Println(c.hash(), "Entering fin-wait-1")
 		c.updateStateReal(fsmFinWait1)
 	} else if c.state == fsmCloseWait {
-		//ch logs.Trace.Println(c.Hash(), "Entering last ack")
+		/*logs*/logs.Trace.Println(c.hash(), "Entering last ack")
 		c.updateStateReal(fsmLastAck)
 	}
 	c.stateUpdate.L.Unlock()
@@ -148,7 +160,7 @@ func (c *TCB) Close() error {
 	c.recentAckUpdate.Broadcast(uint32(math.MaxUint32))
 
 	// send FIN
-	//ch logs.Trace.Println(c.Hash(), "Sending FIN within close")
+	/*logs*/logs.Trace.Println(c.hash(), "Sending FIN within close")
 	c.seqAckMutex.RLock()
 	c.sendFin(c.seqNum, c.ackNum)
 	c.seqAckMutex.RUnlock()
@@ -165,9 +177,9 @@ func (c *TCB) Close() error {
 		}
 		c.stateUpdate.Wait()
 	}
-	//ch logs.Trace.Printf("%s Close of TCB with lport %d finished", c.Hash(), c.lport)
+	/*logs*/logs.Trace.Printf("%s Close of TCB with lport %d finished", c.hash(), c.lport)
 
-	//ch logs.Trace.Println(c.Hash(), "Unbinding TCB")
+	/*logs*/logs.Trace.Println(c.hash(), "Unbinding TCB")
 	err := portManager.unbind(c.rport, c.lport, c.ipAddress)
 	if err != nil {
 		return err

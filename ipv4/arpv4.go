@@ -84,7 +84,7 @@ func (table *arpv4Table) Add(ip arp.ProtocolAddress, addr *ethernet.MACAddress) 
 	// 	return errors.New("Cannot overwrite existing entry")
 	// }
 	d := ip.(*Address)
-	// //ch logs.Trace.Printf("ARPv4 table: add: %v (%v)\n", addr.Data, *d)
+	// /*logs*/logs.Trace.Printf("ARPv4 table: add: %v (%v)\n", addr.Data, *d)
 	table.tableMutex.Lock()
 	table.table[d.Hash()] = addr
 	table.tableMutex.Unlock()

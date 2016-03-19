@@ -23,8 +23,8 @@ const defaultTimeToLive = 64
 
 // The MTU, or maximum transmission unit
 const (
-	//IPMTU = 1500
-	IPMTU = 65535 // TODO change back MTU for non-localhost stuff
+	IPMTU = 1500
+	//IPMTU = 65535 // TODO change back MTU for non-localhost stuff
 )
 
 const (

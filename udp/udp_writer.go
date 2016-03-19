@@ -40,7 +40,7 @@ func (c *writer) Write(x []byte) (int, error) {
 	data[6] = uint8(cksum >> 8)
 	data[7] = uint8(cksum)
 
-	////ch logs.Trace.Println("UDP Writing:", data)
+	///*logs*/logs.Trace.Println("UDP Writing:", data)
 	return c.writer.WriteTo(data)
 }
 

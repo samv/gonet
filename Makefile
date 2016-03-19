@@ -2,8 +2,15 @@
 
 SHELL = /bin/bash
 
+# Variables
+NAME := network
+PKGS := $(shell go list ./...) # tr '\n' ' ' ?
+
 # Basic building
 install: clean setup depend build
+list:
+	@echo $(PKGS)
+
 depend:
 	go get -u github.com/hsheth2/logs
 	go get -u github.com/hsheth2/notifiers
@@ -20,6 +27,7 @@ clean:
 	-rm -f *.test
 	-rm -f *.cover
 	-rm -f *.html
+	-rm -f httpTest
 	go clean ./...
 setup:
 	-./tap_setup.sh
@@ -30,15 +38,22 @@ lines:
 	find ./ -name '*.go' | xargs wc -l
 
 # Checks for style and errors
-vet:
-	go vet ./...
+check: fmt lint vet errcheck
+
 fmt:
 	@echo "Formatting Files..."
 	goimports -l -w ./
 	@echo "Finished Formatting"
+vet:
+	go vet ./...
 lint:
 	golint ./...
+errcheck:
+	errcheck $(PKGS)
 
+# start documentation
+doc:
+	godoc -http=:6060
 
 # Different tests that could be run on the network's code
 test: test_others test_network

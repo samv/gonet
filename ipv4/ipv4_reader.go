@@ -54,7 +54,7 @@ func (ipr *ipReader) readAll() {
 	for {
 		//fmt.Println("STARTING READ")
 		b := <-ipr.incomingPackets
-		//	//ch logs.Info.Println("Read IP packet")
+		//	/*logs*/logs.Info.Println("Read IP packet")
 		//fmt.Println("RAW READ COMPLETED")
 		//fmt.Println("Read Length: ", len(b))
 		//fmt.Print(".")

@@ -72,8 +72,8 @@ func (ipw *ipWriter) getID() uint16 {
 }
 
 func (ipw *ipWriter) WriteTo(p []byte) (int, error) {
-	////ch logs.Trace.Println("IP Preparing to Write:", p)
-	//	//ch logs.Info.Println("IPv4 WriteTo request")
+	///*logs*/logs.Trace.Println("IP Preparing to Write:", p)
+	//	/*logs*/logs.Info.Println("IPv4 WriteTo request")
 
 	header := make([]byte, ipw.headerLen)
 	header[0] = (byte)((ipw.version << 4) + (uint8)(ipw.headerLen/4)) // Version, IHL
@@ -124,7 +124,7 @@ func (ipw *ipWriter) WriteTo(p []byte) (int, error) {
 		var newPacket []byte
 		if len(p) <= maxFragSize*(i+1) {
 			newPacket = make([]byte, ipHeaderLength+len(p[maxPaySize*i:]))
-			////ch logs.Trace.Println("IP Writing Entire Packet:", p[maxPaySize*i:], "i:", i)
+			///*logs*/logs.Trace.Println("IP Writing Entire Packet:", p[maxPaySize*i:], "i:", i)
 			totalLen = uint16(ipw.headerLen) + uint16(len(p[maxPaySize*i:]))
 			//fmt.Println("Full Pack")
 			//fmt.Println("len", len(p[maxPaySize*i:]))
@@ -143,11 +143,11 @@ func (ipw *ipWriter) WriteTo(p []byte) (int, error) {
 
 			copy(newPacket[:ipHeaderLength], header)
 			copy(newPacket[ipHeaderLength:], p[maxPaySize*i:])
-			////ch logs.Trace.Println("Full Packet to Send in IPv4 Writer:", newPacket, "(len ", len(newPacket), ")")
+			///*logs*/logs.Trace.Println("Full Packet to Send in IPv4 Writer:", newPacket, "(len ", len(newPacket), ")")
 			//fmt.Println("CALCULATED LEN:", i*maxFragSize+len(p[maxPaySize*i:]))
 		} else {
 			newPacket = make([]byte, ipHeaderLength+len(p[maxPaySize*i:maxPaySize*(i+1)]))
-			////ch logs.Trace.Println("IP Writer Fragmenting Packet")
+			///*logs*/logs.Trace.Println("IP Writer Fragmenting Packet")
 			totalLen = uint16(ipw.headerLen) + uint16(len(p[maxPaySize*i:maxPaySize*(i+1)]))
 			//fmt.Println("Partial packet")
 			//fmt.Println("len", len(p[maxPaySize*i:maxPaySize*(i+1)]))
@@ -166,11 +166,11 @@ func (ipw *ipWriter) WriteTo(p []byte) (int, error) {
 
 			copy(newPacket[:ipHeaderLength], header)
 			copy(newPacket[ipHeaderLength:], p[maxPaySize*i:maxPaySize*(i+1)])
-			////ch logs.Trace.Println("Full Packet Frag to Send in IPv4 Writer:", newPacket, "(len ", len(newPacket), ")")
+			///*logs*/logs.Trace.Println("Full Packet Frag to Send in IPv4 Writer:", newPacket, "(len ", len(newPacket), ")")
 		}
 
 		// write the bytes
-		// //ch logs.Trace.Println("IP Writing:", newPacket)
+		// /*logs*/logs.Trace.Println("IP Writing:", newPacket)
 		_, err := ipw.nw.Write(newPacket)
 		if err != nil {
 			logs.Error.Println(err)

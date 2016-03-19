@@ -17,15 +17,15 @@ var protoBufs map[EtherType](*ethernetReader) // TODO protect with sync.Mutex
 func readAll() { // TODO terminate (using notifiers)
 	for {
 		data, err := readFrame()
-		// //ch logs.Info.Println("Recv ethernet packet")
+		// /*logs*/logs.Info.Println("Recv ethernet packet")
 		if err != nil {
 			// logs.Error.Println("ReadFrame failed:", err)
 			continue
 		}
-		// //ch logs.Trace.Println("network_reader readAll readFrame success")
+		// /*logs*/logs.Trace.Println("network_reader readAll readFrame success")
 
 		ethProto := EtherType(uint16(data[12])<<8 | uint16(data[13]))
-		// //ch logs.Trace.Println("Eth frame with protocol:", eth_protocol)
+		// /*logs*/logs.Trace.Println("Eth frame with protocol:", eth_protocol)
 		if c, ok := protoBufs[ethProto]; ok {
 			//logs.Trace.Println("Something binded to protocol:", eth_protocol)
 			//logs.Info.Println("Found that ethernet protocol is registered")

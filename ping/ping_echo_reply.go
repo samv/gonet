@@ -9,7 +9,7 @@ import (
 func (pm *Ping_Manager) ping_replier() {
 	for {
 		ping := <-pm.input
-		////ch logs.Info.Println("replying:", ping)
+		///*logs*/logs.Info.Println("replying:", ping)
 		go pm.respondTo(ping)
 	}
 }
@@ -25,7 +25,7 @@ func (pm *Ping_Manager) respondTo(ping *icmp.Packet) error {
 	}
 
 	// send
-	//	//ch logs.Info.Println("Send ping reply")
+	//	/*logs*/logs.Info.Println("Send ping reply")
 	err = icmp.SendPacket(writer, ping.Header)
 	if err != nil {
 		logs.Error.Println(err)

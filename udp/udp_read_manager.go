@@ -51,13 +51,13 @@ func (x *readManager) readAll() {
 		//fmt.Println(dst)
 
 		if len(header.Payload) < udpHeaderSize {
-			//ch logs.Info.Println("Dropping Small UDP packet:", payload)
+			/*logs*/logs.Info.Println("Dropping Small UDP packet:", header.Payload)
 			continue
 		}
 
 		headerLen := uint16(header.Payload[4])<<8 | uint16(header.Payload[5])
 		if !ipv4.VerifyTransportChecksum(header.Payload[:udpHeaderSize], header.Rip, header.Lip, headerLen, ipv4.IPProtoUDP) {
-			//ch logs.Info.Println("Dropping UDP Packet for bad checksum:", payload)
+			/*logs*/logs.Info.Println("Dropping UDP Packet for bad checksum:", header.Payload)
 			continue
 		}
 
@@ -77,12 +77,12 @@ func (x *readManager) readAll() {
 			}
 			select {
 			case output <- header.Payload:
-				//ch logs.Trace.Println("Forwarded UDP packet lport:", dst, "and rip:", rip.IP)
+				/*logs*/logs.Trace.Println("Forwarded UDP packet lport:", dst, "and rip:", header.Rip.IP)
 			default:
 				logs.Warn.Println("Dropping UDP packet: no space in buffer")
 			}
 		} else {
-			////ch logs.Info.Println("Dropping UDP packet:", payload)
+			///*logs*/logs.Info.Println("Dropping UDP packet:", payload)
 		}
 	}
 }

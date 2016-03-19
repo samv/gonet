@@ -57,7 +57,7 @@ func dealer() {
 			//logs.Trace.Println("ARP packet:", packet)
 			pd.Add(p.spa, p.sha)
 			if p.oper == operationRequest {
-				////ch logs.Trace.Println("Got ARP Request")
+				///*logs*/logs.Trace.Println("Got ARP Request")
 				if p.tpa.ARPEqual(pd.GetAddress()) {
 					reply := &packet{
 						htype: p.htype,
