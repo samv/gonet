@@ -2,8 +2,9 @@ package ipv4
 
 import (
 	"errors"
-	"network/arp"
-	"network/ethernet"
+
+	"github.com/hsheth2/gonet/arp"
+	"github.com/hsheth2/gonet/ethernet"
 
 	"sync"
 

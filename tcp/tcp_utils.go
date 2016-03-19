@@ -21,7 +21,7 @@ func (c *TCB) updateState(newState fsmState) {
 }
 
 func (c *TCB) updateStateReal(newState fsmState) {
-	/*logs*/logs.Trace.Println(c.hash(), "The New State is", newState)
+	/*logs*/ logs.Trace.Println(c.hash(), "The New State is", newState)
 	if c.state == fsmTimeWait && newState == fsmTimeWait {
 		//		select {
 		//		case c.timeWaitRestart <- true:
@@ -53,7 +53,7 @@ func (c *TCB) getWindow() uint16 {
 }
 
 func (c *TCB) updateLastAck(newAck uint32) error {
-	/*logs*/logs.Trace.Println(c.hash(), "New ack number:", newAck)
+	/*logs*/ logs.Trace.Println(c.hash(), "New ack number:", newAck)
 	c.recentAckNum = newAck
 	go c.recentAckUpdate.Broadcast(c.recentAckNum)
 	return nil
@@ -72,7 +72,7 @@ func (c *TCB) timeWaitTimer(restart chan bool) error {
 		c.updateState(fsmClosed)
 		return nil
 	case <-restart:
-		/*logs*/logs.Trace.Println(c.hash(), "Restarting timeWaitTimer")
+		/*logs*/ logs.Trace.Println(c.hash(), "Restarting timeWaitTimer")
 		return c.timeWaitTimer(restart)
 	}
 }

@@ -1,7 +1,7 @@
 package icmp
 
 import (
-	"network/ipv4"
+	"github.com/hsheth2/gonet/ipv4"
 )
 
 // Header represents an ICMP header

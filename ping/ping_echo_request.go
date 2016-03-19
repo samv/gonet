@@ -2,10 +2,11 @@ package ping
 
 import (
 	"bytes"
-	"network/icmp"
 	"time"
 
-	"network/ipv4"
+	"github.com/hsheth2/gonet/icmp"
+
+	"github.com/hsheth2/gonet/ipv4"
 
 	"github.com/hsheth2/logs"
 )
@@ -17,7 +18,7 @@ func (pm *Ping_Manager) ping_response_dealer() {
 		ping := <-pm.reply
 		identNum := uint16(ping.Header.Opt >> 16)
 		if _, ok := pm.identifiers[identNum]; !ok {
-			/*logs*/logs.Info.Println("Dropped something from response dealer, identnum=", identNum, "options=", ping.Header.Opt)
+			/*logs*/ logs.Info.Println("Dropped something from response dealer, identnum=", identNum, "options=", ping.Header.Opt)
 			continue
 		}
 		pm.identifiers[identNum] <- ping
@@ -43,7 +44,7 @@ func sendSinglePing(writer ipv4.Writer, id, seq uint16, timeout time.Duration, r
 			select {
 			case pingResonse := <-seqChan:
 				if !bytes.Equal(pingResonse.Header.Data, header.Data) {
-					/*logs*/logs.Info.Println("Dropped packet because header data not equal to ping sent")
+					/*logs*/ logs.Info.Println("Dropped packet because header data not equal to ping sent")
 					continue
 				}
 				time2 := time.Now()
@@ -89,7 +90,7 @@ func sequenceDealer(idInput chan *icmp.Packet, seqChan map[uint16](chan *icmp.Pa
 			if _, ok := seqChan[seqNum]; ok { // FIXME data race
 				seqChan[seqNum] <- packet
 			} else {
-				/*logs*/logs.Info.Println("Dropping bad seq num packet with existing identifier")
+				/*logs*/ logs.Info.Println("Dropping bad seq num packet with existing identifier")
 			}
 		}
 	}

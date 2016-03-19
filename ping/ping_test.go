@@ -6,7 +6,7 @@ import (
 
 	"github.com/hsheth2/logs"
 
-	"network/ipv4"
+	"github.com/hsheth2/gonet/ipv4"
 )
 
 func ping_tester(t *testing.T, ip *ipv4.Address, num uint16) {

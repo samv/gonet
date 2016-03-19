@@ -3,7 +3,8 @@ package udp
 import (
 	"errors"
 	"fmt"
-	"network/ipv4"
+
+	"github.com/hsheth2/gonet/ipv4"
 
 	"github.com/hsheth2/logs"
 )
@@ -51,13 +52,13 @@ func (x *readManager) readAll() {
 		//fmt.Println(dst)
 
 		if len(header.Payload) < udpHeaderSize {
-			/*logs*/logs.Info.Println("Dropping Small UDP packet:", header.Payload)
+			/*logs*/ logs.Info.Println("Dropping Small UDP packet:", header.Payload)
 			continue
 		}
 
 		headerLen := uint16(header.Payload[4])<<8 | uint16(header.Payload[5])
 		if !ipv4.VerifyTransportChecksum(header.Payload[:udpHeaderSize], header.Rip, header.Lip, headerLen, ipv4.IPProtoUDP) {
-			/*logs*/logs.Info.Println("Dropping UDP Packet for bad checksum:", header.Payload)
+			/*logs*/ logs.Info.Println("Dropping UDP Packet for bad checksum:", header.Payload)
 			continue
 		}
 
@@ -77,7 +78,7 @@ func (x *readManager) readAll() {
 			}
 			select {
 			case output <- header.Payload:
-				/*logs*/logs.Trace.Println("Forwarded UDP packet lport:", dst, "and rip:", header.Rip.IP)
+				/*logs*/ logs.Trace.Println("Forwarded UDP packet lport:", dst, "and rip:", header.Rip.IP)
 			default:
 				logs.Warn.Println("Dropping UDP packet: no space in buffer")
 			}

@@ -2,7 +2,8 @@ package tcp
 
 import (
 	"errors"
-	"network/ipv4"
+
+	"github.com/hsheth2/gonet/ipv4"
 
 	"github.com/hsheth2/logs"
 )
@@ -24,7 +25,7 @@ func NewClient(local, remote uint16, dstIP *ipv4.Address) (*Client, error) {
 		return nil, err
 	}
 
-	/*logs*/logs.Trace.Println("Finished New TCB from Client")
+	/*logs*/ logs.Trace.Println("Finished New TCB from Client")
 	tcb, err := newTCB(local, remote, dstIP, read, r, clientParent)
 	if err != nil {
 		return nil, err
@@ -58,10 +59,10 @@ func (c *Client) Connect() (*TCB, error) {
 	c.tcb.seqNum += 1
 
 	// Send the SYN packet
-	/*logs*/logs.Trace.Println(c.tcb.hash(), "About to send syn")
+	/*logs*/ logs.Trace.Println(c.tcb.hash(), "About to send syn")
 	c.tcb.updateState(fsmSynSent)
 	go c.tcb.sendWithRetransmit(SYN)
-	/*logs*/logs.Trace.Println(c.tcb.hash(), "Sent SYN")
+	/*logs*/ logs.Trace.Println(c.tcb.hash(), "Sent SYN")
 
 	// wait for the connection to be established
 	c.tcb.stateUpdate.L.Lock()

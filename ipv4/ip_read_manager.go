@@ -2,7 +2,8 @@ package ipv4
 
 import (
 	"errors"
-	"network/ethernet"
+
+	"github.com/hsheth2/gonet/ethernet"
 
 	"github.com/hsheth2/logs"
 )
