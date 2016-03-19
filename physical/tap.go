@@ -56,7 +56,7 @@ func (tap *tapIO) Write(data []byte) (n int, err error) {
 	if len(data) != n {
 		return n, errors.New("ifce failed to write all data")
 	}
-	////ch logs.Info.Println("Finished write")
+	///*logs*/logs.Info.Println("Finished write")
 	return n, nil
 }
 
@@ -68,7 +68,7 @@ func (tap *tapIO) readAll() {
 		}
 		select {
 		case tap.readBuf <- rx:
-			////ch logs.Trace.Println("Forwarded packet in readAll")
+			///*logs*/logs.Trace.Println("Forwarded packet in readAll")
 		default:
 			logs.Warn.Println("Dropped packet in Network_Tap readAll")
 			continue
@@ -82,12 +82,12 @@ func (tap *tapIO) readOnce() ([]byte, error) {
 	if err != nil {
 		return nil, err
 	}
-	////ch logs.Trace.Println("readOnce:", buf[:ln])
+	///*logs*/logs.Trace.Println("readOnce:", buf[:ln])
 	return buf[:ln], nil
 }
 
 func (tap *tapIO) Read() ([]byte, error) {
-	////ch logs.Trace.Println("read packet off network_tap")
+	///*logs*/logs.Trace.Println("read packet off network_tap")
 	return <-tap.readBuf, nil
 }
 

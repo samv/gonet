@@ -49,10 +49,10 @@ func readAll() {
 			logs.Error.Println(err)
 			continue
 		}
-		////ch logs.Info.Println("Pay", payload, "rip", rip, "lip", lip)
+		///*logs*/logs.Info.Println("Pay", payload, "rip", rip, "lip", lip)
 
 		if len(header.Payload) < HeaderMinSize {
-			//ch logs.Info.Println("Dropping Small ICMP packet:", payload)
+			/*logs*/logs.Info.Println("Dropping Small ICMP packet:", header.Payload)
 			continue
 		}
 
@@ -60,14 +60,14 @@ func readAll() {
 		// TODO verify checksum
 		data, err := extractHeader(header.Payload, header.Lip, header.Lip)
 		if err != nil {
-			//ch logs.Info.Println(err)
+			/*logs*/logs.Info.Println(err)
 			continue
 		}
 
 		if buf, ok := buffers[data.Header.Tp]; ok {
 			buf <- data
 		} else {
-			//ch logs.Info.Println("Dropping ICMP packet:", payload)
+			/*logs*/logs.Info.Println("Dropping ICMP packet:", header.Payload)
 		}
 	}
 }

@@ -14,7 +14,7 @@ type ethernetWriter struct {
 // NewEthernetWriter allows for the writing to a given MAC Address and EtherType
 func NewEthernetWriter(dstMAC *MACAddress, ethertype EtherType) (Writer, error) {
 	index := getInternalIndex(dstMAC)
-	//	//ch logs.Info.Println("Found internal index")
+	//	/*logs*/logs.Info.Println("Found internal index")
 	srcMAC, err := globalSourceMACTable.search(index)
 	if err != nil {
 		return nil, err
@@ -31,10 +31,10 @@ func NewEthernetWriter(dstMAC *MACAddress, ethertype EtherType) (Writer, error) 
 // Write is a blocking write call
 func (nw *ethernetWriter) Write(data []byte) (int, error) {
 	// build the ethernet header
-	//	//ch logs.Info.Println("Ethernet write request")
+	//	/*logs*/logs.Info.Println("Ethernet write request")
 	packet := make([]byte, ethHeaderSize+len(data))
 
-	//	//ch logs.Info.Println("Finished ARP lookup stuff")
+	//	/*logs*/logs.Info.Println("Finished ARP lookup stuff")
 	copy(packet, nw.dstMAC.Data[:ethMACAddressSize])
 	copy(packet[ethMACAddressSize:], nw.srcMAC.Data[:ethMACAddressSize])
 	packet[2*ethMACAddressSize] = byte(nw.ethertype >> 8)

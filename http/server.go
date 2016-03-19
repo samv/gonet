@@ -13,10 +13,17 @@ import (
 type contentType string
 
 const (
-	html  contentType = "html"
-	png               = "png"
-	plain             = "plain"
+	html  contentType = "text/html"
+	png               = "image/png"
+	plain             = "text/plain"
+	js                = "application/javascript"
+	css               = "text/css"
+	favicon           = "image/x-icon"
 )
+
+const noCache = "Cache-Control: no-cache, no-store, must-revalidate\r\n" +
+	"Pragma: no-cache\r\n" +
+	"Expires: 0\r\n"
 
 var base, _ = filepath.Abs("./static")
 
@@ -31,11 +38,18 @@ func getFile(file string) ([]byte, error) {
 }
 
 func fileType(filename string) contentType {
+	fmt.Println("filetype",strings.ToLower(filepath.Ext(filename)))
 	switch strings.ToLower(filepath.Ext(filename)) { // TODO more content types
-	case "html":
+	case ".html":
 		return html
-	case "png":
+	case ".png":
 		return png
+	case ".js":
+		return js
+	case ".css":
+		return css
+	case ".ico":
+		return favicon
 	default:
 		return plain
 	}
@@ -64,18 +78,25 @@ func respond(socket *tcp.TCB, request string) error {
 		fmt.Println(file)
 		response, tp, err := serveReq(file)
 		if err != nil {
+			response = []byte("not found\n")
 			socket.Send(
-				[]byte("HTTP/1.1 404 Not Found\r\n" +
+				append([]byte(
+					"HTTP/1.1 404 Not Found\r\n" +
 					"Content-Type: text/plain\r\n" +
-					"Content-Length:10\r\n" + "\r\n" +
-					"not found\n"))
+					"Content-Length: "+fmt.Sprint(len(response))+"\r\n"+
+					noCache +
+					"Connection: close\r\n" +
+					"\r\n",
+				), response...),
+			)
 			return fmt.Errorf("serve req (finding file): %s", err)
 		}
 		return socket.Send(
 			append([]byte(
 				"HTTP/1.1 200 OK\r\n"+
-					"Content-Type: text/"+string(tp)+"\r\n"+
+					"Content-Type: "+string(tp)+"\r\n"+
 					"Content-Length: "+fmt.Sprint(len(response))+"\r\n"+
+					noCache +
 					"Connection: close\r\n"+
 					"\r\n",
 			), response...),
@@ -107,8 +128,14 @@ func connDealer(socket *tcp.TCB) {
 	for {
 		data, err := socket.Recv(8192) // 8kB
 		if err != nil {
-			fmt.Println("socket recv", err)
-			return
+			if socket.IsRemoteClosed() {
+				fmt.Println("Remote closed connection: closing socket")
+				socket.Close()
+				return
+			} else {
+				fmt.Println("socket recv", err)
+				return
+			}
 		}
 		buffer = buffer + string(data)
 		//fmt.Println(buffer)

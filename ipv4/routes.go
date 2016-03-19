@@ -97,9 +97,9 @@ func (table *RoutingTable) Query(dst *Address) (src *Address) {
 	if len(table.table) == 0 {
 		logs.Error.Fatalln("sipt Query: no entries in table")
 	}
-	//	//ch logs.Trace.Println("Query:", "table:", sipt.table, "len:", len(sipt.table))
+	//	/*logs*/logs.Trace.Println("Query:", "table:", sipt.table, "len:", len(sipt.table))
 	for _, base := range table.table {
-		//		//ch logs.Trace.Println("Trying query:", base, "compared to", dst)
+		//		/*logs*/logs.Trace.Println("Trying query:", base, "compared to", dst)
 		if ipCompare(base, dst, ipv4DefaultNetmask) { // TODO determine netmask dynamically
 			return base
 		}

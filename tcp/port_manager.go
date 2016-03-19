@@ -47,7 +47,7 @@ func (m *portManagerType) bind(rport, lport uint16, ip *ipv4.Address) (chan *pac
 	defer m.lock.Unlock()
 
 	// lport is the local one here, rport is the remote
-	//ch logs.Info.Println("Attempting to bind to rport", rport, "lport", lport, "ip", ip.Hash())
+	/*logs*/logs.Info.Println("Attempting to bind to rport", rport, "lport", lport, "ip", ip.Hash())
 	//	lport, err := m.getUnusedPort()
 	//	if err != nil {
 	//		return nil, err
@@ -78,7 +78,7 @@ func (m *portManagerType) unbind(rport, lport uint16, ip *ipv4.Address) error {
 
 	// TODO verify that it actually won't crash
 	close(m.incoming[lport][rport][ip.Hash()])
-	//ch logs.Trace.Println("Closing the packetdealer channel")
+	/*logs*/logs.Trace.Println("Closing the packetdealer channel")
 	delete(m.incoming[lport][rport], ip.Hash())
 	return nil
 }
@@ -113,18 +113,18 @@ func (m *portManagerType) readDeal(rip, lip *ipv4.Address, payload []byte) error
 
 	m.lock.RLock()
 	defer m.lock.RUnlock()
-	////ch logs.Trace.Printf("readAll tcp packet manager dealing with packet or rport: %d and lport %d", rport, lport)
+	///*logs*/logs.Trace.Printf("readAll tcp packet manager dealing with packet or rport: %d and lport %d", rport, lport)
 	if _, ok := m.incoming[lport]; ok {
-		////ch logs.Trace.Printf("readAll: promising packet rport: %d and lport %d", rport, lport)
+		///*logs*/logs.Trace.Printf("readAll: promising packet rport: %d and lport %d", rport, lport)
 		if p, ok := m.incoming[lport][rport]; ok {
-			////ch logs.Trace.Println("readAll: exact port number match")
+			///*logs*/logs.Trace.Println("readAll: exact port number match")
 			if x, ok := p[rip.Hash()]; ok {
 				output = x
 			} else if x, ok := p[ipv4.IPAllHash]; ok {
 				output = x
 			}
 		} else if p, ok := m.incoming[lport][0]; ok {
-			////ch logs.Trace.Println("readAll: forwarding to a listening server")
+			///*logs*/logs.Trace.Println("readAll: forwarding to a listening server")
 			if x, ok := p[ipv4.IPAllHash]; ok {
 				output = x
 			} else if x, ok := p[rip.Hash()]; ok {
