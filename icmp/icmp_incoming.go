@@ -2,7 +2,8 @@ package icmp
 
 import (
 	"errors"
-	"network/ipv4"
+
+	"github.com/hsheth2/gonet/ipv4"
 
 	"github.com/hsheth2/logs"
 )
@@ -52,7 +53,7 @@ func readAll() {
 		///*logs*/logs.Info.Println("Pay", payload, "rip", rip, "lip", lip)
 
 		if len(header.Payload) < HeaderMinSize {
-			/*logs*/logs.Info.Println("Dropping Small ICMP packet:", header.Payload)
+			/*logs*/ logs.Info.Println("Dropping Small ICMP packet:", header.Payload)
 			continue
 		}
 
@@ -60,14 +61,14 @@ func readAll() {
 		// TODO verify checksum
 		data, err := extractHeader(header.Payload, header.Lip, header.Lip)
 		if err != nil {
-			/*logs*/logs.Info.Println(err)
+			/*logs*/ logs.Info.Println(err)
 			continue
 		}
 
 		if buf, ok := buffers[data.Header.Tp]; ok {
 			buf <- data
 		} else {
-			/*logs*/logs.Info.Println("Dropping ICMP packet:", header.Payload)
+			/*logs*/ logs.Info.Println("Dropping ICMP packet:", header.Payload)
 		}
 	}
 }

@@ -1,7 +1,7 @@
 package ping
 
 import (
-	"network/icmp"
+	"github.com/hsheth2/gonet/icmp"
 
 	"github.com/hsheth2/logs"
 )

@@ -2,8 +2,9 @@ package tcp
 
 import (
 	"errors"
-	"network/ipv4"
 	"sync"
+
+	"github.com/hsheth2/gonet/ipv4"
 
 	"github.com/hsheth2/logs"
 )
@@ -52,7 +53,7 @@ func (s *Server) BindListenWithQueueSize(port uint16, ip *ipv4.Address, queueSiz
 }
 
 func (s *Server) longListener() {
-	/*logs*/logs.Trace.Println("Server listener routine")
+	/*logs*/ logs.Trace.Println("Server listener routine")
 	for {
 		in := <-s.listener
 		///*logs*/logs.Trace.Println("Server rcvd packet:", in)
@@ -94,7 +95,7 @@ func (s *Server) longListener() {
 
 			// send syn-ack
 			c.ackNum = in.header.seq + 1
-			/*logs*/logs.Trace.Printf("%s Server/TCB seq: %d, ack: %d, to rip: %v\n", c.hash(), c.seqNum, c.ackNum, c.ipAddress.IP)
+			/*logs*/ logs.Trace.Printf("%s Server/TCB seq: %d, ack: %d, to rip: %v\n", c.hash(), c.seqNum, c.ackNum, c.ipAddress.IP)
 			synack := &packet{
 				header: &header{
 					seq:     c.seqNum,
@@ -110,13 +111,13 @@ func (s *Server) longListener() {
 			c.seqAckMutex.Lock()
 			c.seqNum += 1
 			c.seqAckMutex.Unlock()
-			/*logs*/logs.Trace.Println(c.hash(), "Server/TCB about to respond with SYN-ACK")
+			/*logs*/ logs.Trace.Println(c.hash(), "Server/TCB about to respond with SYN-ACK")
 			err = c.sendWithRetransmit(synack)
 			if err != nil {
 				logs.Error.Println(err)
 				return
 			}
-			/*logs*/logs.Trace.Println(c.hash(), "Server/TCB responded with SYN-ACK")
+			/*logs*/ logs.Trace.Println(c.hash(), "Server/TCB responded with SYN-ACK")
 
 			select {
 			case s.connQueue <- c:

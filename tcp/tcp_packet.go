@@ -2,7 +2,8 @@ package tcp
 
 import (
 	"errors"
-	"network/ipv4"
+
+	"github.com/hsheth2/gonet/ipv4"
 )
 
 type packet struct {

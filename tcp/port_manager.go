@@ -2,8 +2,9 @@ package tcp
 
 import (
 	"fmt"
-	"network/ipv4"
 	"sync"
+
+	"github.com/hsheth2/gonet/ipv4"
 
 	"github.com/hsheth2/logs"
 )
@@ -37,7 +38,7 @@ func (m *portManagerType) bind(rport, lport uint16, ip *ipv4.Address) (chan *pac
 	defer m.lock.Unlock()
 
 	// lport is the local one here, rport is the remote
-	/*logs*/logs.Info.Println("Attempting to bind to rport", rport, "lport", lport, "ip", ip.Hash())
+	/*logs*/ logs.Info.Println("Attempting to bind to rport", rport, "lport", lport, "ip", ip.Hash())
 	if _, ok := m.incoming[lport]; !ok {
 		m.incoming[lport] = make(map[uint16](map[ipv4.Hash](chan *packet)))
 	}
@@ -63,7 +64,7 @@ func (m *portManagerType) unbind(rport, lport uint16, ip *ipv4.Address) error {
 
 	// TODO verify that it actually won't crash
 	close(m.incoming[lport][rport][ip.Hash()])
-	/*logs*/logs.Trace.Println("Closing the packetdealer channel")
+	/*logs*/ logs.Trace.Println("Closing the packetdealer channel")
 	delete(m.incoming[lport][rport], ip.Hash())
 	return nil
 }

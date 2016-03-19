@@ -1,7 +1,7 @@
 package udp
 
 import (
-	"network/ipv4"
+	"github.com/hsheth2/gonet/ipv4"
 )
 
 type reader struct {

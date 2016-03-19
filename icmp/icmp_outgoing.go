@@ -1,7 +1,7 @@
 package icmp
 
 import (
-	"network/ipv4"
+	"github.com/hsheth2/gonet/ipv4"
 )
 
 // SendPacket sends an ICMP packet to on a given writer

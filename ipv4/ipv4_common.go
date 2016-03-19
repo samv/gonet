@@ -2,7 +2,6 @@ package ipv4
 
 import (
 	"time"
-	//"github.com/hsheth2/logs"
 )
 
 // IPv4 Protocols

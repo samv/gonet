@@ -2,10 +2,11 @@ package udp
 
 import (
 	"fmt"
-	"network/ipv4"
 	"os/exec"
 	"testing"
 	"time"
+
+	"github.com/hsheth2/gonet/ipv4"
 )
 
 const port = 20412
