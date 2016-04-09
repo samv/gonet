@@ -6,11 +6,11 @@
 if [ -d "~/tapip-primes" ]; then
   echo 'exit' | sudo ~/tapip-primes/tapip
 else
-  set -e
-  git clone https://hsheth2@bitbucket.org/primesteam/tapip.git
+  if [ ! -d "tapip" ]; then
+      git clone https://github.com/hsheth2/tapip.git
+  fi
   cd tapip
   make
+  set -e
   echo 'exit' | sudo ./tapip
-  cd ..
-  rm -rf tapip/
 fi
