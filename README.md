@@ -2,6 +2,8 @@
 
 A network stack written in Go with the CSP style.
 
+Note: This project only works on linux machines (because of its dependency on the tap device). 
+
 Warning: This project is still under development.
 
 ## Contributors

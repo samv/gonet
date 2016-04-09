@@ -9,4 +9,6 @@ auto-full.sh
 *.orig
 *.out
 *.log
+
 httpTest
+tapip
