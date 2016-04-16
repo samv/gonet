@@ -1,4 +1,8 @@
 # GoNet
+[![GoDoc](https://godoc.org/github.com/hsheth2/gonet?status.svg)](https://godoc.org/github.com/hsheth2/gonet)
+[![Go Report Card](https://goreportcard.com/badge/github.com/hsheth2/gonet)](https://goreportcard.com/report/github.com/hsheth2/gonet)
+[![Code Climate](https://codeclimate.com/github/hsheth2/gonet/badges/gpa.svg)](https://codeclimate.com/github/hsheth2/gonet)
+[![License](http://img.shields.io/:license-MIT-blue.svg)](http://www.opensource.org/licenses/MIT)
 
 A network stack written in Go with the CSP style.
 
