@@ -32,7 +32,7 @@ func (ethr *ethernetReader) readAll() {
 	for {
 		//logs.Trace.Println("Ethernet reader attempting to get work")
 		data := <-ethr.input
-		//logs.Trace.Println("Ethernet reader recieved packet")
+		//logs.Trace.Println("Ethernet reader received packet")
 
 		ethHead := &FrameHeader{
 			//Rmac: &MAC_Address{Data: data[ETH_MAC_ADDR_SZ : 2*ETH_MAC_ADDR_SZ]},
