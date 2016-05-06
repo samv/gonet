@@ -59,8 +59,12 @@ func Bind(proto EtherType) (Reader, error) {
 
 // Unbind allows clients to unbind from specific EtherTypes
 func Unbind(proto EtherType) error {
-	// TODO write the unbind ethernet proto function
-	return nil
+	_, exists := protoBufs[proto]
+	if exists {
+		delete(protoBufs, proto)
+		return nil
+	}
+	return errors.New("That protocol is not bound!")
 }
 
 func readFrame() (d []byte, err error) {
