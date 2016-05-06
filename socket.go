@@ -1,6 +1,6 @@
-package network
+package gonet
 
-import (
+/*import (
 	"github.com/hsheth2/gonet/ipv4"
 	"github.com/hsheth2/gonet/tcp"
 	"sync"
@@ -169,3 +169,4 @@ func socketUDP() (Socket, error) {
 	// TODO finish UDP socket
 	return nil, nil
 }
+*/
