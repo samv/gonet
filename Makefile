@@ -29,6 +29,7 @@ clean:
 	-rm -f *.cover
 	-rm -f *.html
 	-rm -f httpTest
+	-rm -rf tapip
 	go clean ./...
 setup:
 	-./tap_setup.sh
