@@ -18,6 +18,7 @@ depend:
 	go get -u github.com/pkg/profile
 	go get -u github.com/hsheth2/water
 	go get -u github.com/hsheth2/water/waterutil
+	go get golang.org/x/tools/cmd/...
 	-go get -t ./...
 build:
 	go clean ./...
@@ -43,7 +44,6 @@ lines:
 check: fmt lint vet errcheck
 
 fmt:
-	go get golang.org/x/tools/cmd/goimports
 	@echo "Formatting Files..."
 	goimports -l -w ./
 	@echo "Finished Formatting"
