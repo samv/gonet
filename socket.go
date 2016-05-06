@@ -1,8 +1,8 @@
 package network
 
 import (
-	"network/ipv4"
-	"network/tcp"
+	"github.com/hsheth2/gonet/ipv4"
+	"github.com/hsheth2/gonet/tcp"
 	"sync"
 )
 
