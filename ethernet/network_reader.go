@@ -55,8 +55,11 @@ func (ethr *ethernetReader) Read() (*FrameHeader, error) {
 }
 
 func (ethr *ethernetReader) Close() error {
-	// TODO unbind
-	// TODO close input channel
-	// TODO close output channel
+	err := Unbind(ethr.ethertype)
+	if err != nil {
+		return err
+	}
+	close(ethr.input)
+	close(ethr.processed)
 	return nil
 }
