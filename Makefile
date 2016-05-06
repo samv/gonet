@@ -8,6 +8,7 @@ PKGS := $(shell go list ./...) # tr '\n' ' ' ?
 
 # Basic building
 install: clean setup depend build
+reinstall: clean setup build
 list:
 	@echo $(PKGS)
 
@@ -28,6 +29,7 @@ clean:
 	-rm -f *.cover
 	-rm -f *.html
 	-rm -f httpTest
+	-rm -rf tapip
 	go clean ./...
 setup:
 	-./tap_setup.sh
