@@ -97,7 +97,7 @@ func sequenceDealer(idInput chan *icmp.Packet, seqChan map[uint16](chan *icmp.Pa
 	}
 }
 
-const FLOOD_INTERVAL = 0
+const FLOOD_INTERVAL = 0 // TODO add a flood option
 
 func (pm *Ping_Manager) SendPing(ip *ipv4.Address, interval, timeout time.Duration, numPings uint16) error {
 	terminate := make(chan bool)
