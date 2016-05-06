@@ -40,6 +40,7 @@ func sendSinglePing(writer ipv4.Writer, id, seq uint16, timeout time.Duration, r
 	time1 := time.Now()
 	timeoutTimer := time.NewTimer(timeout)
 	go func(seqChan chan *icmp.Packet, header *icmp.Header, time1 *time.Time, timer *time.Timer) {
+		defer close(seqChan)
 		for {
 			select {
 			case pingResonse := <-seqChan:
