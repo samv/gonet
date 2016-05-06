@@ -57,8 +57,8 @@ doc:
 	godoc -http=:6060
 
 # Different tests that could be run on the network's code
-test: test_others test_network
-test_others:
+test: test_network
+test_deps:
 	./run_test.sh github.com/hsheth2/logs
 	./run_test.sh github.com/hsheth2/notifiers
 test_network: test_udp test_tcp test_ping
@@ -70,4 +70,4 @@ test_ping:
 	./run_test.sh github.com/hsheth2/gonet/ping
 test_tap:
 	# for testing water
-	./run_test.sh github.com/hsheth2/gonet/ethernet
+	./run_test.sh github.com/hsheth2/gonet/physical
