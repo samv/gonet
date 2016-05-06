@@ -43,15 +43,15 @@ func sendSinglePing(writer ipv4.Writer, id, seq uint16, timeout time.Duration, r
 		defer close(seqChan)
 		for {
 			select {
-			case pingResonse := <-seqChan:
-				if !bytes.Equal(pingResonse.Header.Data, header.Data) {
+			case pingResponse := <-seqChan:
+				if !bytes.Equal(pingResponse.Header.Data, header.Data) {
 					/*logs*/ logs.Info.Println("Dropped packet because header data not equal to ping sent")
 					continue
 				}
 				time2 := time.Now()
 				logs.Info.Printf("%d bytes from %v: icmp_seq=%d time=%f ms",
 					len(header.Data)+icmp.HeaderMinSize,
-					pingResonse.RIP.IP,
+					pingResponse.RIP.IP,
 					uint16(header.Opt),
 					float32(time2.Sub(*time1).Nanoseconds())/1000000) // put ttl
 				return
