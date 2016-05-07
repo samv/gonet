@@ -1,13 +1,9 @@
 sudo: required
 
-language: go
-
 services:
   - docker
 
 before_install:
+  - docker pull golang:1.6
   - docker build -t gonet-linux .
   - docker run --privileged -v `pwd`:/go/src/github.com/hsheth2/gonet gonet-linux:latest /bin/bash -c "cd /go/src/github.com/hsheth2/gonet && make && make test"
-
-script:
-  - make && make test
