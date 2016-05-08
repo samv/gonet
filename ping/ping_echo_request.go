@@ -9,6 +9,7 @@ import (
 	"github.com/hsheth2/gonet/ipv4"
 
 	"github.com/hsheth2/logs"
+	"sync/atomic"
 )
 
 const DATA_56_BYTES = "abcdefghijklmnopqrstuvwxyzabcdefghijklmnopqrstuvwxyzabcd"
@@ -25,12 +26,12 @@ func (pm *Ping_Manager) ping_response_dealer() {
 	}
 }
 
-func sendSinglePing(writer ipv4.Writer, id, seq uint16, timeout time.Duration, reply chan *icmp.Packet) {
+func sendSinglePing(writer ipv4.Writer, id uint32, seq uint16, timeout time.Duration, reply chan *icmp.Packet) {
 	// prepare packet
 	packet := &icmp.Header{
 		Tp:   icmp.EchoRequest,
 		Code: PING_ICMP_CODE,
-		Opt:  uint32(id)<<16 | uint32(seq),
+		Opt:  id<<16 | uint32(seq),
 		Data: []byte(DATA_56_BYTES), // TODO make legit by putting the timestamp in the data
 	}
 
@@ -63,22 +64,22 @@ func sendSinglePing(writer ipv4.Writer, id, seq uint16, timeout time.Duration, r
 	}(reply, packet, &time1, timeoutTimer)
 }
 
-func (pm *Ping_Manager) initIdentifier(terminate chan bool) (id uint16, seqChannel map[uint16](chan *icmp.Packet), err error) {
+func (pm *Ping_Manager) initIdentifier(terminate chan bool, numPings uint16, pingCount *uint32) (uint16, [](chan *icmp.Packet), error) {
 	// get identifier
 	pm.currentIdentifier++
-	id = pm.currentIdentifier
+	id := pm.currentIdentifier
 
 	// setup sequence number dealer
 	pm.identifiers[id] = make(chan *icmp.Packet)
-	seqChannel = make(map[uint16](chan *icmp.Packet))
+	seqChannel := make([](chan *icmp.Packet), numPings)
 
 	// create go routine function to deal packets
-	go sequenceDealer(pm.identifiers[id], seqChannel, terminate)
+	go sequenceDealer(pm.identifiers[id], seqChannel, terminate, pingCount)
 
 	return id, seqChannel, nil
 }
 
-func sequenceDealer(idInput chan *icmp.Packet, seqChan map[uint16](chan *icmp.Packet), terminate chan bool) {
+func sequenceDealer(idInput chan *icmp.Packet, seqChan [](chan *icmp.Packet), terminate chan bool, pingCount *uint32) {
 	// TODO verify IPs
 	for {
 		select {
@@ -88,7 +89,7 @@ func sequenceDealer(idInput chan *icmp.Packet, seqChan map[uint16](chan *icmp.Pa
 		case packet := <-idInput:
 			// /*logs*/logs.Info.Println("icmp in =", packet.Header.Opt)
 			seqNum := uint16(packet.Header.Opt)
-			if _, ok := seqChan[seqNum]; ok { // FIXME data race
+			if seqNum < pingCount - 1 {
 				seqChan[seqNum] <- packet
 			} else {
 				/*logs*/ logs.Info.Println("Dropping bad seq num packet with existing identifier")
@@ -101,7 +102,8 @@ const FLOOD_INTERVAL = 0
 
 func (pm *Ping_Manager) SendPing(ip *ipv4.Address, interval, timeout time.Duration, numPings uint16) error {
 	terminate := make(chan bool)
-	id, seqChannel, err := pm.initIdentifier(terminate)
+	pingCount := uint32(1)
+	id, seqChannel, err := pm.initIdentifier(terminate, numPings, &pingCount)
 	if err != nil {
 		logs.Error.Println(err)
 		return err
@@ -115,13 +117,13 @@ func (pm *Ping_Manager) SendPing(ip *ipv4.Address, interval, timeout time.Durati
 		return err
 	}
 
-	for i := uint16(1); i <= numPings; i++ {
-		seqChannel[i] = make(chan *icmp.Packet) // FIXME data race
+	for ;pingCount <= numPings; atomic.AddInt32(&pingCount, 1) {
+		seqChannel[pingCount] = make(chan *icmp.Packet)
 
-		sendSinglePing(writer, id, i, timeout, seqChannel[i]) // function is non-blocking
+		sendSinglePing(writer, id, pingCount, timeout, seqChannel[pingCount]) // function is non-blocking
 
 		// not last
-		if i != numPings {
+		if pingCount != numPings {
 			time.Sleep(interval)
 		}
 	}
