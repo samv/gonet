@@ -26,12 +26,12 @@ func (pm *Ping_Manager) ping_response_dealer() {
 	}
 }
 
-func sendSinglePing(writer ipv4.Writer, id uint32, seq uint16, timeout time.Duration, reply chan *icmp.Packet) {
+func sendSinglePing(writer ipv4.Writer, id uint16, seq uint16, timeout time.Duration, reply chan *icmp.Packet) {
 	// prepare packet
 	packet := &icmp.Header{
 		Tp:   icmp.EchoRequest,
 		Code: PING_ICMP_CODE,
-		Opt:  id<<16 | uint32(seq),
+		Opt:  uint32(id)<<16 | uint32(seq),
 		Data: []byte(DATA_56_BYTES), // TODO make legit by putting the timestamp in the data
 	}
 
@@ -88,8 +88,8 @@ func sequenceDealer(idInput chan *icmp.Packet, seqChan [](chan *icmp.Packet), te
 			return
 		case packet := <-idInput:
 			// /*logs*/logs.Info.Println("icmp in =", packet.Header.Opt)
-			seqNum := uint16(packet.Header.Opt)
-			if seqNum < pingCount - 1 {
+			seqNum := uint32(packet.Header.Opt)
+			if seqNum < atomic.LoadUint32(pingCount) - uint32(1) {
 				seqChan[seqNum] <- packet
 			} else {
 				/*logs*/ logs.Info.Println("Dropping bad seq num packet with existing identifier")
@@ -117,13 +117,13 @@ func (pm *Ping_Manager) SendPing(ip *ipv4.Address, interval, timeout time.Durati
 		return err
 	}
 
-	for ;pingCount <= numPings; atomic.AddInt32(&pingCount, 1) {
+	for ;pingCount <= uint32(numPings); atomic.AddUint32(&pingCount, 1) {
 		seqChannel[pingCount] = make(chan *icmp.Packet)
 
-		sendSinglePing(writer, id, pingCount, timeout, seqChannel[pingCount]) // function is non-blocking
+		sendSinglePing(writer, id, uint16(pingCount), timeout, seqChannel[pingCount]) // function is non-blocking
 
 		// not last
-		if pingCount != numPings {
+		if uint16(pingCount) != numPings {
 			time.Sleep(interval)
 		}
 	}
