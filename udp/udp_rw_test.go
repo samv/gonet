@@ -52,7 +52,7 @@ func readWriteTest(t *testing.T, ip *ipv4.Address, exp int) {
 		w.Close()
 	}(data)
 
-	go func() {
+	go func(data []byte) {
 		//time.Sleep(10*time.Second)
 		p, err := r.Read(maxUDPPacketLength)
 		if err != nil {
@@ -66,7 +66,7 @@ func readWriteTest(t *testing.T, ip *ipv4.Address, exp int) {
 		} else {
 			t.Error("Got Wrong Output:", p)
 		}
-	}()
+	}(data)
 
 	select {
 	case <-success:
