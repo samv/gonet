@@ -18,6 +18,10 @@ type portManagerType struct {
 }
 
 func (m *portManagerType) GetUnusedPort() (uint16, error) {
+	// race prevention
+	m.lock.RLock()
+	defer m.lock.RUnlock()
+
 	for i := minPort; i <= maxPort; i++ {
 		if _, exists := m.incoming[i]; !exists {
 			return i, nil
