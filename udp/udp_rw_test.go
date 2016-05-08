@@ -36,7 +36,7 @@ func readWriteTest(t *testing.T, ip *ipv4.Address, exp int) {
 		data = append(data, data...)
 	}
 
-	go func() {
+	go func(data []byte) {
 		w, err := NewWriter(20000, rwport, ip)
 		if err != nil {
 			t.Fatal(err)
@@ -50,7 +50,7 @@ func readWriteTest(t *testing.T, ip *ipv4.Address, exp int) {
 		}
 
 		w.Close()
-	}()
+	}(data)
 
 	go func() {
 		//time.Sleep(10*time.Second)
