@@ -44,15 +44,15 @@ func sendSinglePing(writer ipv4.Writer, id uint32, seq uint16, timeout time.Dura
 		defer close(seqChan)
 		for {
 			select {
-			case pingResonse := <-seqChan:
-				if !bytes.Equal(pingResonse.Header.Data, header.Data) {
+			case pingResponse := <-seqChan:
+				if !bytes.Equal(pingResponse.Header.Data, header.Data) {
 					/*logs*/ logs.Info.Println("Dropped packet because header data not equal to ping sent")
 					continue
 				}
 				time2 := time.Now()
 				logs.Info.Printf("%d bytes from %v: icmp_seq=%d time=%f ms",
 					len(header.Data)+icmp.HeaderMinSize,
-					pingResonse.RIP.IP,
+					pingResponse.RIP.IP,
 					uint16(header.Opt),
 					float32(time2.Sub(*time1).Nanoseconds())/1000000) // put ttl
 				return
@@ -98,7 +98,7 @@ func sequenceDealer(idInput chan *icmp.Packet, seqChan [](chan *icmp.Packet), te
 	}
 }
 
-const FLOOD_INTERVAL = 0
+const FLOOD_INTERVAL = 0 // TODO add a flood option
 
 func (pm *Ping_Manager) SendPing(ip *ipv4.Address, interval, timeout time.Duration, numPings uint16) error {
 	terminate := make(chan bool)
