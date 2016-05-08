@@ -90,7 +90,7 @@ func sequenceDealer(idInput chan *icmp.Packet, seqChan [](chan *icmp.Packet), te
 		// /*logs*/logs.Info.Println("icmp in =", packet.Header.Opt)
 			seqNum := packet.Header.Opt << 16 >> 16
 			pingC := atomic.LoadUint32(pingCount)
-			if seqNum < pingC-uint32(1) {
+			if seqNum < pingC {
 				seqChan[seqNum-1] <- packet
 			} else {
 				/*logs*/ logs.Info.Println("Dropping bad seq num packet with existing identifier, seqNum-id:", seqNum, "pingcount:", pingC)
@@ -103,7 +103,7 @@ const FLOOD_INTERVAL = 0 // TODO add a flood option
 
 func (pm *Ping_Manager) SendPing(ip *ipv4.Address, interval, timeout time.Duration, numPings uint16) error {
 	terminate := make(chan bool)
-	pingCount := uint32(1)
+	pingCount := uint32(0)
 	id, seqChannel, err := pm.initIdentifier(terminate, numPings, &pingCount)
 	if err != nil {
 		logs.Error.Println(err)
@@ -119,11 +119,11 @@ func (pm *Ping_Manager) SendPing(ip *ipv4.Address, interval, timeout time.Durati
 	}
 
 	for pingCount <= uint32(numPings) {
+		atomic.AddUint32(&pingCount, 1)
 		seqChannel[pingCount-1] = make(chan *icmp.Packet)
 
 		sendSinglePing(writer, id, uint16(pingCount), timeout, seqChannel[pingCount-1]) // function is non-blocking
 
-		atomic.AddUint32(&pingCount, 1)
 		// not last
 		if uint16(pingCount) != numPings {
 			time.Sleep(interval)
