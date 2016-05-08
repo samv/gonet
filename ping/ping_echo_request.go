@@ -90,7 +90,7 @@ func sequenceDealer(idInput chan *icmp.Packet, seqChan [](chan *icmp.Packet), te
 		// /*logs*/logs.Info.Println("icmp in =", packet.Header.Opt)
 			seqNum := packet.Header.Opt << 16 >> 16
 			pingC := atomic.LoadUint32(pingCount)
-			if seqNum < pingC {
+			if seqNum <= pingC {
 				seqChan[seqNum-1] <- packet
 			} else {
 				/*logs*/ logs.Info.Println("Dropping bad seq num packet with existing identifier, seqNum-id:", seqNum, "pingcount:", pingC)
@@ -118,9 +118,9 @@ func (pm *Ping_Manager) SendPing(ip *ipv4.Address, interval, timeout time.Durati
 		return err
 	}
 
-	for pingCount <= uint32(numPings) {
+	for pingCount < uint32(numPings) {
+		seqChannel[pingCount] = make(chan *icmp.Packet)
 		atomic.AddUint32(&pingCount, 1)
-		seqChannel[pingCount-1] = make(chan *icmp.Packet)
 
 		sendSinglePing(writer, id, uint16(pingCount), timeout, seqChannel[pingCount-1]) // function is non-blocking
 
