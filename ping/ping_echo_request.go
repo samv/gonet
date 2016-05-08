@@ -74,12 +74,12 @@ func (pm *Ping_Manager) initIdentifier(terminate chan bool, numPings uint16, pin
 	seqChannel := make([](chan *icmp.Packet), numPings)
 
 	// create go routine function to deal packets
-	go sequenceDealer(pm.identifiers[id], seqChannel, terminate, pingCount)
+	go sequenceDealer(pm.identifiers[id], seqChannel, terminate, id, pingCount)
 
 	return id, seqChannel, nil
 }
 
-func sequenceDealer(idInput chan *icmp.Packet, seqChan [](chan *icmp.Packet), terminate chan bool, pingCount *uint32) {
+func sequenceDealer(idInput chan *icmp.Packet, seqChan [](chan *icmp.Packet), terminate chan bool, id uint16, pingCount *uint32) {
 	// TODO verify IPs
 	for {
 		select {
@@ -90,10 +90,10 @@ func sequenceDealer(idInput chan *icmp.Packet, seqChan [](chan *icmp.Packet), te
 		// /*logs*/logs.Info.Println("icmp in =", packet.Header.Opt)
 			seqNum := uint32(packet.Header.Opt)
 			pingC := atomic.LoadUint32(pingCount)
-			if seqNum < pingC-uint32(1) {
+			if seqNum-uint32(id) < pingC-uint32(1) {
 				seqChan[seqNum-1] <- packet
 			} else {
-				/*logs*/ logs.Info.Println("Dropping bad seq num packet with existing identifier, seqNum:", seqNum, "pingcount:", pingC)
+				/*logs*/ logs.Info.Println("Dropping bad seq num packet with existing identifier, seqNum-id:", seqNum-uint32(id), "pingcount:", pingC)
 			}
 		}
 	}
