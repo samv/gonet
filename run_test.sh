@@ -2,7 +2,7 @@
 
 export name=`basename $1`
 go test -race -c -v $1
-if [ ! -f /.dockerinit ]; then
+if [ ! -f /.dockerenv ]; then
 	# not inside docker
 	# see https://github.com/docker/docker/issues/5650
 	sudo setcap CAP_NET_RAW=epi ./${name}.test
