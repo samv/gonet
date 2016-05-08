@@ -13,5 +13,5 @@ else
   cd tapip
   make
   set -e
-  echo 'exit' | sudo ./tapip
+  echo 'exit' | sudo ./tapip || true
 fi

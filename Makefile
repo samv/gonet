@@ -33,8 +33,8 @@ clean:
 	-rm -rf tapip
 	go clean ./...
 setup:
-	-./tap_setup.sh
-	-./arp_setup.sh
+	./tap_setup.sh
+	./arp_setup.sh
 
 # line counting
 lines:
