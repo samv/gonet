@@ -36,7 +36,24 @@ func (s *Server) BindListen(port uint16, ip *ipv4.Address) error {
 	return s.BindListenWithQueueSize(port, ip, listenQueueSizeDefault)
 }
 
-func (s *Server) BindListenWithQueueSize(port uint16, ip *ipv4.Address, queueSize int) error {
+func (s *Server) BindListenWithQueueSize(port uint16, ip *ipv4.Address, backlog int) error {
+	err := s.Bind(port, ip)
+	if err != nil {
+		return err
+	}
+
+	err = s.Listen(backlog)
+	if err != nil {
+		return err
+	}
+
+	return nil
+}
+
+func (s *Server) Bind(port uint16, ip *ipv4.Address) error {
+	// TODO check state
+	// TODO check if already binded
+
 	s.listenPort = port
 	s.listenIP = ip
 	read, err := portManager.bind(0, port, ip)
@@ -44,8 +61,14 @@ func (s *Server) BindListenWithQueueSize(port uint16, ip *ipv4.Address, queueSiz
 		return err
 	}
 	s.listener = read
+	return nil
+}
+
+func (s *Server) Listen(backlog int) error {
+	// TODO check state
+
 	s.state = fsmListen
-	s.connQueue = make(chan *TCB, queueSize)
+	s.connQueue = make(chan *TCB, backlog)
 
 	go s.longListener()
 

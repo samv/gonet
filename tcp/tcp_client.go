@@ -12,10 +12,16 @@ type Client struct {
 	tcb *TCB
 }
 
-func NewClient(local, remote uint16, dstIP *ipv4.Address) (*Client, error) {
+func NewClient(remote uint16, dstIP *ipv4.Address) (*Client, error) {
+	local, err := portManager.GetUnusedPort()
+	if err != nil {
+		logs.Error.Println(err, remote, dstIP.Hash())
+		return nil, err
+	}
+
 	read, err := portManager.bind(remote, local, dstIP)
 	if err != nil {
-		logs.Error.Println(err, local, remote, dstIP.Hash())
+		logs.Error.Println(err, remote, dstIP.Hash())
 		return nil, err
 	}
 

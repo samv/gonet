@@ -18,8 +18,8 @@ func TestReadWriteOverNetwork(t *testing.T) {
 }
 
 func readWriteTest(t *testing.T, ip *ipv4.Address) {
-	const serverPort = 20102
-	const clientPort = 20101
+	const serverPort = uint16(20102)
+	const clientPort = uint16(20101)
 
 	// TODO make both server and client read and write
 	success := make(chan bool, 1)
@@ -71,7 +71,7 @@ func readWriteTest(t *testing.T, ip *ipv4.Address) {
 
 	// client (sends data)
 	go func() {
-		client, err := NewClient(clientPort, serverPort, ip)
+		client, err := NewClient(serverPort, ip)
 		if err != nil {
 			t.Error("err", err)
 			return
