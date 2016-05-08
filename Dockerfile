@@ -2,6 +2,7 @@ FROM golang:1.6
 
 RUN apt-get update
 RUN apt-get -y install sudo apt-utils net-tools iptables
+RUN go get golang.org/x/tools/cmd/...
 
 #RUN useradd -m docker && echo "docker:docker" | chpasswd && adduser docker sudo
 #USER docker
