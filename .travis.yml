@@ -10,8 +10,8 @@ services:
 
 before_install:
   - docker pull golang:1.6
-  - docker build -t gonet-linux .
-  - docker run --privileged -v `pwd`:/go/src/github.com/hsheth2/gonet gonet-linux:latest /bin/bash -c "cd /go/src/github.com/hsheth2/gonet && make && make test"
+  - docker build -t hsheth2/gonet-base .
+  - docker run --privileged -v `pwd`:/go/src/github.com/hsheth2/gonet hsheth2/gonet-base:latest /bin/bash -c "cd /go/src/github.com/hsheth2/gonet && make && make test"
 
 script:
   - make depend build
