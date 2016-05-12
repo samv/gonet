@@ -3,5 +3,5 @@
 docker rm gonet
 
 # should be run in gonet source directory
-docker build -t hsheth2/gonet-base .
+docker pull hsheth2/gonet-base
 docker run -it --privileged --name gonet -v `pwd`:/go/src/github.com/hsheth2/gonet hsheth2/gonet-base:latest
