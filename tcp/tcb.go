@@ -156,13 +156,13 @@ func (c *TCB) Close() error {
 	c.stateUpdate.L.Unlock()
 
 	// kill all retransmitters
+	c.seqAckMutex.RLock()
 	c.recentAckUpdate.Broadcast(uint32(0))
 	c.recentAckUpdate.Broadcast(c.ackNum)
 	c.recentAckUpdate.Broadcast(uint32(math.MaxUint32))
 
 	// send FIN
 	/*logs*/ logs.Trace.Println(c.hash(), "Sending FIN within close")
-	c.seqAckMutex.RLock()
 	c.sendFin(c.seqNum, c.ackNum)
 	c.seqAckMutex.RUnlock()
 	c.seqAckMutex.Lock()
