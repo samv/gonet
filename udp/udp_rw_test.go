@@ -24,6 +24,7 @@ func TestReadWriteExternal(t *testing.T) {
 
 func readWriteTest(t *testing.T, ip *ipv4.Address, exp int) {
 	success := make(chan bool, 1)
+	wrote := make(chan bool, 1)
 
 	r, err := NewReader(rwport, ip)
 	if err != nil {
@@ -50,6 +51,8 @@ func readWriteTest(t *testing.T, ip *ipv4.Address, exp int) {
 		}
 
 		w.Close()
+
+		wrote <- true
 	}(data)
 
 	go func(data []byte) {
@@ -70,6 +73,7 @@ func readWriteTest(t *testing.T, ip *ipv4.Address, exp int) {
 
 	select {
 	case <-success:
+		<- wrote
 		t.Log("Success")
 	case <-time.After(5 * time.Second):
 		t.Error("Timed out")
