@@ -8,8 +8,9 @@ import (
 
 	"github.com/hsheth2/gonet/ipv4"
 
-	"github.com/hsheth2/logs"
 	"sync/atomic"
+
+	"github.com/hsheth2/logs"
 )
 
 const DATA_56_BYTES = "abcdefghijklmnopqrstuvwxyzabcdefghijklmnopqrstuvwxyzabcd"
@@ -84,10 +85,10 @@ func sequenceDealer(idInput chan *icmp.Packet, seqChan [](chan *icmp.Packet), te
 	for {
 		select {
 		case <-terminate:
-		//			/*logs*/logs.Info.Println("Terminating seq dealer")
+			//			/*logs*/logs.Info.Println("Terminating seq dealer")
 			return
 		case packet := <-idInput:
-		// /*logs*/logs.Info.Println("icmp in =", packet.Header.Opt)
+			// /*logs*/logs.Info.Println("icmp in =", packet.Header.Opt)
 			seqNum := packet.Header.Opt << 16 >> 16
 			pingC := atomic.LoadUint32(pingCount)
 			if seqNum <= pingC {

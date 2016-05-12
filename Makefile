@@ -50,6 +50,7 @@ fmt:
 vet:
 	go vet ./...
 lint:
+	go get github.com/golang/lint/golint
 	golint ./...
 errcheck:
 	errcheck $(PKGS)

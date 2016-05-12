@@ -1,8 +1,9 @@
 package physical
 
 import (
-	"github.com/hsheth2/logs"
 	"errors"
+
+	"github.com/hsheth2/logs"
 )
 
 type loopbackIO struct {
@@ -41,7 +42,7 @@ func (lo *loopbackIO) Write(data []byte) (int, error) {
 func (lo *loopbackIO) Read() ([]byte, error) {
 	///*logs*/logs.Trace.Println("read packet off network_tap")
 	res := <-lo.readBuf
-	if(len(res) == 0) {
+	if len(res) == 0 {
 		return nil, errors.New("Channel is closed!")
 	}
 	return <-lo.readBuf, nil
