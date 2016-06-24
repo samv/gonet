@@ -73,7 +73,7 @@ func readWriteTest(t *testing.T, ip *ipv4.Address, exp int) {
 
 	select {
 	case <-success:
-		<- wrote
+		<-wrote
 		t.Log("Success")
 	case <-time.After(5 * time.Second):
 		t.Error("Timed out")
