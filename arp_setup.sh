@@ -9,5 +9,5 @@ echo '10.0.0.2' > ipv4/external_gateway.static
 IFACE=wlan1
 
 sudo sysctl net.ipv4.ip_forward=1
-sudo iptables -t nat -A PREROUTING -p tcp -d `/sbin/ifconfig ${IFACE} | grep 'inet addr:' | cut -d: -f2 | awk '{ print $1}'` --dport 80 -j DNAT --to 10.0.0.3:80
+sudo iptables -t nat -A PREROUTING -p tcp -d `/sbin/ifconfig ${IFACE} | grep 'inet addr:' | cut -d: -f2 | awk '{ print $1}'` --dport 23280 -j DNAT --to 10.0.0.3:80
 sudo iptables -t nat -A POSTROUTING -j MASQUERADE
