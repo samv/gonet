@@ -101,13 +101,13 @@ func (c *TCB) Send(data []byte) error { // a blocking send call
 	return nil
 }
 
-func (c *TCB) Recv(num uint64) ([]byte, error) { // blocking recv call TODO add timeout
+func (c *TCB) Recv(num int) ([]byte, error) { // blocking recv call TODO add timeout
 	c.pushSignal.L.Lock()
 	defer c.pushSignal.L.Unlock()
 	for {
 		/*logs*/ logs.Trace.Println(c.hash(), "Attempting to read off of pushBuffer")
 		/*logs*/ logs.Trace.Println(c.hash(), "Amt of data on pushBuffer:", len(c.pushBuffer))
-		amt := min(num, uint64(len(c.pushBuffer)))
+		amt := min(uint64(num), uint64(len(c.pushBuffer)))
 		if amt != 0 {
 			data := c.pushBuffer[:amt]
 			c.pushBuffer = c.pushBuffer[amt:]
@@ -156,13 +156,13 @@ func (c *TCB) Close() error {
 	c.stateUpdate.L.Unlock()
 
 	// kill all retransmitters
+	c.seqAckMutex.RLock()
 	c.recentAckUpdate.Broadcast(uint32(0))
 	c.recentAckUpdate.Broadcast(c.ackNum)
 	c.recentAckUpdate.Broadcast(uint32(math.MaxUint32))
 
 	// send FIN
 	/*logs*/ logs.Trace.Println(c.hash(), "Sending FIN within close")
-	c.seqAckMutex.RLock()
 	c.sendFin(c.seqNum, c.ackNum)
 	c.seqAckMutex.RUnlock()
 	c.seqAckMutex.Lock()

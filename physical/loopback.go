@@ -1,6 +1,8 @@
 package physical
 
 import (
+	"errors"
+
 	"github.com/hsheth2/logs"
 )
 
@@ -39,7 +41,11 @@ func (lo *loopbackIO) Write(data []byte) (int, error) {
 
 func (lo *loopbackIO) Read() ([]byte, error) {
 	///*logs*/logs.Trace.Println("read packet off network_tap")
-	return <-lo.readBuf, nil // TODO check if chan is closed
+	res := <-lo.readBuf
+	if len(res) == 0 {
+		return nil, errors.New("Channel is closed!")
+	}
+	return <-lo.readBuf, nil
 }
 
 func (lo *loopbackIO) Close() error {
