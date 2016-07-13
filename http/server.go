@@ -30,43 +30,9 @@ var base, _ = filepath.Abs("./static")
 
 var server *tcp.Server
 
-func getFile(file string) ([]byte, error) {
-	d, err := ioutil.ReadFile(filepath.Join(base, file))
-	if err != nil {
-		return nil, err
-	}
-	return d, nil
-}
-
-func fileType(filename string) contentType {
-	fmt.Println("filetype", strings.ToLower(filepath.Ext(filename)))
-	switch strings.ToLower(filepath.Ext(filename)) { // TODO more content types
-	case ".html":
-		return html
-	case ".png":
-		return png
-	case ".js":
-		return js
-	case ".css":
-		return css
-	case ".ico":
-		return favicon
-	default:
-		return plain
-	}
-}
 
 func serveReq(req string) (contents []byte, tp contentType, err error) {
-	d, err := getFile(req)
-	if err != nil {
-		// TODO more options
-		n, err := getFile(filepath.Join(req, "index.html"))
-		if err != nil {
-			return nil, "", err
-		}
-		return n, html, nil
-	}
-	return d, fileType(req), nil
+        return []byte(`<html><head><title>Hello World</title></head><body><h1>Hello World</h1></body></html>`),html, nil
 }
 
 func respond(socket *tcp.TCB, request string) error {
@@ -76,7 +42,6 @@ func respond(socket *tcp.TCB, request string) error {
 	reqLine := strings.Split(lines[0], " ")
 	if strings.EqualFold(reqLine[0], "GET") {
 		file := strings.Split(reqLine[1], "?")[0]
-		fmt.Println(file)
 		response, tp, err := serveReq(file)
 		if err != nil {
 			response = []byte("not found\n")
@@ -160,9 +125,6 @@ func serverAccept() {
 	}
 }
 
-func SetDir(d string) {
-	base = d
-}
 
 func Run() {
 	s, err := tcp.NewServer()
