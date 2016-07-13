@@ -6,7 +6,6 @@ import (
 	"sync"
 
 	"github.com/hsheth2/logs"
-	"golang.org/x/net/ipv4"
 )
 
 type ipWriter struct {
@@ -51,7 +50,7 @@ func NewWriter(dst *Address, protocol uint8) (Writer, error) {
 		//fd:          fd,
 		//sockAddr:    addr,
 		nw:          nw,
-		version:     ipv4.Version,
+		version:     IPv4Version,
 		headerLen:   ipHeaderLength,
 		dst:         dst,
 		src:         GlobalRoutingTable.Query(dst),

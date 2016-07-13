@@ -6,7 +6,7 @@ import (
 
 func init() {
 	globalLoopbackIO = loInit()
-	globalTapIO = tapInit()
+	globalAnetIO = anetInit()
 }
 
 func getInterface(ifindex InternalIndex) physicalInterface {
@@ -14,7 +14,7 @@ func getInterface(ifindex InternalIndex) physicalInterface {
 		return globalLoopbackIO
 	}
 	// TODO support an arbitrary number of InternalIndexes
-	return globalTapIO
+	return globalAnetIO
 }
 
 // Write allows blocking writes to any given interface

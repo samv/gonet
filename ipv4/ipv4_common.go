@@ -12,6 +12,10 @@ const (
 )
 
 const (
+	IPv4Version = 4 // funnily enough
+)
+
+const (
 	ipHeaderLength    = 20
 	maxIPPacketLength = 65535
 )

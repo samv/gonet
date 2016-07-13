@@ -30,21 +30,22 @@ func (m *portManagerType) GetUnusedPort() (uint16, error) {
 	return uint16(0), errors.New("No ports available to bind to")
 }
 
-var portManager = func() *portManagerType { // TODO use an init function
+var portManager *portManagerType
+
+func init() {
 	ipr, err := ipv4.NewReader(ipv4.IPAll, ipv4.IPProtoTCP)
 	if err != nil {
 		logs.Error.Println(err)
-		return nil
+		return
 	}
 
-	m := &portManagerType{
+	portManager = &portManagerType{
 		tcpReader: ipr,
 		incoming:  make(map[uint16](map[uint16](map[ipv4.Hash](chan *packet)))),
 		lock:      &sync.RWMutex{},
 	}
-	go m.readAll()
-	return m
-}()
+	go portManager.readAll()
+}
 
 func (m *portManagerType) bind(rport, lport uint16, ip *ipv4.Address) (chan *packet, error) {
 	// race prevention
