@@ -3,7 +3,6 @@ package http
 import (
 	"errors"
 	"fmt"
-	"io/ioutil"
 	"path/filepath"
 	"strings"
 
@@ -30,9 +29,8 @@ var base, _ = filepath.Abs("./static")
 
 var server *tcp.Server
 
-
 func serveReq(req string) (contents []byte, tp contentType, err error) {
-        return []byte(`<html><head><title>Hello World</title></head><body><h1>Hello World</h1></body></html>`),html, nil
+	return []byte(`<html><head><title>Hello World</title></head><body><h1>Hello World</h1></body></html>`), html, nil
 }
 
 func respond(socket *tcp.TCB, request string) error {
@@ -124,7 +122,6 @@ func serverAccept() {
 		go connDealer(socket)
 	}
 }
-
 
 func Run() {
 	s, err := tcp.NewServer()

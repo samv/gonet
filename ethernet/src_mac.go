@@ -1,12 +1,10 @@
 package ethernet
 
 import (
+	anet "atman/net"
 	"errors"
-	"io/ioutil"
+	"fmt"
 	"net"
-	"path"
-	"runtime"
-	"strings"
 
 	"github.com/hsheth2/gonet/physical"
 
@@ -37,13 +35,7 @@ func initSourceTable() *sourceMACTable {
 		logs.Error.Fatal(err)
 	}
 
-	_, filename, _, _ := runtime.Caller(1)
-	data, err := ioutil.ReadFile(path.Join(path.Dir(filename), ethLoadFileStaticMAC))
-	if err != nil {
-		logs.Error.Fatal(err)
-	}
-	str := strings.TrimSpace(string(data))
-	hw, err := net.ParseMAC(str)
+	hw, err := net.ParseMAC(string(anet.DefaultDevice.MacAddr))
 	if err != nil {
 		logs.Error.Fatal(err)
 	}
@@ -51,6 +43,7 @@ func initSourceTable() *sourceMACTable {
 	// init addresses
 	LoopbackMACAddress = &MACAddress{Data: []byte{0, 0, 0, 0, 0, 0}}
 	ExternalMACAddress = &MACAddress{Data: []byte(hw)}
+	fmt.Printf("Our mac address is %s\n", anet.DefaultDevice.MacAddr)
 	LoopbackBroadcastAddress = &MACAddress{Data: []byte{0, 0, 0, 0, 0, 0}}
 	ExternalBroadcastAddress = &MACAddress{Data: []byte{0xff, 0xff, 0xff, 0xff, 0xff, 0xff}}
 

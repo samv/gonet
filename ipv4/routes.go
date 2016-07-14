@@ -1,11 +1,6 @@
 package ipv4
 
 import (
-	"io/ioutil"
-	"path"
-	"runtime"
-	"strings"
-
 	"github.com/hsheth2/logs"
 )
 
@@ -27,13 +22,7 @@ var (
 )
 
 func initExternalGateway() *Address {
-	_, filename, _, _ := runtime.Caller(1)
-	data, err := ioutil.ReadFile(path.Join(path.Dir(filename), ipv4StaticGatewayLoadFile))
-	if err != nil {
-		logs.Error.Fatalln(err)
-	}
-	str := strings.TrimSpace(string(data))
-	return MakeIP(str)
+	return MakeIP("10.0.2.2")
 }
 
 func initLoopbackIP() *Address {
@@ -41,14 +30,7 @@ func initLoopbackIP() *Address {
 }
 
 func initExternalIP() *Address {
-	// Load preferences and defaults file
-	_, filename, _, _ := runtime.Caller(1)
-	data, err := ioutil.ReadFile(path.Join(path.Dir(filename), ipv4StaticRouteLoadFile))
-	if err != nil {
-		logs.Error.Fatalln(err)
-	}
-	str := strings.TrimSpace(string(data))
-	return MakeIP(str)
+	return MakeIP("10.0.2.42")
 }
 
 // RoutingTable stores the different routes that may be used
