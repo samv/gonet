@@ -21,6 +21,7 @@ func init() {
 	if err != nil {
 		logs.Error.Fatalln(err)
 	}
+	logs.Info.Printf("bound Arp reader to EtherType: %.4x", ethernet.EtherTypeARP)
 
 	read = r
 	ethernetProtocolDealers = make(map[ethernet.EtherType](ProtocolDealer))
@@ -52,14 +53,16 @@ func dealer() {
 		}
 		data := header.Packet
 		p := parsePacket(data)
+		//logs.Trace.Printf("arp: %+v", p)
 
 		if pd, ok := ethernetProtocolDealers[p.ptype]; ok && p.htype == ethernetHType {
 			p = parsePacketWithType(data, p, pd)
 			//logs.Trace.Println("ARP packet:", packet)
 			pd.Add(p.spa, p.sha)
 			if p.oper == operationRequest {
-				///*logs*/logs.Trace.Println("Got ARP Request")
+				///*logs*/ logs.Trace.Println("Got ARP Request")
 				if p.tpa.ARPEqual(pd.GetAddress()) {
+					logs.Trace.Printf("who-is %s?  I am!", p.tpa)
 					reply := &packet{
 						htype: p.htype,
 						ptype: p.ptype,
@@ -83,11 +86,11 @@ func dealer() {
 					}
 					//logs.Trace.Println("Replied to ARP request")
 				} else {
-					logs.Warn.Println("Ignoring ARP request with a different target protocol address")
+					logs.Trace.Printf("who-is %s?  not me, I'm %s", p.tpa, pd.GetAddress())
 					continue
 				}
 			} else if p.oper == operationReply {
-				//logs.Trace.Println("Got ARP Reply")
+				logs.Trace.Println("Got ARP Reply")
 				// signal is sent in the Add function
 			} else {
 				logs.Warn.Println("Dropping ARP packet for bad operation")
@@ -147,4 +150,7 @@ func Request(tp ethernet.EtherType, raddr ProtocolAddress) (*ethernet.MACAddress
 	} else {
 		return nil, errors.New("No ARP_Protocol_Dealer registered for given EtherType")
 	}
+}
+
+func Noop() {
 }

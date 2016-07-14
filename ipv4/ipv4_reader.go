@@ -29,6 +29,7 @@ func NewReader(ip *Address, protocol uint8) (Reader, error) {
 	if err != nil {
 		return nil, err
 	}
+	logs.Info.Printf("bound IPv4 reader to IP Proto: %.2x, IP: %s", protocol, ip)
 
 	ipr := &ipReader{
 		incomingPackets: c,

@@ -1,9 +1,7 @@
 package physical
 
 import (
-	"bytes"
 	"fmt"
-	"io"
 
 	atmannet "atman/net"
 )
@@ -37,14 +35,12 @@ func (anet *anetIO) Write(data []byte) (n int, err error) {
 func (anet *anetIO) readAll() {
 	dev := anet.ifce
 
-	fmt.Println("AtmanNet ready to read on:")
-	fmt.Printf("  Mac address: %s\n", dev.MacAddr)
-	fmt.Printf("  IP address:  %s\n", dev.IPAddr)
+	fmt.Printf("AtmanNet reading on mac address: %s\n", dev.MacAddr)
 
 	for {
 		dev.EventChannel.Wait()
 
-		fmt.Println("AtmanNet woke up")
+		//fmt.Println("AtmanNet woke up")
 
 		for dev.Rx.CheckForResponses() {
 			rsp := (*atmannet.NetifRxResponse)(dev.Rx.NextResponse())
@@ -57,7 +53,6 @@ func (anet *anetIO) readAll() {
 				packetCopy := make([]byte, dataLen)
 				copy(packetCopy, packet)
 
-				fmt.Printf("Read %d byte(s) from atmannet\n", dataLen)
 				anet.packets <- packetCopy
 			} else {
 				fmt.Printf("response: %+v\n", rsp)

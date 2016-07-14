@@ -3,6 +3,7 @@ package ipv4
 import (
 	"bytes"
 	"encoding/binary"
+	"fmt"
 	"net"
 )
 
@@ -35,6 +36,19 @@ var (
 // Marshal turns an IP Address into a slice of bytes
 func (ip *Address) Marshal() ([]byte, error) {
 	return ip.IP, nil
+}
+
+// String marshals an IP address into dotted integer form with optional 0's removed.
+func (ip *Address) String() string {
+	//if ip.IP[2] == 0 {
+	//if ip.IP[1] == 0 {
+	//return fmt.Sprintf("%d.%d", ip.IP[0], ip.IP[3])
+	//} else {
+	//return fmt.Sprintf("%d.%d.%d", ip.IP[0], ip.IP[1], ip.IP[3])
+	//}
+	//} else {
+	return fmt.Sprintf("%d.%d.%d.%d", ip.IP[0], ip.IP[1], ip.IP[2], ip.IP[3])
+	//}
 }
 
 // Hash converts an IP Address into a uint32 for hashing purposes

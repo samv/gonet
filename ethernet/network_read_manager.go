@@ -26,19 +26,16 @@ func readAll() { // TODO terminate (using notifiers)
 		// /*logs*/logs.Trace.Println("network_reader readAll readFrame success")
 
 		ethProto := EtherType(uint16(data[12])<<8 | uint16(data[13]))
-		// /*logs*/logs.Trace.Println("Eth frame with protocol:", eth_protocol)
 		if c, ok := protoBufs[ethProto]; ok {
-			//logs.Trace.Println("Something binded to protocol:", eth_protocol)
-			//logs.Info.Println("Found that ethernet protocol is registered")
-
 			select {
 			case c.input <- data:
-			//logs.Trace.Println("Ethernet Data begin forwarded:", data)
+				logs.Trace.Printf("EtherType is %.4x (payload %d byte(s))", ethProto, len(data)-14)
+				//
 			default:
 				logs.Warn.Printf("Dropping Ethernet packet %v no space in input buffer\n", ethProto)
 			}
 		} else {
-			logs.Warn.Println("Dropping Ethernet packet for wrong protocol:", ethProto)
+			logs.Warn.Printf("ignoring ethernet frame with EtherType: %.4x", ethProto)
 		}
 	}
 }

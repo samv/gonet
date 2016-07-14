@@ -53,7 +53,7 @@ func (m *portManagerType) bind(rport, lport uint16, ip *ipv4.Address) (chan *pac
 	defer m.lock.Unlock()
 
 	// lport is the local one here, rport is the remote
-	/*logs*/ logs.Info.Println("Attempting to bind to rport", rport, "lport", lport, "ip", ip.Hash())
+	///*logs*/ logs.Info.Println("Attempting to bind to rport", rport, "lport", lport, "ip", ip.Hash())
 	if _, ok := m.incoming[lport]; !ok {
 		m.incoming[lport] = make(map[uint16](map[ipv4.Hash](chan *packet)))
 	}
@@ -64,7 +64,7 @@ func (m *portManagerType) bind(rport, lport uint16, ip *ipv4.Address) (chan *pac
 	}
 
 	if _, ok := m.incoming[lport][rport][ip.Hash()]; ok {
-		return nil, fmt.Errorf("Ports (lport: %d, rport %d) and IP (%v) already binded to", lport, rport, ip)
+		return nil, fmt.Errorf("Ports (lport: %d, rport %d) and IP (%v) already bound", lport, rport, ip)
 	}
 
 	ans := make(chan *packet, incomingBufferSize)

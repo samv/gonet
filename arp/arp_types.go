@@ -25,4 +25,5 @@ type ProtocolAddress interface {
 	Marshal() ([]byte, error)
 	Len() uint8
 	ARPEqual(ProtocolAddress) bool
+	String() string
 }

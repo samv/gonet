@@ -72,3 +72,5 @@ func readAll() {
 		}
 	}
 }
+
+func Noop() {}

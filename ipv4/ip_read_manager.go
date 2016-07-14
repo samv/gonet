@@ -23,6 +23,7 @@ var globalIPReadManager = func() *ipReadManager {
 
 func newIPReadManager() (*ipReadManager, error) {
 	r, err := ethernet.Bind(ethernet.EtherTypeIP)
+	logs.Info.Printf("bound IP reader to EtherType: %.4x", ethernet.EtherTypeIP)
 	if err != nil {
 		return nil, err
 	}
@@ -45,7 +46,7 @@ func (irm *ipReadManager) readAll() {
 			logs.Error.Println(err)
 			continue
 		}
-		//logs.Info.Println("IP read_manager recvd packet:", eth_packet.Packet)
+		//logs.Info.Println("IP read_manager recvd packet:", ethPacket.Packet)
 		buf := ethPacket.Packet
 
 		if len(buf) <= ipHeaderLength {
@@ -64,25 +65,21 @@ func (irm *ipReadManager) readAll() {
 
 func (irm *ipReadManager) processOne(buf []byte) error {
 	protocol := uint8(buf[9])
-	rip := &Address{IP: buf[12:16]}
+	srcIp := &Address{IP: buf[12:16]}
+	dstIp := &Address{IP: buf[16:20]}
 
-	//fmt.Println(ln)
-	//fmt.Println(protocol, ip)
-	/*if ln == 47 {
-		fmt.Println(buf)
-	}*/
-	//fmt.Println(protocol, ip)
+	logs.Trace.Printf("IP Proto %.2x, %s -> %s", protocol, srcIp, dstIp)
 	if protoBuf, foundProto := irm.buffers[protocol]; foundProto {
 		//fmt.Println("Dealing with packet")
 		var output chan []byte
-		if c, foundIP := protoBuf[rip.Hash()]; foundIP {
+		if c, foundIP := protoBuf[srcIp.Hash()]; foundIP {
 			//fmt.Println("Found exact")
 			output = c
 		} else if c, foundAll := protoBuf[IPAllHash]; foundAll {
 			//fmt.Println("Found global")
 			output = c
 		} else {
-			logs.Warn.Println("output buf doesn't exist, rip:", rip)
+			logs.Warn.Println("not bound to IP ", dstIp)
 			return nil
 		}
 		select {
@@ -91,6 +88,8 @@ func (irm *ipReadManager) processOne(buf []byte) error {
 		default:
 			logs.Warn.Println("Dropping incoming IPv4 packet: no space in buffer")
 		}
+	} else {
+		logs.Trace.Printf("Nothing bound to IP proto %.2x, dropping", protocol)
 	}
 	return nil
 }
@@ -125,3 +124,5 @@ func (irm *ipReadManager) unbind(ip *Address, protocol uint8) error {
 	}
 	return errors.New("Not bound, can't unbind.")
 }
+
+func Noop() {}

@@ -60,6 +60,7 @@ func (s *Server) Bind(port uint16, ip *ipv4.Address) error {
 	if err != nil {
 		return err
 	}
+	logs.Info.Printf("listening on %s:%d", ip, port)
 	s.listener = read
 	return nil
 }
@@ -76,7 +77,6 @@ func (s *Server) Listen(backlog int) error {
 }
 
 func (s *Server) longListener() {
-	/*logs*/ logs.Trace.Println("Server listener routine")
 	for {
 		in := <-s.listener
 		///*logs*/logs.Trace.Println("Server rcvd packet:", in)
